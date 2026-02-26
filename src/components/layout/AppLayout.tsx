@@ -112,8 +112,11 @@ const EmptyState = () => {
     <div className="flex flex-col items-center justify-center h-full text-theme-text-muted px-4">
       <div className="w-full max-w-sm space-y-6">
         {/* Header */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-theme-text tracking-tight">{t('layout.empty.title')}</h1>
+        <div className="text-center select-none">
+          <h1 className="text-5xl font-bold tracking-tight text-theme-text empty-brand">
+            {t('layout.empty.title')}
+            <span className="inline-block w-[3px] h-[0.7em] ml-1.5 translate-y-[0.05em] rounded-sm bg-theme-text opacity-40" />
+          </h1>
         </div>
 
         {/* Quick Actions */}

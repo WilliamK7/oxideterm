@@ -134,5 +134,29 @@
   "zen_mode": {
     "hint": "Zen モード — ⌘⇧Z で終了",
     "hint_other": "Zen モード — Ctrl+Shift+Z で終了"
+  },
+  "onboarding": {
+    "welcome": "OxideTerm へようこそ",
+    "subtitle": "Rust ネイティブ SSH ターミナルクライアント",
+    "start_exploring": "探索を始める",
+    "quick_start": "クイックスタート",
+    "open_terminal": "ターミナルを開く",
+    "open_terminal_desc": "ローカルシェルセッションを起動",
+    "new_connection": "新規接続",
+    "new_connection_desc": "SSH サーバーに接続",
+    "import_ssh": "SSH 設定をインポート",
+    "import_ssh_desc": "~/.ssh/config に {{count}} 件のホストを検出",
+    "import_ssh_none": "SSH 設定にホストが見つかりません",
+    "import_ssh_done": "{{count}} 件のホストをインポート済み",
+    "importing": "スキャン中...",
+    "features": "主な特長",
+    "cmd_palette": "コマンドパレット",
+    "cmd_palette_desc": "接続、設定、テーマにワンショートカットでアクセス。",
+    "reconnect": "スマート再接続",
+    "reconnect_desc": "30秒の猶予期間で vim や htop の状態を保持。",
+    "multiplexing": "SSH 多重化",
+    "multiplexing_desc": "ターミナル、SFTP、ポート転送が1つの SSH 接続を共有。",
+    "security": "デフォルトで安全",
+    "security_desc": "OS キーチェーンに保存。ChaCha20-Poly1305 暗号化。純 Rust SSH。"
   }
 }

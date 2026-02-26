@@ -134,5 +134,29 @@
   "zen_mode": {
     "hint": "Zen Mode — Press ⌘⇧Z to exit",
     "hint_other": "Zen Mode — Press Ctrl+Shift+Z to exit"
+  },
+  "onboarding": {
+    "welcome": "Welcome to OxideTerm",
+    "subtitle": "Rust-native SSH terminal client",
+    "start_exploring": "Start Exploring",
+    "quick_start": "Quick Start",
+    "open_terminal": "Open Terminal",
+    "open_terminal_desc": "Launch a local shell session",
+    "new_connection": "New Connection",
+    "new_connection_desc": "Connect to an SSH server",
+    "import_ssh": "Import SSH Config",
+    "import_ssh_desc": "{{count}} hosts found in ~/.ssh/config",
+    "import_ssh_none": "No hosts in SSH config",
+    "import_ssh_done": "{{count}} hosts imported",
+    "importing": "Scanning...",
+    "features": "Key Features",
+    "cmd_palette": "Command Palette",
+    "cmd_palette_desc": "Access connections, settings, and themes — one shortcut away.",
+    "reconnect": "Smart Reconnect",
+    "reconnect_desc": "30s grace period — TUI apps like vim stay intact.",
+    "multiplexing": "SSH Multiplexing",
+    "multiplexing_desc": "Terminal, SFTP, port forwarding share one SSH connection.",
+    "security": "Secure by Default",
+    "security_desc": "Keychain storage, ChaCha20-Poly1305 encryption, pure Rust SSH."
   }
 }

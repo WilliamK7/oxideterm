@@ -134,5 +134,29 @@
   "zen_mode": {
     "hint": "Zen 模式 — 按 ⌘⇧Z 退出",
     "hint_other": "Zen 模式 — 按 Ctrl+Shift+Z 退出"
+  },
+  "onboarding": {
+    "welcome": "歡迎使用 OxideTerm",
+    "subtitle": "Rust 原生 SSH 終端用戶端",
+    "start_exploring": "開始探索",
+    "quick_start": "快速開始",
+    "open_terminal": "開啟終端",
+    "open_terminal_desc": "啟動本地 Shell 工作階段",
+    "new_connection": "新增連線",
+    "new_connection_desc": "連線至 SSH 伺服器",
+    "import_ssh": "匯入 SSH 設定",
+    "import_ssh_desc": "在 ~/.ssh/config 中偵測到 {{count}} 台主機",
+    "import_ssh_none": "未偵測到 SSH 設定",
+    "import_ssh_done": "已匯入 {{count}} 台主機",
+    "importing": "正在掃描...",
+    "features": "核心特性",
+    "cmd_palette": "命令面板",
+    "cmd_palette_desc": "一鍵存取連線、設定與主題。",
+    "reconnect": "智慧重連",
+    "reconnect_desc": "30 秒寬限期，vim、htop 等 TUI 應用狀態完整保留。",
+    "multiplexing": "SSH 多工複用",
+    "multiplexing_desc": "終端、SFTP、連接埠轉發共享同一條 SSH 連線。",
+    "security": "預設安全",
+    "security_desc": "密碼存於系統鑰匙圈，ChaCha20-Poly1305 加密，純 Rust SSH。"
   }
 }

@@ -118,21 +118,45 @@
   },
   "command_palette": {
     "title": "Paleta de comandos",
-    "placeholder": "Pesquisar comandos, conex\u00f5es ou digitar user@host...",
+    "placeholder": "Pesquisar comandos, conexões ou digitar user@host...",
     "no_results": "Nenhum resultado",
     "section_commands": "Comandos",
-    "section_connections": "Conex\u00f5es salvas",
-    "section_sessions": "Sess\u00f5es ativas",
-    "quick_connect": "Conex\u00e3o r\u00e1pida",
+    "section_connections": "Conexões salvas",
+    "section_sessions": "Sessões ativas",
+    "quick_connect": "Conexão rápida",
     "cmd_new_terminal": "Novo terminal local",
-    "cmd_new_connection": "Nova conex\u00e3o SSH",
-    "cmd_settings": "Abrir configura\u00e7\u00f5es",
+    "cmd_new_connection": "Nova conexão SSH",
+    "cmd_settings": "Abrir configurações",
     "cmd_toggle_sidebar": "Alternar barra lateral",
     "cmd_zen_mode": "Alternar modo Zen",
     "cmd_close_tab": "Fechar aba atual"
   },
   "zen_mode": {
-    "hint": "Modo Zen \u2014 Pressione \u2318\u21e7Z para sair",
-    "hint_other": "Modo Zen \u2014 Pressione Ctrl+Shift+Z para sair"
+    "hint": "Modo Zen — Pressione ⌘⇧Z para sair",
+    "hint_other": "Modo Zen — Pressione Ctrl+Shift+Z para sair"
+  },
+  "onboarding": {
+    "welcome": "Bem-vindo ao OxideTerm",
+    "subtitle": "Cliente SSH terminal nativo em Rust",
+    "start_exploring": "Começar a explorar",
+    "quick_start": "Início rápido",
+    "open_terminal": "Abrir terminal",
+    "open_terminal_desc": "Iniciar uma sessão de shell local",
+    "new_connection": "Nova conexão",
+    "new_connection_desc": "Conectar a um servidor SSH",
+    "import_ssh": "Importar config SSH",
+    "import_ssh_desc": "{{count}} hosts encontrados em ~/.ssh/config",
+    "import_ssh_none": "Nenhum host na config SSH",
+    "import_ssh_done": "{{count}} hosts importados",
+    "importing": "Escaneando...",
+    "features": "Recursos principais",
+    "cmd_palette": "Paleta de comandos",
+    "cmd_palette_desc": "Acesse conexões, configurações e temas com um atalho.",
+    "reconnect": "Reconexão inteligente",
+    "reconnect_desc": "30s de graça — apps TUI como vim mantêm seu estado.",
+    "multiplexing": "Multiplexação SSH",
+    "multiplexing_desc": "Terminal, SFTP e encaminhamento compartilham uma conexão SSH.",
+    "security": "Seguro por padrão",
+    "security_desc": "Chaveiro do sistema, criptografia ChaCha20-Poly1305, SSH puro Rust."
   }
 }

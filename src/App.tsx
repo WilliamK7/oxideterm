@@ -19,6 +19,7 @@ import { useToastStore } from './hooks/useToast';
 import { PluginConfirmDialog } from './components/plugin/PluginConfirmDialog';
 import { CommandPalette } from './components/command-palette/CommandPalette';
 import { CastPlayer } from './components/terminal/CastPlayer';
+import { OnboardingModal } from './components/modals/OnboardingModal';
 import { useRecordingStore } from './store/recordingStore';
 
 function App() {
@@ -387,6 +388,7 @@ function App() {
       <AppLayout />
       <Toaster />
       <AutoRouteModal />
+      <OnboardingModal />
       <PluginConfirmDialog />
       <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
       <LocalShellLauncher 

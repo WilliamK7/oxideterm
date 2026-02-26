@@ -119,20 +119,44 @@
   "command_palette": {
     "title": "Palette de commandes",
     "placeholder": "Rechercher commandes, connexions, ou taper user@host...",
-    "no_results": "Aucun r\u00e9sultat",
+    "no_results": "Aucun résultat",
     "section_commands": "Commandes",
-    "section_connections": "Connexions enregistr\u00e9es",
+    "section_connections": "Connexions enregistrées",
     "section_sessions": "Sessions actives",
     "quick_connect": "Connexion rapide",
     "cmd_new_terminal": "Nouveau terminal local",
     "cmd_new_connection": "Nouvelle connexion SSH",
-    "cmd_settings": "Ouvrir les param\u00e8tres",
-    "cmd_toggle_sidebar": "Basculer la barre lat\u00e9rale",
+    "cmd_settings": "Ouvrir les paramètres",
+    "cmd_toggle_sidebar": "Basculer la barre latérale",
     "cmd_zen_mode": "Basculer le mode Zen",
     "cmd_close_tab": "Fermer l'onglet actuel"
   },
   "zen_mode": {
-    "hint": "Mode Zen \u2014 Appuyez sur \u2318\u21e7Z pour quitter",
-    "hint_other": "Mode Zen \u2014 Appuyez sur Ctrl+Shift+Z pour quitter"
+    "hint": "Mode Zen — Appuyez sur ⌘⇧Z pour quitter",
+    "hint_other": "Mode Zen — Appuyez sur Ctrl+Shift+Z pour quitter"
+  },
+  "onboarding": {
+    "welcome": "Bienvenue dans OxideTerm",
+    "subtitle": "Client SSH terminal natif en Rust",
+    "start_exploring": "Commencer l'exploration",
+    "quick_start": "Démarrage rapide",
+    "open_terminal": "Ouvrir le terminal",
+    "open_terminal_desc": "Lancer une session shell locale",
+    "new_connection": "Nouvelle connexion",
+    "new_connection_desc": "Se connecter à un serveur SSH",
+    "import_ssh": "Importer la config SSH",
+    "import_ssh_desc": "{{count}} hôtes trouvés dans ~/.ssh/config",
+    "import_ssh_none": "Aucun hôte dans la config SSH",
+    "import_ssh_done": "{{count}} hôtes importés",
+    "importing": "Scan en cours...",
+    "features": "Fonctionnalités clés",
+    "cmd_palette": "Palette de commandes",
+    "cmd_palette_desc": "Accédez aux connexions, paramètres et thèmes en un raccourci.",
+    "reconnect": "Reconnexion intelligente",
+    "reconnect_desc": "30s de grâce — les apps TUI comme vim restent intactes.",
+    "multiplexing": "Multiplexage SSH",
+    "multiplexing_desc": "Terminal, SFTP et redirections partagent une seule connexion SSH.",
+    "security": "Sécurisé par défaut",
+    "security_desc": "Trousseau système, chiffrement ChaCha20-Poly1305, SSH pur Rust."
   }
 }

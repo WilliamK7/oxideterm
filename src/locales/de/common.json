@@ -134,5 +134,29 @@
   "zen_mode": {
     "hint": "Zen-Modus — Drücken Sie ⌘⇧Z zum Beenden",
     "hint_other": "Zen-Modus — Drücken Sie Ctrl+Shift+Z zum Beenden"
+  },
+  "onboarding": {
+    "welcome": "Willkommen bei OxideTerm",
+    "subtitle": "Rust-nativer SSH-Terminalclient",
+    "start_exploring": "Erkunden starten",
+    "quick_start": "Schnellstart",
+    "open_terminal": "Terminal öffnen",
+    "open_terminal_desc": "Lokale Shell-Sitzung starten",
+    "new_connection": "Neue Verbindung",
+    "new_connection_desc": "Mit SSH-Server verbinden",
+    "import_ssh": "SSH-Config importieren",
+    "import_ssh_desc": "{{count}} Hosts in ~/.ssh/config gefunden",
+    "import_ssh_none": "Keine Hosts in der SSH-Config",
+    "import_ssh_done": "{{count}} Hosts importiert",
+    "importing": "Wird gescannt...",
+    "features": "Hauptmerkmale",
+    "cmd_palette": "Befehlspalette",
+    "cmd_palette_desc": "Verbindungen, Einstellungen und Themes — ein Tastenkürzel entfernt.",
+    "reconnect": "Intelligente Wiederverbindung",
+    "reconnect_desc": "30s Gnadenfrist — TUI-Apps wie vim bleiben erhalten.",
+    "multiplexing": "SSH-Multiplexing",
+    "multiplexing_desc": "Terminal, SFTP und Portweiterleitung teilen eine SSH-Verbindung.",
+    "security": "Standardmäßig sicher",
+    "security_desc": "System-Schlüsselbund, ChaCha20-Poly1305-Verschlüsselung, reines Rust-SSH."
   }
 }

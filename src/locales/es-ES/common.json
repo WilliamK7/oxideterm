@@ -123,16 +123,40 @@
     "section_commands": "Comandos",
     "section_connections": "Conexiones guardadas",
     "section_sessions": "Sesiones activas",
-    "quick_connect": "Conexi\u00f3n r\u00e1pida",
+    "quick_connect": "Conexión rápida",
     "cmd_new_terminal": "Nuevo terminal local",
-    "cmd_new_connection": "Nueva conexi\u00f3n SSH",
+    "cmd_new_connection": "Nueva conexión SSH",
     "cmd_settings": "Abrir ajustes",
     "cmd_toggle_sidebar": "Alternar barra lateral",
     "cmd_zen_mode": "Alternar modo Zen",
-    "cmd_close_tab": "Cerrar pesta\u00f1a actual"
+    "cmd_close_tab": "Cerrar pestaña actual"
   },
   "zen_mode": {
-    "hint": "Modo Zen \u2014 Pulsa \u2318\u21e7Z para salir",
-    "hint_other": "Modo Zen \u2014 Pulsa Ctrl+Shift+Z para salir"
+    "hint": "Modo Zen — Pulsa ⌘⇧Z para salir",
+    "hint_other": "Modo Zen — Pulsa Ctrl+Shift+Z para salir"
+  },
+  "onboarding": {
+    "welcome": "Bienvenido a OxideTerm",
+    "subtitle": "Cliente SSH terminal nativo en Rust",
+    "start_exploring": "Empezar a explorar",
+    "quick_start": "Inicio rápido",
+    "open_terminal": "Abrir terminal",
+    "open_terminal_desc": "Iniciar una sesión de shell local",
+    "new_connection": "Nueva conexión",
+    "new_connection_desc": "Conectar a un servidor SSH",
+    "import_ssh": "Importar config SSH",
+    "import_ssh_desc": "{{count}} hosts encontrados en ~/.ssh/config",
+    "import_ssh_none": "Sin hosts en la config SSH",
+    "import_ssh_done": "{{count}} hosts importados",
+    "importing": "Escaneando...",
+    "features": "Características clave",
+    "cmd_palette": "Paleta de comandos",
+    "cmd_palette_desc": "Accede a conexiones, ajustes y temas con un solo atajo.",
+    "reconnect": "Reconexión inteligente",
+    "reconnect_desc": "30s de gracia — apps TUI como vim mantienen su estado.",
+    "multiplexing": "Multiplexación SSH",
+    "multiplexing_desc": "Terminal, SFTP y reenvío de puertos comparten una conexión SSH.",
+    "security": "Seguro por defecto",
+    "security_desc": "Llavero del sistema, cifrado ChaCha20-Poly1305, SSH puro en Rust."
   }
 }

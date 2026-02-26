@@ -217,6 +217,8 @@ export interface PersistedSettingsV2 {
   sftp?: SftpSettings;
   ide?: IdeSettings;
   experimental?: ExperimentalSettings;
+  /** Whether the first-run onboarding wizard has been completed or dismissed */
+  onboardingCompleted?: boolean;
 }
 
 /** Experimental feature flags */
@@ -347,6 +349,7 @@ function createDefaultSettings(): PersistedSettingsV2 {
     sftp: { ...defaultSftpSettings },
     ide: { ...defaultIdeSettings },
     experimental: { virtualSessionProxy: false },
+    onboardingCompleted: false,
   };
 }
 
@@ -516,6 +519,9 @@ interface SettingsStore {
   toggleAiSidebar: () => void;
   // Zen mode
   toggleZenMode: () => void;
+
+  // Onboarding
+  completeOnboarding: () => void;
 
   // Actions - Bulk operations
   resetToDefaults: () => void;
@@ -822,6 +828,18 @@ export const useSettingsStore = create<SettingsStore>()(
           sidebarUI: newSidebarUI,
         };
         // Don't persist zen mode — it's a transient UI state
+        return { settings: newSettings };
+      });
+    },
+
+    // ========== Onboarding ==========
+    completeOnboarding: () => {
+      set((state) => {
+        const newSettings: PersistedSettingsV2 = {
+          ...state.settings,
+          onboardingCompleted: true,
+        };
+        persistSettings(newSettings);
         return { settings: newSettings };
       });
     },

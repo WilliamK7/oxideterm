@@ -1158,3 +1158,19 @@ html {
 [data-bg-active] .topo-content {
   background-color: color-mix(in srgb, var(--theme-bg) 20%, transparent) !important;
 }
+
+/* EmptyState brand caret blink */
+@keyframes caret-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.animate-caret {
+  animation: caret-blink 1s steps(1) infinite;
+}
+
+/* EmptyState brand glow — subtle accent halo behind the title */
+.empty-brand {
+  text-shadow:
+    0 0 40px color-mix(in srgb, var(--theme-accent) 25%, transparent),
+    0 0 80px color-mix(in srgb, var(--theme-accent) 10%, transparent);
+}
