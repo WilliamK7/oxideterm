@@ -730,7 +730,21 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
         }
         
         term.refresh(0, term.rows - 1);
-        fitAddonRef.current?.fit();
+        // Delay fit to next frame so xterm recalculates glyph metrics with new fontSize
+        requestAnimationFrame(() => {
+          const fitAddon = fitAddonRef.current;
+          if (!fitAddon) return;
+          fitAddon.fit();
+          // Explicitly sync new dimensions to remote PTY
+          const ws = wsRef.current;
+          if (ws && ws.readyState === WebSocket.OPEN && !inputLockedRef.current) {
+            const dims = fitAddon.proposeDimensions();
+            if (dims) {
+              const frame = encodeResizeFrame(dims.cols, dims.rows);
+              ws.send(frame);
+            }
+          }
+        });
       }
     );
     return unsubscribe;

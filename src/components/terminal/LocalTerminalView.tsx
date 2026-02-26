@@ -305,11 +305,21 @@ export const LocalTerminalView: React.FC<LocalTerminalViewProps> = ({
         }
         
         term.refresh(0, term.rows - 1);
-        fitAddonRef.current?.fit();
+        // Delay fit to next frame so xterm recalculates glyph metrics with new fontSize
+        requestAnimationFrame(() => {
+          const fitAddon = fitAddonRef.current;
+          if (!fitAddon) return;
+          fitAddon.fit();
+          // Explicitly sync new dimensions to local PTY
+          const dims = fitAddon.proposeDimensions();
+          if (dims) {
+            resizeTerminal(sessionId, dims.cols, dims.rows);
+          }
+        });
       }
     );
     return unsubscribe;
-  }, []);
+  }, [sessionId, resizeTerminal]);
 
   // CJK Font lazy loading: refresh terminal ONCE when Maple Mono Regular loads
   // Only Regular triggers refresh, secondary weights (Bold/Italic) load silently
