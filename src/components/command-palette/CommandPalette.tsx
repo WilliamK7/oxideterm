@@ -10,6 +10,8 @@ import {
   Search,
   Zap,
   Server,
+  Keyboard,
+  Hand,
 } from 'lucide-react';
 import {
   Dialog,
@@ -32,7 +34,7 @@ import type { ConnectionInfo } from '@/types';
 type PaletteItem = {
   id: string;
   label: string;
-  section: 'commands' | 'connections' | 'sessions' | 'quick_connect';
+  section: 'commands' | 'connections' | 'sessions' | 'quick_connect' | 'help';
   icon: React.ReactNode;
   detail?: string;
   action: () => void | Promise<void>;
@@ -41,6 +43,7 @@ type PaletteItem = {
 type CommandPaletteProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onOpenShortcuts?: () => void;
 };
 
 // ---------------------------------------------------------------------------
@@ -69,7 +72,7 @@ const QUICK_CONNECT_RE = /^([^@\s]+)@([^:\s]+)(?::(\d+))?$/;
 // Component
 // ---------------------------------------------------------------------------
 
-export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onOpenChange }) => {
+export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onOpenChange, onOpenShortcuts }) => {
   const { t } = useTranslation();
   const { toast } = useToast();
 
@@ -145,9 +148,26 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onOpenChan
           if (tabId) await closeTab(tabId);
         },
       },
+      // ---- Help commands ----
+      {
+        id: 'cmd:show_shortcuts',
+        label: t('command_palette.cmd_show_shortcuts'),
+        section: 'help',
+        icon: <Keyboard className="h-4 w-4" />,
+        action: () => onOpenShortcuts?.(),
+      },
+      {
+        id: 'cmd:show_welcome',
+        label: t('command_palette.cmd_show_welcome'),
+        section: 'help',
+        icon: <Hand className="h-4 w-4" />,
+        action: () => {
+          useSettingsStore.getState().resetOnboarding();
+        },
+      },
     ];
     return items;
-  }, [t]);
+  }, [t, onOpenShortcuts]);
 
   // ---- Build connection items ---------------------------------------------
 
@@ -231,6 +251,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onOpenChan
       { key: 'commands', label: t('command_palette.section_commands') },
       { key: 'sessions', label: t('command_palette.section_sessions') },
       { key: 'connections', label: t('command_palette.section_connections') },
+      { key: 'help', label: t('command_palette.section_help') },
     ];
 
     return sectionOrder

@@ -26,7 +26,8 @@
       "no_sessions": "Không có phiên hoạt động",
       "new_connection": "Kết nối mới",
       "new_local_terminal": "Terminal cục bộ",
-      "recent_connections": "Kết nối gần đây"
+      "recent_connections": "Kết nối gần đây",
+      "keyboard_shortcuts": "Phím tắt"
     },
     "connection_monitor": {
       "title": "Giám sát kết nối"
@@ -129,7 +130,10 @@
     "cmd_settings": "Mở cài đặt",
     "cmd_toggle_sidebar": "Chuyển đổi thanh bên",
     "cmd_zen_mode": "Chuyển đổi chế độ Zen",
-    "cmd_close_tab": "Đóng tab hiện tại"
+    "cmd_close_tab": "Đóng tab hiện tại",
+    "cmd_show_shortcuts": "Phím tắt bàn phím",
+    "cmd_show_welcome": "Hiển thị chào mừng",
+    "section_help": "Trợ giúp"
   },
   "zen_mode": {
     "hint": "Chế độ Zen — Nhấn ⌘⇧Z để thoát",
@@ -157,6 +161,14 @@
     "multiplexing": "Ghép kênh SSH",
     "multiplexing_desc": "Terminal, SFTP và chuyển tiếp cổng dùng chung một kết nối SSH.",
     "security": "Bảo mật mặc định",
-    "security_desc": "Chuỗi khóa hệ thống, mã hóa ChaCha20-Poly1305, SSH thuần Rust."
+    "security_desc": "Chuỗi khóa hệ thống, mã hóa ChaCha20-Poly1305, SSH thuần Rust.",
+    "view_shortcuts": "Xem phím tắt"
+  },
+  "shortcuts_modal": {
+    "title": "Phím tắt bàn phím",
+    "search_placeholder": "Tìm phím tắt...",
+    "no_results": "Không tìm thấy phím tắt nào",
+    "footer_hint": "Nhấn Esc để đóng",
+    "shortcut_count": "phím tắt"
   }
 }

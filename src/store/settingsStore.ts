@@ -522,6 +522,7 @@ interface SettingsStore {
 
   // Onboarding
   completeOnboarding: () => void;
+  resetOnboarding: () => void;
 
   // Actions - Bulk operations
   resetToDefaults: () => void;
@@ -838,6 +839,17 @@ export const useSettingsStore = create<SettingsStore>()(
         const newSettings: PersistedSettingsV2 = {
           ...state.settings,
           onboardingCompleted: true,
+        };
+        persistSettings(newSettings);
+        return { settings: newSettings };
+      });
+    },
+
+    resetOnboarding: () => {
+      set((state) => {
+        const newSettings: PersistedSettingsV2 = {
+          ...state.settings,
+          onboardingCompleted: false,
         };
         persistSettings(newSettings);
         return { settings: newSettings };

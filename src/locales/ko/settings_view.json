@@ -376,7 +376,8 @@
       "resources": "리소스",
       "github": "GitHub 저장소",
       "issues": "문제 신고",
-      "license": "OxideTerm은 PolyForm 비상업적 라이선스 1.0.0에 따라 라이선스가 부여됩니다."
+      "license": "OxideTerm은 PolyForm 비상업적 라이선스 1.0.0에 따라 라이선스가 부여됩니다.",
+      "shortcut_keyboard_shortcuts": "키보드 단축키"
     },
     "errors": {
       "create_group_failed": "그룹 생성 실패: {{error}}",

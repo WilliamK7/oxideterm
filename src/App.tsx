@@ -20,6 +20,7 @@ import { PluginConfirmDialog } from './components/plugin/PluginConfirmDialog';
 import { CommandPalette } from './components/command-palette/CommandPalette';
 import { CastPlayer } from './components/terminal/CastPlayer';
 import { OnboardingModal } from './components/modals/OnboardingModal';
+import { KeyboardShortcutsModal } from './components/modals/KeyboardShortcutsModal';
 import { useRecordingStore } from './store/recordingStore';
 
 function App() {
@@ -39,6 +40,9 @@ function App() {
   
   // Command palette state
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
+  // Keyboard shortcuts modal state
+  const [shortcutsModalOpen, setShortcutsModalOpen] = useState(false);
 
   // Determine if a terminal is currently active
   const isTerminalActive = useMemo(() => {
@@ -254,6 +258,14 @@ function App() {
       description: 'Reset font size',
       terminalBehavior: 'always' as const,
     },
+    {
+      key: '/',
+      ctrl: true,
+      shift: false,
+      action: () => setShortcutsModalOpen(true),
+      description: 'Show keyboard shortcuts',
+      terminalBehavior: 'always' as const,
+    },
   ], [handleCreateLocalTerminal, activeTabId, closeTab, createTab]);
 
   // Use unified keyboard manager for app shortcuts
@@ -390,7 +402,8 @@ function App() {
       <AutoRouteModal />
       <OnboardingModal />
       <PluginConfirmDialog />
-      <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
+      <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} onOpenShortcuts={() => setShortcutsModalOpen(true)} />
+      <KeyboardShortcutsModal open={shortcutsModalOpen} onOpenChange={setShortcutsModalOpen} />
       <LocalShellLauncher 
         open={shellLauncherOpen} 
         onOpenChange={setShellLauncherOpen} 

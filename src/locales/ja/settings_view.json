@@ -376,7 +376,8 @@
       "resources": "リソース",
       "github": "GitHub リポジトリ",
       "issues": "問題を報告",
-      "license": "OxideTerm は PolyForm 非商用ライセンス 1.0.0 のもとで公開されています。"
+      "license": "OxideTerm は PolyForm 非商用ライセンス 1.0.0 のもとで公開されています。",
+      "shortcut_keyboard_shortcuts": "キーボードショートカット"
     },
     "errors": {
       "create_group_failed": "グループの作成に失敗しました: {{error}}",

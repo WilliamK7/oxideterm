@@ -26,7 +26,8 @@
       "no_sessions": "Nessuna sessione attiva",
       "new_connection": "Nuova Connessione",
       "new_local_terminal": "Terminale locale",
-      "recent_connections": "Connessioni recenti"
+      "recent_connections": "Connessioni recenti",
+      "keyboard_shortcuts": "Scorciatoie da tastiera"
     },
     "connection_monitor": {
       "title": "Monitor Connessioni"
@@ -129,7 +130,10 @@
     "cmd_settings": "Apri impostazioni",
     "cmd_toggle_sidebar": "Attiva/disattiva barra laterale",
     "cmd_zen_mode": "Attiva/disattiva modalità Zen",
-    "cmd_close_tab": "Chiudi scheda corrente"
+    "cmd_close_tab": "Chiudi scheda corrente",
+    "cmd_show_shortcuts": "Scorciatoie da tastiera",
+    "cmd_show_welcome": "Mostra benvenuto",
+    "section_help": "Aiuto"
   },
   "zen_mode": {
     "hint": "Modalità Zen — Premi ⌘⇧Z per uscire",
@@ -157,6 +161,14 @@
     "multiplexing": "Multiplexing SSH",
     "multiplexing_desc": "Terminale, SFTP e port forwarding condividono una connessione SSH.",
     "security": "Sicuro di default",
-    "security_desc": "Portachiavi di sistema, crittografia ChaCha20-Poly1305, SSH puro Rust."
+    "security_desc": "Portachiavi di sistema, crittografia ChaCha20-Poly1305, SSH puro Rust.",
+    "view_shortcuts": "Vedi scorciatoie"
+  },
+  "shortcuts_modal": {
+    "title": "Scorciatoie da tastiera",
+    "search_placeholder": "Cerca scorciatoie...",
+    "no_results": "Nessuna scorciatoia trovata",
+    "footer_hint": "Premi Esc per chiudere",
+    "shortcut_count": "scorciatoie"
   }
 }

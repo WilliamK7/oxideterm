@@ -26,7 +26,8 @@
       "no_sessions": "Aucune session active",
       "new_connection": "Nouvelle connexion",
       "new_local_terminal": "Terminal local",
-      "recent_connections": "Connexions récentes"
+      "recent_connections": "Connexions récentes",
+      "keyboard_shortcuts": "Raccourcis clavier"
     },
     "connection_monitor": {
       "title": "Moniteur de connexions"
@@ -129,7 +130,10 @@
     "cmd_settings": "Ouvrir les paramètres",
     "cmd_toggle_sidebar": "Basculer la barre latérale",
     "cmd_zen_mode": "Basculer le mode Zen",
-    "cmd_close_tab": "Fermer l'onglet actuel"
+    "cmd_close_tab": "Fermer l'onglet actuel",
+    "cmd_show_shortcuts": "Raccourcis clavier",
+    "cmd_show_welcome": "Afficher l'accueil",
+    "section_help": "Aide"
   },
   "zen_mode": {
     "hint": "Mode Zen — Appuyez sur ⌘⇧Z pour quitter",
@@ -157,6 +161,14 @@
     "multiplexing": "Multiplexage SSH",
     "multiplexing_desc": "Terminal, SFTP et redirections partagent une seule connexion SSH.",
     "security": "Sécurisé par défaut",
-    "security_desc": "Trousseau système, chiffrement ChaCha20-Poly1305, SSH pur Rust."
+    "security_desc": "Trousseau système, chiffrement ChaCha20-Poly1305, SSH pur Rust.",
+    "view_shortcuts": "Voir les raccourcis"
+  },
+  "shortcuts_modal": {
+    "title": "Raccourcis clavier",
+    "search_placeholder": "Rechercher des raccourcis...",
+    "no_results": "Aucun raccourci correspondant",
+    "footer_hint": "Appuyez sur Échap pour fermer",
+    "shortcut_count": "raccourcis"
   }
 }

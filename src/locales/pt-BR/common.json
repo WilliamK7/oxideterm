@@ -26,7 +26,8 @@
       "no_sessions": "Nenhuma sessão ativa",
       "new_connection": "Nova conexão",
       "new_local_terminal": "Terminal local",
-      "recent_connections": "Conexões recentes"
+      "recent_connections": "Conexões recentes",
+      "keyboard_shortcuts": "Atalhos de teclado"
     },
     "connection_monitor": {
       "title": "Monitor de conexão"
@@ -129,7 +130,10 @@
     "cmd_settings": "Abrir configurações",
     "cmd_toggle_sidebar": "Alternar barra lateral",
     "cmd_zen_mode": "Alternar modo Zen",
-    "cmd_close_tab": "Fechar aba atual"
+    "cmd_close_tab": "Fechar aba atual",
+    "cmd_show_shortcuts": "Atalhos de teclado",
+    "cmd_show_welcome": "Mostrar boas-vindas",
+    "section_help": "Ajuda"
   },
   "zen_mode": {
     "hint": "Modo Zen — Pressione ⌘⇧Z para sair",
@@ -157,6 +161,14 @@
     "multiplexing": "Multiplexação SSH",
     "multiplexing_desc": "Terminal, SFTP e encaminhamento compartilham uma conexão SSH.",
     "security": "Seguro por padrão",
-    "security_desc": "Chaveiro do sistema, criptografia ChaCha20-Poly1305, SSH puro Rust."
+    "security_desc": "Chaveiro do sistema, criptografia ChaCha20-Poly1305, SSH puro Rust.",
+    "view_shortcuts": "Ver atalhos"
+  },
+  "shortcuts_modal": {
+    "title": "Atalhos de teclado",
+    "search_placeholder": "Pesquisar atalhos...",
+    "no_results": "Nenhum atalho encontrado",
+    "footer_hint": "Pressione Esc para fechar",
+    "shortcut_count": "atalhos"
   }
 }

@@ -26,7 +26,8 @@
       "no_sessions": "Keine aktiven Sitzungen",
       "new_connection": "Neue Verbindung",
       "new_local_terminal": "Lokales Terminal",
-      "recent_connections": "Letzte Verbindungen"
+      "recent_connections": "Letzte Verbindungen",
+      "keyboard_shortcuts": "Tastaturkürzel"
     },
     "connection_monitor": {
       "title": "Verbindungsmonitor"
@@ -129,7 +130,10 @@
     "cmd_settings": "Einstellungen öffnen",
     "cmd_toggle_sidebar": "Seitenleiste umschalten",
     "cmd_zen_mode": "Zen-Modus umschalten",
-    "cmd_close_tab": "Aktuellen Tab schließen"
+    "cmd_close_tab": "Aktuellen Tab schließen",
+    "cmd_show_shortcuts": "Tastaturkürzel",
+    "cmd_show_welcome": "Willkommen anzeigen",
+    "section_help": "Hilfe"
   },
   "zen_mode": {
     "hint": "Zen-Modus — Drücken Sie ⌘⇧Z zum Beenden",
@@ -157,6 +161,14 @@
     "multiplexing": "SSH-Multiplexing",
     "multiplexing_desc": "Terminal, SFTP und Portweiterleitung teilen eine SSH-Verbindung.",
     "security": "Standardmäßig sicher",
-    "security_desc": "System-Schlüsselbund, ChaCha20-Poly1305-Verschlüsselung, reines Rust-SSH."
+    "security_desc": "System-Schlüsselbund, ChaCha20-Poly1305-Verschlüsselung, reines Rust-SSH.",
+    "view_shortcuts": "Tastaturkürzel anzeigen"
+  },
+  "shortcuts_modal": {
+    "title": "Tastaturkürzel",
+    "search_placeholder": "Tastaturkürzel suchen...",
+    "no_results": "Keine passenden Tastaturkürzel",
+    "footer_hint": "Esc zum Schließen drücken",
+    "shortcut_count": "Tastaturkürzel"
   }
 }

@@ -26,7 +26,8 @@
       "no_sessions": "アクティブなセッションがありません",
       "new_connection": "新規接続",
       "new_local_terminal": "ローカルターミナル",
-      "recent_connections": "最近の接続"
+      "recent_connections": "最近の接続",
+      "keyboard_shortcuts": "キーボードショートカット"
     },
     "connection_monitor": {
       "title": "接続モニター"
@@ -129,7 +130,10 @@
     "cmd_settings": "設定を開く",
     "cmd_toggle_sidebar": "サイドバー切替",
     "cmd_zen_mode": "Zen モード切替",
-    "cmd_close_tab": "現在のタブを閉じる"
+    "cmd_close_tab": "現在のタブを閉じる",
+    "cmd_show_shortcuts": "キーボードショートカット",
+    "cmd_show_welcome": "ウェルカムを表示",
+    "section_help": "ヘルプ"
   },
   "zen_mode": {
     "hint": "Zen モード — ⌘⇧Z で終了",
@@ -157,6 +161,14 @@
     "multiplexing": "SSH 多重化",
     "multiplexing_desc": "ターミナル、SFTP、ポート転送が1つの SSH 接続を共有。",
     "security": "デフォルトで安全",
-    "security_desc": "OS キーチェーンに保存。ChaCha20-Poly1305 暗号化。純 Rust SSH。"
+    "security_desc": "OS キーチェーンに保存。ChaCha20-Poly1305 暗号化。純 Rust SSH。",
+    "view_shortcuts": "ショートカットを見る"
+  },
+  "shortcuts_modal": {
+    "title": "キーボードショートカット",
+    "search_placeholder": "ショートカットを検索...",
+    "no_results": "一致するショートカットがありません",
+    "footer_hint": "Escで閉じる",
+    "shortcut_count": "件のショートカット"
   }
 }

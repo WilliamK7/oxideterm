@@ -26,7 +26,8 @@
       "no_sessions": "沒有使用中的工作階段",
       "new_connection": "新增連線",
       "new_local_terminal": "本機終端",
-      "recent_connections": "最近連線"
+      "recent_connections": "最近連線",
+      "keyboard_shortcuts": "鍵盤快捷鍵"
     },
     "connection_monitor": {
       "title": "連線監控"
@@ -129,7 +130,10 @@
     "cmd_settings": "開啟設定",
     "cmd_toggle_sidebar": "切換側邊欄",
     "cmd_zen_mode": "切換 Zen 模式",
-    "cmd_close_tab": "關閉當前分頁"
+    "cmd_close_tab": "關閉當前分頁",
+    "cmd_show_shortcuts": "鍵盤快捷鍵",
+    "cmd_show_welcome": "顯示歡迎頁",
+    "section_help": "幫助"
   },
   "zen_mode": {
     "hint": "Zen 模式 — 按 ⌘⇧Z 退出",
@@ -157,6 +161,14 @@
     "multiplexing": "SSH 多工複用",
     "multiplexing_desc": "終端、SFTP、連接埠轉發共享同一條 SSH 連線。",
     "security": "預設安全",
-    "security_desc": "密碼存於系統鑰匙圈，ChaCha20-Poly1305 加密，純 Rust SSH。"
+    "security_desc": "密碼存於系統鑰匙圈，ChaCha20-Poly1305 加密，純 Rust SSH。",
+    "view_shortcuts": "檢視快捷鍵"
+  },
+  "shortcuts_modal": {
+    "title": "鍵盤快捷鍵",
+    "search_placeholder": "搜尋快捷鍵...",
+    "no_results": "沒有匹配的快捷鍵",
+    "footer_hint": "按 Esc 關閉",
+    "shortcut_count": "個快捷鍵"
   }
 }

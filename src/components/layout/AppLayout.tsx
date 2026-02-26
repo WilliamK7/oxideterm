@@ -106,6 +106,7 @@ const EmptyState = () => {
     { key: isMac ? '⌘K' : 'Ctrl+K', label: t('command_palette.title') },
     { key: isMac ? '⌘N' : 'Ctrl+N', label: t('layout.empty.new_connection') },
     { key: isMac ? '⌘T' : 'Ctrl+T', label: t('layout.empty.new_local_terminal') },
+    { key: isMac ? '⌘/' : 'Ctrl+/', label: t('layout.empty.keyboard_shortcuts') },
   ];
 
   return (

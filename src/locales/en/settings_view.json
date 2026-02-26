@@ -376,7 +376,8 @@
       "resources": "Resources",
       "github": "GitHub Repository",
       "issues": "Report an Issue",
-      "license": "OxideTerm is licensed under the PolyForm Noncommercial License 1.0.0"
+      "license": "OxideTerm is licensed under the PolyForm Noncommercial License 1.0.0",
+      "shortcut_keyboard_shortcuts": "Keyboard Shortcuts"
     },
     "errors": {
       "create_group_failed": "Failed to create group: {{error}}",

@@ -26,7 +26,8 @@
       "no_sessions": "No active sessions",
       "new_connection": "New Connection",
       "new_local_terminal": "Local Terminal",
-      "recent_connections": "Recent connections"
+      "recent_connections": "Recent connections",
+      "keyboard_shortcuts": "Keyboard Shortcuts"
     },
     "connection_monitor": {
       "title": "Connection Monitor"
@@ -129,7 +130,10 @@
     "cmd_settings": "Open Settings",
     "cmd_toggle_sidebar": "Toggle Sidebar",
     "cmd_zen_mode": "Toggle Zen Mode",
-    "cmd_close_tab": "Close Current Tab"
+    "cmd_close_tab": "Close Current Tab",
+    "cmd_show_shortcuts": "Keyboard Shortcuts",
+    "cmd_show_welcome": "Show Welcome",
+    "section_help": "Help"
   },
   "zen_mode": {
     "hint": "Zen Mode — Press ⌘⇧Z to exit",
@@ -157,6 +161,14 @@
     "multiplexing": "SSH Multiplexing",
     "multiplexing_desc": "Terminal, SFTP, port forwarding share one SSH connection.",
     "security": "Secure by Default",
-    "security_desc": "Keychain storage, ChaCha20-Poly1305 encryption, pure Rust SSH."
+    "security_desc": "Keychain storage, ChaCha20-Poly1305 encryption, pure Rust SSH.",
+    "view_shortcuts": "View Shortcuts"
+  },
+  "shortcuts_modal": {
+    "title": "Keyboard Shortcuts",
+    "search_placeholder": "Search shortcuts...",
+    "no_results": "No shortcuts match your search",
+    "footer_hint": "Press Esc to close",
+    "shortcut_count": "shortcuts"
   }
 }

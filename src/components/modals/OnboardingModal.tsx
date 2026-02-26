@@ -199,7 +199,10 @@ export const OnboardingModal = () => {
         </div>
 
         {/* ── Footer ─────────────────────────────────────────── */}
-        <div className="flex items-center justify-end px-6 py-4 border-t border-theme-border bg-theme-bg-panel">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-theme-border bg-theme-bg-panel">
+          <span className="text-[11px] text-theme-text-muted">
+            {isMac ? '⌘/' : 'Ctrl+/'} {t('onboarding.view_shortcuts')}
+          </span>
           <Button size="sm" onClick={handleClose} className="gap-1.5">
             {t('onboarding.start_exploring')}
             <ArrowRight className="h-3.5 w-3.5" />

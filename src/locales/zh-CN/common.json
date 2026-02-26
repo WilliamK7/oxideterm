@@ -26,7 +26,8 @@
       "no_sessions": "无活动会话",
       "new_connection": "新建连接",
       "new_local_terminal": "本地终端",
-      "recent_connections": "最近连接"
+      "recent_connections": "最近连接",
+      "keyboard_shortcuts": "快捷键"
     },
     "connection_monitor": {
       "title": "连接监控"
@@ -129,7 +130,10 @@
     "cmd_settings": "打开设置",
     "cmd_toggle_sidebar": "切换侧边栏",
     "cmd_zen_mode": "切换 Zen 模式",
-    "cmd_close_tab": "关闭当前标签页"
+    "cmd_close_tab": "关闭当前标签页",
+    "cmd_show_shortcuts": "键盘快捷键",
+    "cmd_show_welcome": "显示欢迎页",
+    "section_help": "帮助"
   },
   "zen_mode": {
     "hint": "Zen 模式 — 按 ⌘⇧Z 退出",
@@ -157,6 +161,14 @@
     "multiplexing": "SSH 多路复用",
     "multiplexing_desc": "终端、SFTP、端口转发共享同一条 SSH 连接。",
     "security": "默认安全",
-    "security_desc": "密码存于系统钥匙串，ChaCha20-Poly1305 加密，纯 Rust SSH。"
+    "security_desc": "密码存于系统钥匙串，ChaCha20-Poly1305 加密，纯 Rust SSH。",
+    "view_shortcuts": "查看快捷键"
+  },
+  "shortcuts_modal": {
+    "title": "键盘快捷键",
+    "search_placeholder": "搜索快捷键...",
+    "no_results": "没有匹配的快捷键",
+    "footer_hint": "按 Esc 关闭",
+    "shortcut_count": "个快捷键"
   }
 }

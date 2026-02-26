@@ -376,7 +376,8 @@
       "resources": "Tài nguyên",
       "github": "Kho lưu trữ GitHub",
       "issues": "Báo cáo vấn đề",
-      "license": "OxideTerm được cấp phép theo Giấy phép PolyForm Noncommercial 1.0.0."
+      "license": "OxideTerm được cấp phép theo Giấy phép PolyForm Noncommercial 1.0.0.",
+      "shortcut_keyboard_shortcuts": "Phím tắt bàn phím"
     },
     "errors": {
       "create_group_failed": "Không thể tạo nhóm: {{error}}",
