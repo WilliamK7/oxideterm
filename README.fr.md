@@ -155,7 +155,7 @@ IA dual-mode, priorité à la vie privée :
 - **Chat latéral** : conversation persistante avec historique
 - **Capture de contexte** : Terminal Registry collecte le tampon des panneaux actifs ou tous les splits
 - **Compatible** : OpenAI, Ollama, DeepSeek, OneAPI, tout endpoint `/v1/chat/completions`
-- **Sécurisé** : clés API dans le trousseau système
+- **Sécurisé** : clés API dans le trousseau système ; sous macOS, la lecture des clés est protégée par **Touch ID** via `LAContext` (`LocalAuthentication.framework`), sans entitlement ni signature de code requis
 
 ### 💻 Mode IDE — Édition distante
 
@@ -465,7 +465,7 @@ OxideTerm/
 | Préoccupation | Implémentation |
 |---|---|
 | **Mots de passe** | Trousseau système (macOS Keychain / Windows Credential Manager / Linux libsecret) |
-| **Clés API IA** | Trousseau système sous service `com.oxideterm.ai` |
+| **Clés API IA** | Trousseau système sous service `com.oxideterm.ai` ; sous macOS, la lecture exige une authentification **Touch ID** (`LAContext.evaluatePolicy`, sans entitlement de protection des données) — les clés sont mises en cache en mémoire après la première authentification, Touch ID n'est donc demandé qu'une fois par session |
 | **Fichiers config** | `~/.oxideterm/connections.json` — stocke uniquement les IDs du trousseau |
 | **Export** | .oxide : ChaCha20-Poly1305 + Argon2id, intégration optionnelle de clés |
 | **Mémoire** | `zeroize` efface les données sensibles ; Rust garantit la sécurité mémoire |

@@ -159,7 +159,7 @@ impl Signer for AgentSigner { /* 通过 Agent IPC 完成挑战-响应签名 */ }
 - **侧边栏聊天**：持久化对话，支持历史记录
 - **上下文捕获**：Terminal Registry 从活动或全部分屏面板采集缓冲区
 - **广泛兼容**：OpenAI、Ollama、DeepSeek、OneAPI，任意 `/v1/chat/completions` 端点
-- **安全存储**：API Key 存于系统钥匙串（macOS Keychain / Windows Credential Manager）
+- **安全存储**：API Key 存于系统钥匙串（macOS Keychain / Windows Credential Manager）；macOS 下读取 Key 时通过 **Touch ID** 生物认证（`LocalAuthentication.framework` / `LAContext`，无需代码签名或 entitlement）
 
 ### 💻 IDE 模式 — 远程编辑
 
@@ -470,7 +470,7 @@ OxideTerm/
 | 关注点 | 实现 |
 |---|---|
 | **密码** | 系统钥匙串 (macOS Keychain / Windows Credential Manager / Linux libsecret) |
-| **AI API Key** | 系统钥匙串 `com.oxideterm.ai` 服务 |
+| **AI API Key** | 系统钥匙串 `com.oxideterm.ai` 服务；macOS 下读取前强制 **Touch ID** 验证（`LAContext.evaluatePolicy`，无需 entitlement），首次认证后 Key 存入内存缓存，同一会话内不再重复验证 |
 | **配置文件** | `~/.oxideterm/connections.json` — 仅存储钥匙串引用 ID |
 | **导出** | .oxide: ChaCha20-Poly1305 + Argon2id，可选密钥内嵌 |
 | **内存** | `zeroize` 擦除敏感数据；Rust 编译器保证内存安全 |

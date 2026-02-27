@@ -159,7 +159,7 @@ Dual-mode AI with privacy-first design:
 - **Sidebar chat**: persistent conversation with history
 - **Context capture**: Terminal Registry gathers buffer from active or all split panes
 - **Compatible**: OpenAI, Ollama, DeepSeek, OneAPI, any `/v1/chat/completions` endpoint
-- **Secure**: API keys in OS keychain (macOS Keychain / Windows Credential Manager)
+- **Secure**: API keys in OS keychain (macOS Keychain / Windows Credential Manager); on macOS, reads are gated behind **Touch ID** via `LAContext` — no entitlements or code-signing required
 
 ### 💻 IDE Mode — Remote Editing
 
@@ -473,7 +473,7 @@ OxideTerm/
 | Concern | Implementation |
 |---|---|
 | **Passwords** | OS keychain (macOS Keychain / Windows Credential Manager / Linux libsecret) |
-| **AI API Keys** | OS keychain under `com.oxideterm.ai` service |
+| **AI API Keys** | OS keychain under `com.oxideterm.ai` service; on macOS, key reads require **Touch ID** (biometric gate via `LocalAuthentication.framework`, no data-protection entitlements needed) — keys are cached in memory after first auth, so Touch ID is only prompted once per session |
 | **Config files** | `~/.oxideterm/connections.json` — stores keychain reference IDs only |
 | **Export** | .oxide: ChaCha20-Poly1305 + Argon2id, optional key embedding |
 | **Memory** | `zeroize` clears sensitive data; Rust guarantees memory safety |
