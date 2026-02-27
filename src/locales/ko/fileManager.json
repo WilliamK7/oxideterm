@@ -111,6 +111,7 @@
     "created": "생성일",
     "permissions": "권한",
     "mimeType": "MIME 유형",
+    "type": "유형",
     "symlink": "심볼릭 링크",
     "previousFile": "이전 파일",
     "nextFile": "다음 파일",

@@ -108,6 +108,18 @@
       "cannot_close_last": "No se puede cerrar el último panel"
     },
     "mouse_mode_hint": "⇧ Shift + Arrastrar para seleccionar",
+    "broadcast": {
+      "broadcast_input": "Entrada de difusión",
+      "select_targets": "Seleccionar destinos",
+      "select_all": "Seleccionar todo",
+      "deselect_all": "Deseleccionar todo",
+      "no_targets": "No hay otros terminales disponibles",
+      "target_count": "{{count}} destino(s)",
+      "local_terminal": "Terminal local",
+      "enabled": "Difusión activada",
+      "disabled": "Difusión desactivada",
+      "current": "Actual"
+    },
     "recording": {
       "start": "Grabar sesión",
       "stop": "Detener grabación",

@@ -37,7 +37,8 @@
       "switch_tree": "Baumansicht",
       "switch_focus": "Fokusansicht",
       "auto_route": "Auto-Route-Verbindung",
-      "new_connection": "Neue Verbindung"
+      "new_connection": "Neue Verbindung",
+      "collapse": "Einklappen"
     }
   }
 }

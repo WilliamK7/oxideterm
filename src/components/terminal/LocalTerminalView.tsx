@@ -32,6 +32,8 @@ import { api } from '../../lib/api';
 import { installTerminalClipboardSupport } from '../../lib/clipboardSupport';
 import { useTerminalRecording } from '../../hooks/useTerminalRecording';
 import { RecordingControls } from './RecordingControls';
+import { useBroadcastStore } from '../../store/broadcastStore';
+import { broadcastToTargets } from '../../lib/terminalRegistry';
 
 interface LocalTerminalViewProps {
   sessionId: string;
@@ -711,6 +713,12 @@ export const LocalTerminalView: React.FC<LocalTerminalViewProps> = ({
       const encoder = new TextEncoder();
       const bytes = encoder.encode(data);
       writeTerminal(sessionId, bytes);
+
+      // Broadcast input to targets (empty target set = all other terminals)
+      const bc = useBroadcastStore.getState();
+      if (bc.enabled) {
+        broadcastToTargets(effectivePaneId, data, bc.targets);
+      }
     });
 
     // Handle terminal binary input (for special keys)

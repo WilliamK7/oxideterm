@@ -108,6 +108,18 @@
       "cannot_close_last": "Cannot close the last pane"
     },
     "mouse_mode_hint": "⇧ Shift + drag to select",
+    "broadcast": {
+      "broadcast_input": "Broadcast Input",
+      "select_targets": "Select Broadcast Targets",
+      "select_all": "Select All",
+      "deselect_all": "Deselect All",
+      "no_targets": "No other terminals available",
+      "target_count": "{{count}} target(s)",
+      "local_terminal": "Local Terminal",
+      "enabled": "Broadcast Enabled",
+      "disabled": "Broadcast Disabled",
+      "current": "Current"
+    },
     "recording": {
       "start": "Record Session",
       "stop": "Stop Recording",

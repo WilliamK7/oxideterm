@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Dialog, DialogContent } from '../ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { useSettingsStore } from '../../store/settingsStore';
 import { api } from '../../lib/api';
@@ -104,6 +104,7 @@ export const OnboardingModal = () => {
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
       <DialogContent className="sm:max-w-[520px] p-0 gap-0 overflow-hidden">
+        <DialogTitle className="sr-only">{t('onboarding.welcome')}</DialogTitle>
         {/* ── Brand header ───────────────────────────────────── */}
         <div className="px-6 pt-8 pb-6 text-center select-none">
           <div className="flex items-center justify-center gap-1">

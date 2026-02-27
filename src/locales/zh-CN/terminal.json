@@ -108,6 +108,18 @@
       "cannot_close_last": "无法关闭最后一个面板"
     },
     "mouse_mode_hint": "⇧ Shift + 拖拽以选择文本",
+    "broadcast": {
+      "broadcast_input": "广播输入",
+      "select_targets": "选择广播目标",
+      "select_all": "全选",
+      "deselect_all": "取消全选",
+      "no_targets": "没有其他可用终端",
+      "target_count": "{{count}} 个目标",
+      "local_terminal": "本地终端",
+      "enabled": "广播已启用",
+      "disabled": "广播已禁用",
+      "current": "当前"
+    },
     "recording": {
       "start": "录制会话",
       "stop": "停止录制",

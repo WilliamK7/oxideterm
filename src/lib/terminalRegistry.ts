@@ -82,6 +82,14 @@ export function unregisterTerminalBuffer(paneId: string): void {
     const remaining = Array.from(registry.keys());
     activePaneId = remaining.length > 0 ? remaining[0] : null;
   }
+
+  // Clean up broadcast targets when a terminal is unregistered
+  try {
+    const { useBroadcastStore } = require('../store/broadcastStore');
+    useBroadcastStore.getState().removeTarget(paneId);
+  } catch {
+    // broadcastStore may not be loaded yet during early teardown
+  }
 }
 
 /**
@@ -375,5 +383,73 @@ export function writeToTerminal(paneId: string, data: string): boolean {
     console.error('[TerminalRegistry] Failed to write to terminal:', e);
     return false;
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Broadcast Input Support
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Get metadata for all registered terminal entries.
+ * Used by the broadcast target selector UI.
+ */
+export function getAllEntries(): Array<{
+  paneId: string;
+  tabId: string;
+  sessionId: string;
+  terminalType: 'terminal' | 'local_terminal';
+}> {
+  const result: Array<{
+    paneId: string;
+    tabId: string;
+    sessionId: string;
+    terminalType: 'terminal' | 'local_terminal';
+  }> = [];
+
+  for (const [paneId, entry] of registry) {
+    result.push({
+      paneId,
+      tabId: entry.tabId,
+      sessionId: entry.sessionId,
+      terminalType: entry.terminalType,
+    });
+  }
+  return result;
+}
+
+/**
+ * Broadcast data to all target panes, excluding the source pane.
+ * @param sourcePaneId - The pane that originated the input (will be skipped)
+ * @param data - Text data to broadcast
+ * @param targets - Set of target paneIds. If empty, broadcasts to all other registered panes.
+ * @returns Count of successful and failed writes
+ */
+export function broadcastToTargets(
+  sourcePaneId: string,
+  data: string,
+  targets: Set<string>,
+): { sent: number; failed: number } {
+  let sent = 0;
+  let failed = 0;
+
+  const targetPaneIds = targets.size > 0
+    ? Array.from(targets)
+    : Array.from(registry.keys());
+
+  if (import.meta.env.DEV) {
+    console.debug(
+      `[Broadcast] source=${sourcePaneId.slice(0, 8)}, registry=${registry.size}, explicit_targets=${targets.size}, effective_targets=${targetPaneIds.length}, has_writers=${targetPaneIds.filter(id => id !== sourcePaneId && registry.get(id)?.writer).length}`,
+    );
+  }
+
+  for (const targetPaneId of targetPaneIds) {
+    if (targetPaneId === sourcePaneId) continue;
+    if (writeToTerminal(targetPaneId, data)) {
+      sent++;
+    } else {
+      failed++;
+    }
+  }
+  return { sent, failed };
 }
 

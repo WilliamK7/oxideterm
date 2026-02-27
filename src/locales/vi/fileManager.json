@@ -111,6 +111,7 @@
     "created": "Đã tạo",
     "permissions": "Quyền",
     "mimeType": "Loại MIME",
+    "type": "Loại",
     "symlink": "Liên kết tượng trưng",
     "previousFile": "Tệp trước",
     "nextFile": "Tệp tiếp theo",

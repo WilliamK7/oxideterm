@@ -108,6 +108,18 @@
       "cannot_close_last": "最後のペインは閉じられません"
     },
     "mouse_mode_hint": "⇧ Shift + ドラッグで選択",
+    "broadcast": {
+      "broadcast_input": "ブロードキャスト入力",
+      "select_targets": "ブロードキャスト対象を選択",
+      "select_all": "すべて選択",
+      "deselect_all": "すべて解除",
+      "no_targets": "他に利用可能なターミナルがありません",
+      "target_count": "{{count}} 件の対象",
+      "local_terminal": "ローカルターミナル",
+      "enabled": "ブロードキャスト有効",
+      "disabled": "ブロードキャスト無効",
+      "current": "現在"
+    },
     "recording": {
       "start": "セッション録画",
       "stop": "録画停止",

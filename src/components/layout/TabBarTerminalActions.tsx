@@ -12,11 +12,12 @@
  *   - REC indicator when recording is active
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Circle, FilePlay, Square, Trash2,
   SplitSquareHorizontal, SplitSquareVertical,
+  Radio,
 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { readTextFile } from '@tauri-apps/plugin-fs';
@@ -24,11 +25,183 @@ import { cn } from '../../lib/utils';
 import { useRecordingStore } from '../../store/recordingStore';
 import { useAppStore, findPaneById } from '../../store/appStore';
 import { useLocalTerminalStore } from '../../store/localTerminalStore';
+import { useBroadcastStore } from '../../store/broadcastStore';
+import { getAllEntries } from '../../lib/terminalRegistry';
 import { MAX_PANES_PER_TAB } from '../../types';
 import type { Tab, SplitDirection } from '../../types';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '../ui/dropdown-menu';
 
 type TabBarTerminalActionsProps = {
   activeTab: Tab;
+};
+
+/* ──────────────────────────────────────────────────────────────────────
+ * BroadcastDropdown — target selector for broadcast input
+ * ──────────────────────────────────────────────────────────────────── */
+
+type BroadcastDropdownProps = {
+  entries: Array<{
+    paneId: string;
+    tabId: string;
+    sessionId: string;
+    terminalType: 'terminal' | 'local_terminal';
+  }>;
+  targets: Set<string>;
+  enabled: boolean;
+  activePaneId: string | undefined;
+  sessions: Map<string, { name: string; host: string }>;
+  tabs: Tab[];
+  toggleTarget: (paneId: string) => void;
+  disableBroadcast: () => void;
+  onRefresh: () => void;
+  t: (key: string, opts?: Record<string, unknown>) => string;
+};
+
+const BroadcastDropdown: React.FC<BroadcastDropdownProps> = ({
+  entries,
+  targets,
+  enabled,
+  activePaneId,
+  sessions,
+  tabs,
+  toggleTarget,
+  disableBroadcast,
+  onRefresh,
+  t,
+}) => {
+  // Separate current terminal from other targets
+  const otherEntries = useMemo(
+    () => entries.filter(e => e.paneId !== activePaneId),
+    [entries, activePaneId],
+  );
+
+  const allSelected = otherEntries.length > 0 && otherEntries.every(e => targets.has(e.paneId));
+
+  /** Build human-readable label for an entry */
+  const entryLabel = useCallback(
+    (e: (typeof entries)[0]) => {
+      if (e.terminalType === 'local_terminal') {
+        // Find tab title for local terminals
+        const tab = tabs.find(tb => tb.id === e.tabId);
+        return tab?.title ?? t('terminal.broadcast.local_terminal');
+      }
+      // SSH terminal — use session name
+      const session = sessions.get(e.sessionId);
+      return session ? `${session.name} (${session.host})` : e.sessionId.slice(0, 8);
+    },
+    [sessions, tabs, t],
+  );
+
+  const handleSelectAll = useCallback(() => {
+    const { addTarget } = useBroadcastStore.getState();
+    for (const e of otherEntries) addTarget(e.paneId);
+  }, [otherEntries]);
+
+  const handleDeselectAll = useCallback(() => {
+    disableBroadcast();
+  }, [disableBroadcast]);
+
+  return (
+    <DropdownMenu onOpenChange={(open) => { if (open) onRefresh(); }}>
+      <DropdownMenuTrigger asChild>
+        <button
+          className={cn(
+            'relative p-1.5 mx-1 rounded-sm transition-colors',
+            enabled
+              ? 'text-orange-400 bg-orange-500/15 hover:bg-orange-500/25'
+              : 'text-theme-text-muted hover:text-theme-accent hover:bg-theme-bg-hover',
+          )}
+          title={t('terminal.broadcast.broadcast_input')}
+        >
+          <Radio className="h-3.5 w-3.5" />
+          {enabled && targets.size > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] flex items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white leading-none px-0.5">
+              {targets.size}
+            </span>
+          )}
+        </button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" className="min-w-[220px]">
+        <DropdownMenuLabel className="text-xs">
+          {t('terminal.broadcast.select_targets')}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+
+        {/* Current terminal indicator (non-selectable) */}
+        {activePaneId && (() => {
+          const currentEntry = entries.find(e => e.paneId === activePaneId);
+          if (!currentEntry) return null;
+          return (
+            <div className="flex items-center gap-2 px-2 py-1.5 text-xs opacity-60">
+              <span className="h-1.5 w-1.5 rounded-full bg-orange-400 animate-pulse flex-shrink-0" />
+              <span className="flex-1 truncate">{entryLabel(currentEntry)}</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-orange-500/15 text-orange-400">
+                {t('terminal.broadcast.current')}
+              </span>
+            </div>
+          );
+        })()}
+
+        {activePaneId && otherEntries.length > 0 && <DropdownMenuSeparator />}
+
+        {otherEntries.length === 0 ? (
+          <div className="px-2 py-3 text-xs text-theme-text-muted text-center">
+            {t('terminal.broadcast.no_targets')}
+          </div>
+        ) : (
+          <>
+            {otherEntries.map(entry => (
+              <DropdownMenuCheckboxItem
+                key={entry.paneId}
+                checked={targets.has(entry.paneId)}
+                onCheckedChange={() => toggleTarget(entry.paneId)}
+                onSelect={e => e.preventDefault()}
+                className="text-xs gap-2"
+              >
+                <span className="flex-1 truncate">{entryLabel(entry)}</span>
+                <span
+                  className={cn(
+                    'text-[10px] px-1.5 py-0.5 rounded font-medium',
+                    entry.terminalType === 'local_terminal'
+                      ? 'bg-emerald-500/15 text-emerald-400'
+                      : 'bg-blue-500/15 text-blue-400',
+                  )}
+                >
+                  {entry.terminalType === 'local_terminal' ? 'LOCAL' : 'SSH'}
+                </span>
+              </DropdownMenuCheckboxItem>
+            ))}
+
+            <DropdownMenuSeparator />
+
+            <div className="flex items-center justify-between px-2 py-1.5">
+              <button
+                onClick={allSelected ? handleDeselectAll : handleSelectAll}
+                className="text-[11px] text-theme-text-muted hover:text-theme-accent transition-colors"
+              >
+                {allSelected
+                  ? t('terminal.broadcast.deselect_all')
+                  : t('terminal.broadcast.select_all')}
+              </button>
+              {enabled && (
+                <span className="text-[10px] text-orange-400 tabular-nums">
+                  {t('terminal.broadcast.target_count', { count: targets.size })}
+                </span>
+              )}
+            </div>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 };
 
 export const TabBarTerminalActions: React.FC<TabBarTerminalActionsProps> = ({
@@ -117,7 +290,7 @@ export const TabBarTerminalActions: React.FC<TabBarTerminalActionsProps> = ({
 
   // ── Split pane state (local_terminal only) ───────────────────────────
   const isLocalTerminal = activeTab.type === 'local_terminal';
-  const { splitPane, getPaneCount } = useAppStore();
+  const { splitPane, getPaneCount, sessions, tabs } = useAppStore();
   const { createTerminal } = useLocalTerminalStore();
   const paneCount = getPaneCount(activeTab.id);
   const canSplit = paneCount < MAX_PANES_PER_TAB;
@@ -134,6 +307,30 @@ export const TabBarTerminalActions: React.FC<TabBarTerminalActionsProps> = ({
 
   // No session ID (e.g. split pane with cleared sessionId) — hide actions
   if (!sessionId) return null;
+
+  // ── Broadcast state ─────────────────────────────────────────────────
+  const broadcastEnabled = useBroadcastStore(s => s.enabled);
+  const broadcastTargets = useBroadcastStore(s => s.targets);
+  const toggleTarget = useBroadcastStore(s => s.toggleTarget);
+  const disableBroadcast = useBroadcastStore(s => s.disable);
+
+  // Build target list from terminal registry
+  // For split-pane tabs: use activePaneId from tab state
+  // For single-pane (legacy) tabs: fall back to sessionId (matches effectivePaneId in TerminalView)
+  const activePaneId = activeTab.activePaneId
+    ?? (activeTab.rootPane?.type === 'leaf' ? activeTab.rootPane.id : undefined)
+    ?? sessionId;
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const terminalEntries = useMemo(() => {
+    // Re-evaluate whenever broadcast targets change or dropdown is manually refreshed
+    void broadcastTargets;
+    void refreshKey;
+    return getAllEntries();
+  }, [broadcastTargets, refreshKey]);
 
   // ── Build action groups ────────────────────────────────────────────────
   return (
@@ -185,10 +382,27 @@ export const TabBarTerminalActions: React.FC<TabBarTerminalActionsProps> = ({
         </div>
       )}
 
-      {/* ── Separator between split & recording groups ──────────────── */}
+      {/* ── Separator between split & broadcast/recording groups ─────── */}
       {isLocalTerminal && (
         <div className="w-px h-4 bg-theme-border/50" />
       )}
+
+      {/* ── Broadcast input ─────────────────────────────────────────── */}
+      <BroadcastDropdown
+        entries={terminalEntries}
+        targets={broadcastTargets}
+        enabled={broadcastEnabled}
+        activePaneId={activePaneId}
+        sessions={sessions}
+        tabs={tabs}
+        toggleTarget={toggleTarget}
+        disableBroadcast={disableBroadcast}
+        onRefresh={() => setRefreshKey(k => k + 1)}
+        t={t}
+      />
+
+      {/* ── Separator before recording ──────────────────────────────── */}
+      <div className="w-px h-4 bg-theme-border/50" />
 
       {/* ── Recording actions ───────────────────────────────────────── */}
       {isRecording && meta ? (

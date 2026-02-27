@@ -37,7 +37,8 @@
       "switch_tree": "Chế độ cây",
       "switch_focus": "Chế độ tập trung",
       "auto_route": "Kết nối tự động",
-      "new_connection": "Kết nối mới"
+      "new_connection": "Kết nối mới",
+      "collapse": "Thu gọn"
     }
   }
 }

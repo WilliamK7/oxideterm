@@ -139,6 +139,7 @@
     "cmd_close_tab": "Chiudi scheda corrente",
     "cmd_split_horizontal": "Dividi orizzontalmente",
     "cmd_split_vertical": "Dividi verticalmente",
+    "cmd_broadcast_toggle": "Attiva/disattiva broadcast input",
     "cmd_show_shortcuts": "Scorciatoie da tastiera",
     "cmd_show_welcome": "Mostra benvenuto",
     "section_help": "Aiuto"

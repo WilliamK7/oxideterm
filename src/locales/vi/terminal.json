@@ -108,6 +108,18 @@
       "cannot_close_last": "Không thể đóng khung cuối cùng"
     },
     "mouse_mode_hint": "⇧ Shift + Kéo để chọn",
+    "broadcast": {
+      "broadcast_input": "Phát đầu vào",
+      "select_targets": "Chọn mục tiêu phát",
+      "select_all": "Chọn tất cả",
+      "deselect_all": "Bỏ chọn tất cả",
+      "no_targets": "Không có terminal nào khác",
+      "target_count": "{{count}} mục tiêu",
+      "local_terminal": "Terminal cục bộ",
+      "enabled": "Đã bật phát",
+      "disabled": "Đã tắt phát",
+      "current": "Hiện tại"
+    },
     "recording": {
       "start": "Ghi phiên",
       "stop": "Dừng ghi",

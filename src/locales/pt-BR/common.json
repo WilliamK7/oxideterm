@@ -139,6 +139,7 @@
     "cmd_close_tab": "Fechar aba atual",
     "cmd_split_horizontal": "Dividir horizontalmente",
     "cmd_split_vertical": "Dividir verticalmente",
+    "cmd_broadcast_toggle": "Alternar entrada de difusão",
     "cmd_show_shortcuts": "Atalhos de teclado",
     "cmd_show_welcome": "Mostrar boas-vindas",
     "section_help": "Ajuda"

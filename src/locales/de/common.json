@@ -139,6 +139,7 @@
     "cmd_close_tab": "Aktuellen Tab schließen",
     "cmd_split_horizontal": "Horizontal teilen",
     "cmd_split_vertical": "Vertikal teilen",
+    "cmd_broadcast_toggle": "Broadcast-Eingabe umschalten",
     "cmd_show_shortcuts": "Tastaturkürzel",
     "cmd_show_welcome": "Willkommen anzeigen",
     "section_help": "Hilfe"

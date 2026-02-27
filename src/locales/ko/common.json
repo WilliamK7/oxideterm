@@ -139,6 +139,7 @@
     "cmd_close_tab": "현재 탭 닫기",
     "cmd_split_horizontal": "수평 분할",
     "cmd_split_vertical": "수직 분할",
+    "cmd_broadcast_toggle": "브로드캐스트 입력 전환",
     "cmd_show_shortcuts": "키보드 단축키",
     "cmd_show_welcome": "시작 화면 표시",
     "section_help": "도움말"

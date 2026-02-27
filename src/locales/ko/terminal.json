@@ -108,6 +108,18 @@
       "cannot_close_last": "마지막 창은 닫을 수 없음"
     },
     "mouse_mode_hint": "⇧ Shift + 드래그하여 선택",
+    "broadcast": {
+      "broadcast_input": "브로드캐스트 입력",
+      "select_targets": "브로드캐스트 대상 선택",
+      "select_all": "모두 선택",
+      "deselect_all": "모두 해제",
+      "no_targets": "사용 가능한 다른 터미널이 없습니다",
+      "target_count": "{{count}}개 대상",
+      "local_terminal": "로컬 터미널",
+      "enabled": "브로드캐스트 활성화됨",
+      "disabled": "브로드캐스트 비활성화됨",
+      "current": "현재"
+    },
     "recording": {
       "start": "세션 녹화",
       "stop": "녹화 중지",

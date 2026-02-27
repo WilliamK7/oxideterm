@@ -39,6 +39,8 @@ import type { BackgroundFit } from '../../store/settingsStore';
 import { installTerminalClipboardSupport } from '../../lib/clipboardSupport';
 import { useTerminalRecording } from '../../hooks/useTerminalRecording';
 import { RecordingControls } from './RecordingControls';
+import { useBroadcastStore } from '../../store/broadcastStore';
+import { broadcastToTargets } from '../../lib/terminalRegistry';
 
 const PREFILL_REPLAY_LINE_COUNT = 50; // Keep aligned with backend replay count
 
@@ -1508,6 +1510,12 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
             const payload = encoder.encode(processed);
             const frame = encodeDataFrame(payload);
             ws.send(frame);
+
+            // Broadcast input to targets (empty target set = all other terminals)
+            const bc = useBroadcastStore.getState();
+            if (bc.enabled) {
+              broadcastToTargets(effectivePaneId, processed, bc.targets);
+            }
             
             // IDE Terminal: 检测回车键触发 Git 刷新
             // 仅当 sessionId 以 'ide-terminal-' 开头时触发（区分普通终端和 IDE 终端）

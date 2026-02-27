@@ -108,6 +108,18 @@
       "cannot_close_last": "Letzter Bereich kann nicht geschlossen werden"
     },
     "mouse_mode_hint": "⇧ Shift + Ziehen zum Auswählen",
+    "broadcast": {
+      "broadcast_input": "Broadcast-Eingabe",
+      "select_targets": "Broadcast-Ziele auswählen",
+      "select_all": "Alle auswählen",
+      "deselect_all": "Alle abwählen",
+      "no_targets": "Keine anderen Terminals verfügbar",
+      "target_count": "{{count}} Ziel(e)",
+      "local_terminal": "Lokales Terminal",
+      "enabled": "Broadcast aktiviert",
+      "disabled": "Broadcast deaktiviert",
+      "current": "Aktuell"
+    },
     "recording": {
       "start": "Sitzung aufnehmen",
       "stop": "Aufnahme stoppen",

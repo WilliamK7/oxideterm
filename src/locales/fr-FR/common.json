@@ -139,6 +139,7 @@
     "cmd_close_tab": "Fermer l'onglet actuel",
     "cmd_split_horizontal": "Diviser horizontalement",
     "cmd_split_vertical": "Diviser verticalement",
+    "cmd_broadcast_toggle": "Basculer la diffusion d'entrée",
     "cmd_show_shortcuts": "Raccourcis clavier",
     "cmd_show_welcome": "Afficher l'accueil",
     "section_help": "Aide"

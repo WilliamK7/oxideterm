@@ -108,6 +108,18 @@
       "cannot_close_last": "無法關閉最後一個窗格"
     },
     "mouse_mode_hint": "⇧ Shift + 拖曳來選擇",
+    "broadcast": {
+      "broadcast_input": "廣播輸入",
+      "select_targets": "選擇廣播目標",
+      "select_all": "全選",
+      "deselect_all": "取消全選",
+      "no_targets": "沒有其他可用終端",
+      "target_count": "{{count}} 個目標",
+      "local_terminal": "本機終端",
+      "enabled": "廣播已啟用",
+      "disabled": "廣播已停用",
+      "current": "目前"
+    },
     "recording": {
       "start": "錄製工作階段",
       "stop": "停止錄製",

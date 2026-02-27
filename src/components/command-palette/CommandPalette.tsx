@@ -14,6 +14,7 @@ import {
   Hand,
   Columns2,
   Rows,
+  Radio,
 } from 'lucide-react';
 import {
   Dialog,
@@ -24,6 +25,7 @@ import { Input } from '../ui/input';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/appStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useBroadcastStore } from '@/store/broadcastStore';
 import { useLocalTerminalStore } from '@/store/localTerminalStore';
 import { connectToSaved } from '@/lib/connectToSaved';
 import { useToast } from '@/hooks/useToast';
@@ -168,6 +170,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onOpenChan
         icon: <Columns2 className="h-4 w-4" />,
         action: () => {
           window.dispatchEvent(new CustomEvent('oxideterm:split', { detail: { direction: 'vertical' } }));
+        },
+      },
+      {
+        id: 'cmd:broadcast_toggle',
+        label: t('command_palette.cmd_broadcast_toggle'),
+        section: 'commands',
+        icon: <Radio className="h-4 w-4" />,
+        action: () => {
+          useBroadcastStore.getState().toggle();
         },
       },
       // ---- Help commands ----

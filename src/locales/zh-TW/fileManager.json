@@ -111,6 +111,7 @@
     "created": "建立時間",
     "permissions": "權限",
     "mimeType": "MIME 類型",
+    "type": "類型",
     "symlink": "符號連結",
     "previousFile": "上一個檔案",
     "nextFile": "下一個檔案",

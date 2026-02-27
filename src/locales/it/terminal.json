@@ -108,6 +108,18 @@
       "cannot_close_last": "Impossibile chiudere l'ultimo pannello"
     },
     "mouse_mode_hint": "⇧ Shift + Trascina per selezionare",
+    "broadcast": {
+      "broadcast_input": "Input broadcast",
+      "select_targets": "Seleziona destinazioni",
+      "select_all": "Seleziona tutto",
+      "deselect_all": "Deseleziona tutto",
+      "no_targets": "Nessun altro terminale disponibile",
+      "target_count": "{{count}} destinazione/i",
+      "local_terminal": "Terminale locale",
+      "enabled": "Broadcast attivato",
+      "disabled": "Broadcast disattivato",
+      "current": "Corrente"
+    },
     "recording": {
       "start": "Registra sessione",
       "stop": "Ferma registrazione",

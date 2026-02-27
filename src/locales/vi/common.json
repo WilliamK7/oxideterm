@@ -139,6 +139,7 @@
     "cmd_close_tab": "Đóng tab hiện tại",
     "cmd_split_horizontal": "Chia ngang",
     "cmd_split_vertical": "Chia dọ",
+    "cmd_broadcast_toggle": "Bật/tắt phát đầu vào",
     "cmd_show_shortcuts": "Phím tắt bàn phím",
     "cmd_show_welcome": "Hiển thị chào mừng",
     "section_help": "Trợ giúp"

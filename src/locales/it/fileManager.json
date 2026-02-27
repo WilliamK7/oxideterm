@@ -111,6 +111,7 @@
     "created": "Creato",
     "permissions": "Permessi",
     "mimeType": "Tipo MIME",
+    "type": "Tipo",
     "symlink": "Link simbolico",
     "previousFile": "File precedente",
     "nextFile": "File successivo",

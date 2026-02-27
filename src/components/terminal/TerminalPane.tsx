@@ -3,6 +3,7 @@ import { PaneLeaf } from '../../types';
 import { TerminalView } from './TerminalView';
 import { LocalTerminalView } from './LocalTerminalView';
 import { getSession } from '../../store/appStore';
+import { useBroadcastStore } from '../../store/broadcastStore';
 import { cn } from '../../lib/utils';
 
 interface TerminalPaneProps {
@@ -37,6 +38,11 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({
     onClose?.(pane.id);
   }, [onClose, pane.id]);
 
+  // Broadcast target indicator
+  const isBroadcastTarget = useBroadcastStore(
+    s => s.enabled && s.targets.has(pane.id),
+  );
+
   return (
     <div
       className={cn(
@@ -44,10 +50,19 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({
         // Oxide Orange focus border
         isActive
           ? 'ring-2 ring-[#FF6B35] ring-opacity-80'
-          : 'ring-1 ring-zinc-700/50 hover:ring-zinc-600/70'
+          : isBroadcastTarget
+            ? 'ring-2 ring-orange-400/60'
+            : 'ring-1 ring-zinc-700/50 hover:ring-zinc-600/70'
       )}
       onClick={handleFocus}
     >
+      {/* Broadcast target badge */}
+      {isBroadcastTarget && !isActive && (
+        <div className="absolute left-1.5 top-1.5 z-10 flex items-center gap-1 rounded bg-orange-500/20 px-1.5 py-0.5 backdrop-blur-sm">
+          <span className="h-1.5 w-1.5 rounded-full bg-orange-400 animate-pulse" />
+          <span className="text-[10px] font-medium text-orange-300">BC</span>
+        </div>
+      )}
       {/* Terminal content */}
       {/* Key includes ws_url to force remount when backend assigns new port */}
       <div className="h-full w-full">

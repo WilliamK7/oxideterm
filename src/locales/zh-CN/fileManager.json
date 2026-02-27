@@ -111,6 +111,7 @@
     "created": "创建时间",
     "permissions": "权限",
     "mimeType": "MIME 类型",
+    "type": "类型",
     "symlink": "符号链接",
     "previousFile": "上一个文件",
     "nextFile": "下一个文件",
