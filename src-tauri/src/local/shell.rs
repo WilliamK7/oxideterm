@@ -246,6 +246,27 @@ fn scan_unix_shells() -> Vec<ShellInfo> {
         }
     }
 
+    // 3. Fallback: scan common absolute directories (does not rely on PATH)
+    // This is important for packaged app environments where PATH may be minimal,
+    // e.g. macOS production builds missing /opt/homebrew/bin.
+    let common_dirs = [
+        "/bin",
+        "/usr/bin",
+        "/usr/local/bin",
+        "/opt/homebrew/bin",
+        "/opt/local/bin",
+    ];
+    for dir in common_dirs {
+        for shell_name in common_shells {
+            let path = PathBuf::from(dir).join(shell_name);
+            if path.exists() && !shells.iter().any(|s| s.path == path) {
+                if let Some(shell) = shell_info_from_path(&path) {
+                    shells.push(shell);
+                }
+            }
+        }
+    }
+
     shells
 }
 

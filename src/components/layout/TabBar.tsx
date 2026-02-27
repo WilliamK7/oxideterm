@@ -1,6 +1,6 @@
 import React, { useRef, useCallback, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Terminal, FolderOpen, GitFork, RefreshCw, XCircle, WifiOff, Settings, Activity, Network, Plug, Square, HardDrive, LayoutList, Puzzle, Monitor, Copy } from 'lucide-react';
+import { X, Terminal, FolderOpen, GitFork, RefreshCw, XCircle, WifiOff, Settings, Activity, Network, Plug, Square, HardDrive, LayoutList, Puzzle, Monitor, Copy, CirclePause } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
 import { useSessionTreeStore } from '../../store/sessionTreeStore';
 import { useReconnectOrchestratorStore } from '../../store/reconnectOrchestratorStore';
@@ -13,6 +13,7 @@ import { ReconnectTimeline } from '../connections/ReconnectTimeline';
 import { TabBarTerminalActions } from './TabBarTerminalActions';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '../ui/context-menu';
 import { Tooltip, TooltipTrigger, TooltipContent } from '../ui/tooltip';
+import { useConfirm } from '../../hooks/useConfirm';
 
 /** Count leaf panes in a pane tree */
 function countPanes(node: PaneNode): number {
@@ -238,6 +239,7 @@ export const TabBar = () => {
   const orchestratorScheduleReconnect = useReconnectOrchestratorStore((s) => s.scheduleReconnect);
   const orchestratorCancel = useReconnectOrchestratorStore((s) => s.cancel);
   const [closing, setClosing] = React.useState<string | null>(null);
+  const { confirm, ConfirmDialog } = useConfirm();
 
   // ── Pointer-based tab drag reorder (Tauri intercepts HTML5 DnD) ──────────
   const [dragState, setDragState] = useState<{
@@ -389,6 +391,22 @@ export const TabBar = () => {
 
     // Handle local terminal tabs
     if (tabType === 'local_terminal' && sessionId) {
+      // Check for child processes — offer "Send to Background" if active
+      try {
+        const hasChildren = await useLocalTerminalStore.getState().checkChildProcesses(sessionId);
+        if (hasChildren) {
+          const userChoice = await confirm({
+            title: t('tabbar.child_process_warning'),
+            variant: 'danger',
+          });
+          if (!userChoice) {
+            return;
+          }
+        }
+      } catch {
+        // If check fails, proceed with close anyway
+      }
+
       setClosing(sessionId);
       try {
         const { closeTerminal } = useLocalTerminalStore.getState();
@@ -447,6 +465,15 @@ export const TabBar = () => {
   const handleCloseAllTabs = async () => {
     for (const tab of [...tabs]) {
       await handleCloseTab(null, tab.id, tab.sessionId, tab.type);
+    }
+  };
+
+  const handleDetachTab = async (tabId: string, sessionId: string) => {
+    try {
+      await useLocalTerminalStore.getState().detachTerminal(sessionId);
+      closeTab(tabId);
+    } catch (error) {
+      console.error('Failed to detach local terminal:', error);
     }
   };
 
@@ -591,6 +618,16 @@ export const TabBar = () => {
                   <Copy className="h-3.5 w-3.5 mr-2" />
                   {t('tabbar.copy_title')}
                 </ContextMenuItem>
+                {/* Send to Background — only for local terminal tabs */}
+                {tab.type === 'local_terminal' && tab.sessionId && (
+                  <>
+                    <ContextMenuSeparator />
+                    <ContextMenuItem onSelect={() => handleDetachTab(tab.id, tab.sessionId!)}>
+                      <CirclePause className="h-3.5 w-3.5 mr-2" />
+                      {t('tabbar.send_to_background')}
+                    </ContextMenuItem>
+                  </>
+                )}
                 <ContextMenuSeparator />
                 <ContextMenuItem onSelect={() => handleCloseTab(null, tab.id, tab.sessionId, tab.type)}>
                   {t('tabbar.close_tab')}
@@ -631,6 +668,7 @@ export const TabBar = () => {
         }
         return null;
       })()}
+      {ConfirmDialog}
     </div>
   );
 };

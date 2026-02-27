@@ -14,7 +14,18 @@
       "load_shells_failed": "加载可用 Shell 失败",
       "terminal_created": "本地终端已创建",
       "using_shell": "使用 {{shell}}",
-      "create_failed": "创建本地终端失败"
+      "create_failed": "创建本地终端失败",
+      "detached": "会话已移至后台",
+      "detached_desc": "{{shell}} 正在后台运行",
+      "detach_failed": "移至后台失败",
+      "attached": "会话已恢复",
+      "attach_failed": "恢复会话失败"
+    },
+    "background": {
+      "title": "后台会话",
+      "lines": "行",
+      "resume": "恢复",
+      "kill": "终止"
     }
   },
   "modals": {

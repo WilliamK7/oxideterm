@@ -14,7 +14,18 @@
       "load_shells_failed": "Failed to load available shells",
       "terminal_created": "Local terminal created",
       "using_shell": "Using {{shell}}",
-      "create_failed": "Failed to create local terminal"
+      "create_failed": "Failed to create local terminal",
+      "detached": "Session backgrounded",
+      "detached_desc": "{{shell}} is running in the background",
+      "detach_failed": "Failed to background session",
+      "attached": "Session resumed",
+      "attach_failed": "Failed to resume session"
+    },
+    "background": {
+      "title": "Background Sessions",
+      "lines": "lines",
+      "resume": "Resume",
+      "kill": "Kill"
     }
   },
   "modals": {

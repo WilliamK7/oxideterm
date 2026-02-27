@@ -47,7 +47,9 @@
     "confirm_close_all_title": "모든 탭 닫기",
     "confirm_close_all_desc": "{{count}}개의 탭을 모두 닫으시겠습니까? 활성 연결이 끊어집니다.",
     "confirm_close_other_title": "다른 탭 닫기",
-    "confirm_close_other_desc": "다른 {{count}}개의 탭을 닫으시겠습니까? 활성 연결이 끊어집니다."
+    "confirm_close_other_desc": "다른 {{count}}개의 탭을 닫으시겠습니까? 활성 연결이 끊어집니다.",
+    "send_to_background": "백그라운드로 보내기",
+    "child_process_warning": "이 터미널에 실행 중인 자식 프로세스가 있습니다. 그래도 닫으시겠습니까?"
   },
   "tabs": {
     "settings": "설정",

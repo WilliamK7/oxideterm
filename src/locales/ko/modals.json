@@ -14,7 +14,18 @@
       "load_shells_failed": "사용 가능한 쉘 목록 로드 실패",
       "terminal_created": "로컬 터미널 생성됨",
       "using_shell": "{{shell}} 사용 중",
-      "create_failed": "로컬 터미널 생성 실패"
+      "create_failed": "로컬 터미널 생성 실패",
+      "detached": "세션이 백그라운드로 이동됨",
+      "detached_desc": "{{shell}}이(가) 백그라운드에서 실행 중입니다",
+      "detach_failed": "백그라운드로 이동 실패",
+      "attached": "세션이 재개됨",
+      "attach_failed": "세션 재개 실패"
+    },
+    "background": {
+      "title": "백그라운드 세션",
+      "lines": "행",
+      "resume": "재개",
+      "kill": "종료"
     }
   },
   "modals": {

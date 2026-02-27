@@ -14,7 +14,18 @@
       "load_shells_failed": "Falha ao carregar shells disponíveis",
       "terminal_created": "Terminal local criado",
       "using_shell": "Usando {{shell}}",
-      "create_failed": "Falha ao criar terminal local"
+      "create_failed": "Falha ao criar terminal local",
+      "detached": "Sessão enviada para segundo plano",
+      "detached_desc": "{{shell}} está em execução em segundo plano",
+      "detach_failed": "Falha ao enviar para segundo plano",
+      "attached": "Sessão retomada",
+      "attach_failed": "Falha ao retomar sessão"
+    },
+    "background": {
+      "title": "Sessões em segundo plano",
+      "lines": "linhas",
+      "resume": "Retomar",
+      "kill": "Encerrar"
     }
   },
   "modals": {

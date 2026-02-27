@@ -14,7 +14,18 @@
       "load_shells_failed": "Error al cargar shells disponibles",
       "terminal_created": "Terminal local creada",
       "using_shell": "Usando {{shell}}",
-      "create_failed": "Error al crear terminal local"
+      "create_failed": "Error al crear terminal local",
+      "detached": "Sesión enviada al fondo",
+      "detached_desc": "{{shell}} se está ejecutando en el fondo",
+      "detach_failed": "Error al enviar al fondo",
+      "attached": "Sesión reanudada",
+      "attach_failed": "Error al reanudar la sesión"
+    },
+    "background": {
+      "title": "Sesiones en segundo plano",
+      "lines": "líneas",
+      "resume": "Reanudar",
+      "kill": "Terminar"
     }
   },
   "modals": {

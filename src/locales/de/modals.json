@@ -14,7 +14,18 @@
       "load_shells_failed": "Verfügbare Shells konnten nicht geladen werden",
       "terminal_created": "Lokales Terminal erstellt",
       "using_shell": "Verwende {{shell}}",
-      "create_failed": "Lokales Terminal konnte nicht erstellt werden"
+      "create_failed": "Lokales Terminal konnte nicht erstellt werden",
+      "detached": "Sitzung in den Hintergrund verschoben",
+      "detached_desc": "{{shell}} läuft im Hintergrund",
+      "detach_failed": "Fehler beim Verschieben in den Hintergrund",
+      "attached": "Sitzung wiederhergestellt",
+      "attach_failed": "Fehler beim Wiederherstellen der Sitzung"
+    },
+    "background": {
+      "title": "Hintergrundsitzungen",
+      "lines": "Zeilen",
+      "resume": "Fortsetzen",
+      "kill": "Beenden"
     }
   },
   "modals": {

@@ -1,14 +1,27 @@
 //! Local Terminal Registry
 //!
 //! Manages multiple local terminal sessions with thread-safe access.
-//! Provides session lifecycle management and event routing.
+//! Provides session lifecycle management, event routing, and
+//! background (detach/reattach) support.
 
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::{mpsc, RwLock};
+use std::time::Duration;
+use tokio::sync::{mpsc, oneshot, RwLock};
 
-use crate::local::session::{LocalTerminalInfo, LocalTerminalSession, SessionError, SessionEvent};
+use crate::local::session::{
+    BackgroundSessionInfo, LocalTerminalInfo, LocalTerminalSession, SessionError, SessionEvent,
+};
 use crate::local::shell::ShellInfo;
+
+/// Maximum number of background (detached) sessions allowed
+const MAX_BACKGROUND_SESSIONS: usize = 5;
+
+/// Idle TTL for background sessions (30 minutes)
+const IDLE_DETACH_TTL: Duration = Duration::from_secs(30 * 60);
+
+/// Active TTL for background sessions with running children (4 hours)
+const ACTIVE_DETACH_TTL: Duration = Duration::from_secs(4 * 60 * 60);
 
 /// Registry for managing multiple local terminal sessions
 pub struct LocalTerminalRegistry {
@@ -152,6 +165,177 @@ impl LocalTerminalRegistry {
         }
 
         Ok(())
+    }
+
+    /// Detach a session (send to background).
+    /// PTY stays alive; output continues to be buffered in ScrollBuffer.
+    /// A TTL timer starts — idle sessions expire after 30 min, active after 4 h.
+    pub async fn detach_session(&self, session_id: &str) -> Result<BackgroundSessionInfo, SessionError> {
+        let sessions = self.sessions.read().await;
+
+        // Check background limit
+        let bg_count = sessions.values().filter(|s| s.is_detached()).count();
+        if bg_count >= MAX_BACKGROUND_SESSIONS {
+            return Err(SessionError::BackgroundLimitReached(MAX_BACKGROUND_SESSIONS));
+        }
+
+        let session = sessions
+            .get(session_id)
+            .ok_or_else(|| SessionError::NotFound(session_id.to_string()))?;
+
+        if session.is_detached() {
+            return Err(SessionError::AlreadyDetached);
+        }
+
+        if !session.is_running() {
+            return Err(SessionError::AlreadyClosed);
+        }
+
+        session.detach();
+
+        // Choose TTL based on whether the session has active child processes
+        let ttl = if session.has_child_processes() {
+            ACTIVE_DETACH_TTL
+        } else {
+            IDLE_DETACH_TTL
+        };
+
+        // Start TTL timer with cancel channel
+        let (cancel_tx, cancel_rx) = oneshot::channel::<()>();
+        if let Ok(mut cancel) = session.detach_cancel.lock() {
+            *cancel = Some(cancel_tx);
+        }
+
+        let buffer_lines = session.scroll_buffer.len().await;
+        let info = BackgroundSessionInfo {
+            id: session.id.clone(),
+            shell: session.shell.clone(),
+            cols: session.cols,
+            rows: session.rows,
+            running: session.is_running(),
+            detached_secs: 0,
+            buffer_lines,
+        };
+
+        // Spawn TTL timer task
+        let sid = session_id.to_string();
+        let sessions_ref = self.sessions.clone();
+        let channels_ref = self.event_channels.clone();
+        tokio::spawn(async move {
+            tokio::select! {
+                _ = tokio::time::sleep(ttl) => {
+                    tracing::info!("Background session {} TTL expired ({:?}), cleaning up", sid, ttl);
+                    let mut sessions = sessions_ref.write().await;
+                    if let Some(mut session) = sessions.remove(&sid) {
+                        session.close();
+                    }
+                    let mut channels = channels_ref.write().await;
+                    channels.remove(&sid);
+                }
+                _ = cancel_rx => {
+                    tracing::debug!("Background TTL timer cancelled for session {}", sid);
+                }
+            }
+        });
+
+        Ok(info)
+    }
+
+    /// Attach (reattach) a background session.
+    /// Returns replay data (last N lines from ScrollBuffer) as raw bytes
+    /// and a new event receiver for future data.
+    pub async fn attach_session(
+        &self,
+        session_id: &str,
+    ) -> Result<(Vec<u8>, mpsc::Receiver<SessionEvent>), SessionError> {
+        let sessions = self.sessions.read().await;
+
+        let session = sessions
+            .get(session_id)
+            .ok_or_else(|| SessionError::NotFound(session_id.to_string()))?;
+
+        if !session.is_detached() {
+            return Err(SessionError::NotDetached);
+        }
+
+        if !session.is_running() {
+            return Err(SessionError::AlreadyClosed);
+        }
+
+        // Get replay data before marking as attached
+        let replay = session.get_replay_data().await;
+
+        // Mark as foreground
+        session.attach();
+
+        // Create new event channel for this session
+        let (event_tx, event_rx) = mpsc::channel::<SessionEvent>(256);
+
+        // Store the new event sender
+        {
+            let mut channels = self.event_channels.write().await;
+            channels.insert(session_id.to_string(), event_tx.clone());
+        }
+
+        // Subscribe to the broadcast channel and forward to the new event channel
+        let mut output_rx = session.output_tx.subscribe();
+        let sid = session_id.to_string();
+        tokio::spawn(async move {
+            while let Ok(data) = output_rx.recv().await {
+                if event_tx.send(SessionEvent::Data(data)).await.is_err() {
+                    tracing::debug!("Event forwarder for reattached session {} stopped", sid);
+                    break;
+                }
+            }
+        });
+
+        Ok((replay, event_rx))
+    }
+
+    /// List all background (detached) sessions
+    pub async fn list_background_sessions(&self) -> Vec<BackgroundSessionInfo> {
+        let sessions = self.sessions.read().await;
+        let mut result = Vec::new();
+
+        for session in sessions.values() {
+            if session.is_detached() {
+                let detached_secs = session
+                    .detached_at
+                    .lock()
+                    .ok()
+                    .and_then(|ts| ts.map(|t| t.elapsed().as_secs()))
+                    .unwrap_or(0);
+
+                let buffer_lines = session.scroll_buffer.len().await;
+
+                result.push(BackgroundSessionInfo {
+                    id: session.id.clone(),
+                    shell: session.shell.clone(),
+                    cols: session.cols,
+                    rows: session.rows,
+                    running: session.is_running(),
+                    detached_secs,
+                    buffer_lines,
+                });
+            }
+        }
+
+        result
+    }
+
+    /// Get the count of background sessions
+    pub async fn background_count(&self) -> usize {
+        let sessions = self.sessions.read().await;
+        sessions.values().filter(|s| s.is_detached()).count()
+    }
+
+    /// Check if a session has active child processes
+    pub async fn check_child_processes(&self, session_id: &str) -> Result<bool, SessionError> {
+        let sessions = self.sessions.read().await;
+        let session = sessions
+            .get(session_id)
+            .ok_or_else(|| SessionError::NotFound(session_id.to_string()))?;
+        Ok(session.has_child_processes())
     }
 
     /// Close all sessions

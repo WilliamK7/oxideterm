@@ -14,7 +14,18 @@
       "load_shells_failed": "利用可能なシェルの読み込みに失敗しました",
       "terminal_created": "ローカルターミナルが作成されました",
       "using_shell": "{{shell}}を使用",
-      "create_failed": "ローカルターミナルの作成に失敗しました"
+      "create_failed": "ローカルターミナルの作成に失敗しました",
+      "detached": "セッションをバックグラウンドに移動しました",
+      "detached_desc": "{{shell}} はバックグラウンドで実行中です",
+      "detach_failed": "バックグラウンドへの移動に失敗しました",
+      "attached": "セッションを再開しました",
+      "attach_failed": "セッションの再開に失敗しました"
+    },
+    "background": {
+      "title": "バックグラウンドセッション",
+      "lines": "行",
+      "resume": "再開",
+      "kill": "終了"
     }
   },
   "modals": {

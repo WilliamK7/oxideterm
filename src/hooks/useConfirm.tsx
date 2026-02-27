@@ -24,6 +24,7 @@ import { AlertTriangle, HelpCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from '../components/ui/dialog';
 
 interface ConfirmOptions {
@@ -67,6 +68,8 @@ export function useConfirm() {
         // Hide the default close button — we have Cancel
         onPointerDownOutside={(e) => e.preventDefault()}
       >
+        {/* Accessible title for screen readers (visually rendered below) */}
+        <DialogTitle className="sr-only">{options.title}</DialogTitle>
         {/* Body */}
         <div className="flex flex-col items-center gap-3 px-6 pt-6 pb-4">
           {/* Icon */}

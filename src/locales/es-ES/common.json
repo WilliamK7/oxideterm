@@ -47,7 +47,9 @@
     "confirm_close_all_title": "Cerrar todas las pestañas",
     "confirm_close_all_desc": "¿Cerrar las {{count}} pestañas? Las conexiones activas se desconectarán.",
     "confirm_close_other_title": "Cerrar otras pestañas",
-    "confirm_close_other_desc": "¿Cerrar las otras {{count}} pestañas? Las conexiones activas se desconectarán."
+    "confirm_close_other_desc": "¿Cerrar las otras {{count}} pestañas? Las conexiones activas se desconectarán.",
+    "send_to_background": "Enviar al fondo",
+    "child_process_warning": "Este terminal tiene procesos hijos en ejecución. ¿Cerrar de todos modos?"
   },
   "tabs": {
     "settings": "Configuración",

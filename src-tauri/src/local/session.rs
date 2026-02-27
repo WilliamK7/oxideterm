@@ -2,15 +2,23 @@
 //!
 //! Manages a single local terminal session with PTY, data pump,
 //! and WebSocket integration for frontend communication.
+//!
+//! ## Background (Detach) Support
+//!
+//! Sessions can be explicitly detached by the user ("Send to Background").
+//! When detached, the PTY stays alive and output is buffered in a ScrollBuffer
+//! (up to 5 000 lines). On reattach, the buffer is replayed to the frontend.
+//! Resource limits: max 5 background sessions, idle TTL 30 min, active TTL 4 h.
 
 use std::io::{Read, Write};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, MutexGuard};
-use tokio::sync::mpsc;
+use tokio::sync::{broadcast, mpsc};
 use uuid::Uuid;
 
 use crate::local::pty::{PtyConfig, PtyError, PtyHandle};
 use crate::local::shell::ShellInfo;
+use crate::session::scroll_buffer::{ScrollBuffer, TerminalLine};
 
 /// Error type for session operations
 #[derive(Debug, thiserror::Error)]
@@ -23,6 +31,15 @@ pub enum SessionError {
 
     #[error("Session already closed")]
     AlreadyClosed,
+
+    #[error("Session is not detached")]
+    NotDetached,
+
+    #[error("Session is already detached")]
+    AlreadyDetached,
+
+    #[error("Background session limit reached (max {0})")]
+    BackgroundLimitReached(usize),
 
     #[error("Channel send error")]
     ChannelError,
@@ -37,6 +54,12 @@ pub enum SessionEvent {
     Closed(Option<i32>), // exit code if available
 }
 
+/// Maximum lines in the background scroll buffer (lightweight — not full 30K)
+const BACKGROUND_BUFFER_MAX_LINES: usize = 5_000;
+
+/// Number of lines to replay when reattaching
+const REPLAY_LINE_COUNT: usize = 200;
+
 /// A local terminal session
 pub struct LocalTerminalSession {
     /// Unique session ID
@@ -44,8 +67,8 @@ pub struct LocalTerminalSession {
     /// Shell being used
     pub shell: ShellInfo,
     /// Current terminal size
-    cols: u16,
-    rows: u16,
+    pub(crate) cols: u16,
+    pub(crate) rows: u16,
     /// The PTY instance (wrapped for thread safety)
     pty: Option<Arc<PtyHandle>>,
     /// Whether the session is running
@@ -54,6 +77,16 @@ pub struct LocalTerminalSession {
     input_tx: Option<mpsc::Sender<Vec<u8>>>,
     /// Task handle for the data pump
     _data_pump_handle: Option<tokio::task::JoinHandle<()>>,
+    /// Scroll buffer — stores recent output for replay on reattach
+    pub scroll_buffer: Arc<ScrollBuffer>,
+    /// Broadcast channel — all output bytes go here for any subscriber
+    pub output_tx: broadcast::Sender<Vec<u8>>,
+    /// Whether this session is detached (running in background)
+    pub detached: AtomicBool,
+    /// When the session was detached (for TTL enforcement)
+    pub detached_at: std::sync::Mutex<Option<std::time::Instant>>,
+    /// Cancel handle for detach TTL timer
+    pub detach_cancel: std::sync::Mutex<Option<tokio::sync::oneshot::Sender<()>>>,
 }
 
 // Implement Send + Sync manually since we've made PtyHandle thread-safe
@@ -63,6 +96,7 @@ unsafe impl Sync for LocalTerminalSession {}
 impl LocalTerminalSession {
     /// Create a new local terminal session
     pub fn new(shell: ShellInfo, cols: u16, rows: u16) -> Self {
+        let (output_tx, _) = broadcast::channel(256);
         Self {
             id: Uuid::new_v4().to_string(),
             shell,
@@ -72,6 +106,11 @@ impl LocalTerminalSession {
             running: Arc::new(AtomicBool::new(false)),
             input_tx: None,
             _data_pump_handle: None,
+            scroll_buffer: Arc::new(ScrollBuffer::with_capacity(BACKGROUND_BUFFER_MAX_LINES)),
+            output_tx,
+            detached: AtomicBool::new(false),
+            detached_at: std::sync::Mutex::new(None),
+            detach_cancel: std::sync::Mutex::new(None),
         }
     }
 
@@ -147,6 +186,8 @@ impl LocalTerminalSession {
         // Spawn read pump (PTY -> frontend)
         let running_read = self.running.clone();
         let session_id = self.id.clone();
+        let scroll_buffer = self.scroll_buffer.clone();
+        let output_tx = self.output_tx.clone();
         let handle = tokio::task::spawn_blocking(move || {
             let rt = tokio::runtime::Handle::current();
             let mut buf = [0u8; 8192]; // 8KB buffer for efficiency
@@ -205,6 +246,18 @@ impl LocalTerminalSession {
 
                 // Only send if we have data (might be empty if all bytes are partial UTF-8)
                 if !to_send.is_empty() {
+                    // Feed scroll buffer (for background replay)
+                    // Split on newlines and store individual lines
+                    if let Ok(text) = String::from_utf8(to_send.clone()) {
+                        for line in text.lines() {
+                            rt.block_on(scroll_buffer.append(TerminalLine::new(line.to_string())));
+                        }
+                    }
+
+                    // Broadcast to any subscribers (used during reattach)
+                    let _ = output_tx.send(to_send.clone());
+
+                    // Send to frontend event channel
                     if let Err(e) = rt.block_on(event_tx.send(SessionEvent::Data(to_send))) {
                         tracing::error!("Failed to send data event: {}", e);
                         break;
@@ -271,13 +324,74 @@ impl LocalTerminalSession {
             cols: self.cols,
             rows: self.rows,
             running: self.is_running(),
+            detached: self.is_detached(),
         }
+    }
+
+    /// Check if session is currently detached (background)
+    pub fn is_detached(&self) -> bool {
+        self.detached.load(Ordering::SeqCst)
+    }
+
+    /// Mark session as detached (sent to background)
+    pub fn detach(&self) {
+        self.detached.store(true, Ordering::SeqCst);
+        if let Ok(mut ts) = self.detached_at.lock() {
+            *ts = Some(std::time::Instant::now());
+        }
+        tracing::info!("Local terminal session {} detached (background)", self.id);
+    }
+
+    /// Mark session as attached (brought back to foreground)
+    pub fn attach(&self) {
+        self.detached.store(false, Ordering::SeqCst);
+        if let Ok(mut ts) = self.detached_at.lock() {
+            *ts = None;
+        }
+        // Cancel any pending TTL timer
+        if let Ok(mut cancel) = self.detach_cancel.lock() {
+            if let Some(tx) = cancel.take() {
+                let _ = tx.send(());
+            }
+        }
+        tracing::info!("Local terminal session {} reattached (foreground)", self.id);
+    }
+
+    /// Get replay data from scroll buffer (last N lines as raw text)
+    pub async fn get_replay_data(&self) -> Vec<u8> {
+        let lines = self.scroll_buffer.tail_lines(REPLAY_LINE_COUNT).await;
+        let mut replay = Vec::new();
+        for (i, line) in lines.iter().enumerate() {
+            replay.extend_from_slice(line.text.as_bytes());
+            if i < lines.len() - 1 {
+                replay.push(b'\r');
+                replay.push(b'\n');
+            }
+        }
+        replay
+    }
+
+    /// Check if the PTY has child processes (besides the shell itself)
+    pub fn has_child_processes(&self) -> bool {
+        if let Some(pty) = &self.pty {
+            if let Some(pid) = pty.pid() {
+                return check_pid_has_children(pid);
+            }
+        }
+        false
     }
 
     /// Close the session
     pub fn close(&mut self) {
         tracing::info!("Closing local terminal session {}", self.id);
         self.running.store(false, Ordering::SeqCst);
+
+        // Cancel any detach TTL timer
+        if let Ok(mut cancel) = self.detach_cancel.lock() {
+            if let Some(tx) = cancel.take() {
+                let _ = tx.send(());
+            }
+        }
 
         // Kill the entire PTY process group
         // This ensures all child processes (vim, btop, etc.) are cleaned up
@@ -296,6 +410,46 @@ impl Drop for LocalTerminalSession {
     }
 }
 
+/// Check if a PID has child processes
+#[cfg(unix)]
+fn check_pid_has_children(pid: u32) -> bool {
+    use sysinfo::{Pid as SysPid, ProcessesToUpdate, System};
+    let mut sys = System::new();
+    sys.refresh_processes(ProcessesToUpdate::All, true);
+
+    let parent_pid = SysPid::from_u32(pid);
+    sys.processes()
+        .values()
+        .any(|p: &sysinfo::Process| p.parent() == Some(parent_pid))
+}
+
+#[cfg(not(unix))]
+fn check_pid_has_children(pid: u32) -> bool {
+    use sysinfo::{Pid as SysPid, ProcessesToUpdate, System};
+    let mut sys = System::new();
+    sys.refresh_processes(ProcessesToUpdate::All, true);
+
+    let parent_pid = SysPid::from_u32(pid);
+    sys.processes()
+        .values()
+        .any(|p: &sysinfo::Process| p.parent() == Some(parent_pid))
+}
+
+/// Background session info for the frontend (more detail than LocalTerminalInfo)
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackgroundSessionInfo {
+    pub id: String,
+    pub shell: ShellInfo,
+    pub cols: u16,
+    pub rows: u16,
+    pub running: bool,
+    /// How long the session has been in the background (seconds)
+    pub detached_secs: u64,
+    /// Number of lines in the scroll buffer
+    pub buffer_lines: usize,
+}
+
 /// Serializable session info for frontend
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct LocalTerminalInfo {
@@ -304,6 +458,9 @@ pub struct LocalTerminalInfo {
     pub cols: u16,
     pub rows: u16,
     pub running: bool,
+    /// Whether this session is detached (running in background)
+    #[serde(default)]
+    pub detached: bool,
 }
 
 /// Find a safe UTF-8 boundary in a byte slice.

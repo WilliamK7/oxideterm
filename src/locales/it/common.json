@@ -47,7 +47,9 @@
     "confirm_close_all_title": "Chiudi tutte le schede",
     "confirm_close_all_desc": "Chiudere tutte le {{count}} schede? Le connessioni attive verranno disconnesse.",
     "confirm_close_other_title": "Chiudi le altre schede",
-    "confirm_close_other_desc": "Chiudere le altre {{count}} schede? Le connessioni attive verranno disconnesse."
+    "confirm_close_other_desc": "Chiudere le altre {{count}} schede? Le connessioni attive verranno disconnesse.",
+    "send_to_background": "Invia in background",
+    "child_process_warning": "Questo terminale ha processi figlio in esecuzione. Chiudere comunque?"
   },
   "tabs": {
     "settings": "Impostazioni",

@@ -723,9 +723,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (localTerminalIds.length > 0) {
       const { useLocalTerminalStore } = await import('./localTerminalStore');
       
-      // 并行关闭所有本地终端
+      // 并行关闭所有本地终端（跳过已后台挂起的会话）
+      const bgSessions = useLocalTerminalStore.getState().backgroundSessions;
       await Promise.all(
         localTerminalIds.map(async (sid) => {
+          // Skip detached sessions — they stay alive in the background
+          if (bgSessions.has(sid)) {
+            console.log(`[closeTab] Local terminal ${sid} is detached, skipping backend close`);
+            return;
+          }
           try {
             await api.localCloseTerminal(sid);
             console.log(`[closeTab] Local terminal ${sid} closed`);

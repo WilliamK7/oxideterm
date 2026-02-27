@@ -14,7 +14,18 @@
       "load_shells_failed": "Impossibile caricare le shell disponibili",
       "terminal_created": "Terminale locale creato",
       "using_shell": "Usando {{shell}}",
-      "create_failed": "Impossibile creare il terminale locale"
+      "create_failed": "Impossibile creare il terminale locale",
+      "detached": "Sessione spostata in background",
+      "detached_desc": "{{shell}} è in esecuzione in background",
+      "detach_failed": "Impossibile spostare in background",
+      "attached": "Sessione ripristinata",
+      "attach_failed": "Impossibile ripristinare la sessione"
+    },
+    "background": {
+      "title": "Sessioni in background",
+      "lines": "righe",
+      "resume": "Riprendi",
+      "kill": "Termina"
     }
   },
   "modals": {

@@ -14,7 +14,18 @@
       "load_shells_failed": "Échec du chargement des shells disponibles",
       "terminal_created": "Terminal local créé",
       "using_shell": "Utilisation de {{shell}}",
-      "create_failed": "Échec de la création du terminal local"
+      "create_failed": "Échec de la création du terminal local",
+      "detached": "Session mise en arrière-plan",
+      "detached_desc": "{{shell}} s’exécute en arrière-plan",
+      "detach_failed": "Échec de la mise en arrière-plan",
+      "attached": "Session reprise",
+      "attach_failed": "Échec de la reprise de session"
+    },
+    "background": {
+      "title": "Sessions en arrière-plan",
+      "lines": "lignes",
+      "resume": "Reprendre",
+      "kill": "Terminer"
     }
   },
   "modals": {

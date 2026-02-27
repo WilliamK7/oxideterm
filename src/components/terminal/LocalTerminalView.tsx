@@ -620,7 +620,16 @@ export const LocalTerminalView: React.FC<LocalTerminalViewProps> = ({
       term.writeln('');
     };
 
+    // Check for pending replay data (from reattached background session)
+    const replayData = useLocalTerminalStore.getState().consumeReplay(sessionId);
+    if (replayData && replayData.length > 0) {
+      const bytes = new Uint8Array(replayData);
+      term.write(bytes);
+    }
+
     const prefillHistory = async (): Promise<boolean> => {
+      // Skip prefill if we already replayed background data
+      if (replayData && replayData.length > 0) return true;
       if (prefillHistoryRef.current) return false;
       prefillHistoryRef.current = true;
       try {

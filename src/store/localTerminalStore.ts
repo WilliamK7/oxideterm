@@ -6,6 +6,7 @@ import i18n from '../i18n';
 import {
   ShellInfo,
   LocalTerminalInfo,
+  BackgroundSessionInfo,
   CreateLocalTerminalRequest,
 } from '../types';
 
@@ -15,6 +16,9 @@ interface LocalTerminalStore {
   shells: ShellInfo[];
   defaultShell: ShellInfo | null;
   shellsLoaded: boolean;
+  backgroundSessions: Map<string, BackgroundSessionInfo>;
+  /** Pending replay data for reattached sessions (sessionId -> raw bytes) */
+  pendingReplay: Map<string, number[]>;
 
   // Actions
   loadShells: () => Promise<void>;
@@ -25,12 +29,20 @@ interface LocalTerminalStore {
   refreshTerminals: () => Promise<void>;
   cleanupDeadSessions: () => Promise<string[]>;
   
+  // Background session actions
+  detachTerminal: (sessionId: string) => Promise<BackgroundSessionInfo>;
+  attachTerminal: (sessionId: string) => Promise<number[]>;
+  refreshBackgroundSessions: () => Promise<void>;
+  checkChildProcesses: (sessionId: string) => Promise<boolean>;
+  consumeReplay: (sessionId: string) => number[] | undefined;
+  
   // Internal
   updateTerminalState: (sessionId: string, running: boolean) => void;
   removeTerminal: (sessionId: string) => void;
   
   // Computed
   getTerminal: (sessionId: string) => LocalTerminalInfo | undefined;
+  backgroundCount: () => number;
 }
 
 export const useLocalTerminalStore = create<LocalTerminalStore>((set, get) => ({
@@ -38,6 +50,8 @@ export const useLocalTerminalStore = create<LocalTerminalStore>((set, get) => ({
   shells: [],
   defaultShell: null,
   shellsLoaded: false,
+  backgroundSessions: new Map(),
+  pendingReplay: new Map(),
 
   loadShells: async () => {
     try {
@@ -174,7 +188,9 @@ export const useLocalTerminalStore = create<LocalTerminalStore>((set, get) => ({
       const terminals = await api.localListTerminals();
       const newTerminals = new Map<string, LocalTerminalInfo>();
       for (const terminal of terminals) {
-        newTerminals.set(terminal.id, terminal);
+        if (!terminal.detached) {
+          newTerminals.set(terminal.id, terminal);
+        }
       }
       set({ terminals: newTerminals });
     } catch (error) {
@@ -216,11 +232,139 @@ export const useLocalTerminalStore = create<LocalTerminalStore>((set, get) => ({
     set((state) => {
       const newTerminals = new Map(state.terminals);
       newTerminals.delete(sessionId);
-      return { terminals: newTerminals };
+
+      const newBg = new Map(state.backgroundSessions);
+      newBg.delete(sessionId);
+
+      const newReplay = new Map(state.pendingReplay);
+      newReplay.delete(sessionId);
+
+      return {
+        terminals: newTerminals,
+        backgroundSessions: newBg,
+        pendingReplay: newReplay,
+      };
     });
+  },
+
+  detachTerminal: async (sessionId: string) => {
+    try {
+      const bgInfo = await api.localDetachTerminal(sessionId);
+      
+      // Move from active terminals to background sessions
+      set((state) => {
+        const newTerminals = new Map(state.terminals);
+        newTerminals.delete(sessionId);
+        
+        const newBg = new Map(state.backgroundSessions);
+        newBg.set(sessionId, bgInfo);
+        
+        return { terminals: newTerminals, backgroundSessions: newBg };
+      });
+
+      useToastStore.getState().addToast({
+        title: i18n.t('local_shell.toast.detached'),
+        description: i18n.t('local_shell.toast.detached_desc', { shell: bgInfo.shell.label }),
+      });
+
+      return bgInfo;
+    } catch (error) {
+      console.error('Failed to detach terminal:', error);
+      useToastStore.getState().addToast({
+        title: i18n.t('local_shell.toast.detach_failed'),
+        description: String(error),
+        variant: 'error',
+      });
+      throw error;
+    }
+  },
+
+  attachTerminal: async (sessionId: string) => {
+    try {
+      const replay = await api.localAttachTerminal(sessionId);
+      
+      // Move from background to active terminals and store replay data
+      set((state) => {
+        const newBg = new Map(state.backgroundSessions);
+        const bgInfo = newBg.get(sessionId);
+        newBg.delete(sessionId);
+        
+        const newTerminals = new Map(state.terminals);
+        if (bgInfo) {
+          newTerminals.set(sessionId, {
+            id: bgInfo.id,
+            shell: bgInfo.shell,
+            cols: bgInfo.cols,
+            rows: bgInfo.rows,
+            running: bgInfo.running,
+            detached: false,
+          });
+        }
+        
+        // Store replay data for the view to consume on mount
+        const newReplay = new Map(state.pendingReplay);
+        if (replay.length > 0) {
+          newReplay.set(sessionId, replay);
+        }
+        
+        return { terminals: newTerminals, backgroundSessions: newBg, pendingReplay: newReplay };
+      });
+
+      useToastStore.getState().addToast({
+        title: i18n.t('local_shell.toast.attached'),
+      });
+
+      return replay;
+    } catch (error) {
+      console.error('Failed to attach terminal:', error);
+      useToastStore.getState().addToast({
+        title: i18n.t('local_shell.toast.attach_failed'),
+        description: String(error),
+        variant: 'error',
+      });
+      throw error;
+    }
+  },
+
+  refreshBackgroundSessions: async () => {
+    try {
+      const sessions = await api.localListBackground();
+      const newBg = new Map<string, BackgroundSessionInfo>();
+      for (const s of sessions) {
+        newBg.set(s.id, s);
+      }
+      set({ backgroundSessions: newBg });
+    } catch (error) {
+      console.error('Failed to refresh background sessions:', error);
+    }
+  },
+
+  checkChildProcesses: async (sessionId: string) => {
+    try {
+      return await api.localCheckChildProcesses(sessionId);
+    } catch (error) {
+      console.error('Failed to check child processes:', error);
+      return false;
+    }
+  },
+
+  consumeReplay: (sessionId: string) => {
+    const replay = get().pendingReplay.get(sessionId);
+    if (replay) {
+      set((state) => {
+        const newReplay = new Map(state.pendingReplay);
+        newReplay.delete(sessionId);
+        return { pendingReplay: newReplay };
+      });
+    }
+    return replay;
   },
 
   getTerminal: (sessionId: string) => {
     return get().terminals.get(sessionId);
+  },
+
+  backgroundCount: () => {
+    return get().backgroundSessions.size;
   },
 }));

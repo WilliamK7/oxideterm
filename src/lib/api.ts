@@ -1156,6 +1156,39 @@ export const api = {
   },
 
   /**
+   * Detach a local terminal session (send to background).
+   * PTY stays alive, output is buffered.
+   */
+  localDetachTerminal: async (sessionId: string): Promise<import('../types').BackgroundSessionInfo> => {
+    if (USE_MOCK) throw new Error('Not implemented in mock');
+    return invoke('local_detach_terminal', { sessionId });
+  },
+
+  /**
+   * Reattach a background session. Returns replay data (raw bytes).
+   */
+  localAttachTerminal: async (sessionId: string): Promise<number[]> => {
+    if (USE_MOCK) return [];
+    return invoke('local_attach_terminal', { sessionId });
+  },
+
+  /**
+   * List all background (detached) sessions
+   */
+  localListBackground: async (): Promise<import('../types').BackgroundSessionInfo[]> => {
+    if (USE_MOCK) return [];
+    return invoke('local_list_background');
+  },
+
+  /**
+   * Check if a session has active child processes
+   */
+  localCheckChildProcesses: async (sessionId: string): Promise<boolean> => {
+    if (USE_MOCK) return false;
+    return invoke('local_check_child_processes', { sessionId });
+  },
+
+  /**
    * Get available local drives / mounted volumes.
    * Returns structured DriveInfo with path, name, type, and capacity.
    */

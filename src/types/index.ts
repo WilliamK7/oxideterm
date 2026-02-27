@@ -1133,6 +1133,28 @@ export interface LocalTerminalInfo {
   rows: number;
   /** Whether the session is running */
   running: boolean;
+  /** Whether this session is detached (running in background) */
+  detached?: boolean;
+}
+
+/**
+ * Background (detached) session info
+ */
+export interface BackgroundSessionInfo {
+  /** Unique session ID */
+  id: string;
+  /** Shell being used */
+  shell: ShellInfo;
+  /** Terminal columns */
+  cols: number;
+  /** Terminal rows */
+  rows: number;
+  /** Whether the session is running */
+  running: boolean;
+  /** How long the session has been in the background (seconds) */
+  detachedSecs: number;
+  /** Number of lines in the scroll buffer */
+  bufferLines: number;
 }
 
 /**

@@ -14,7 +14,18 @@
       "load_shells_failed": "無法載入可用的 Shell",
       "terminal_created": "已建立本機終端機",
       "using_shell": "使用 {{shell}}",
-      "create_failed": "無法建立本機終端機"
+      "create_failed": "無法建立本機終端機",
+      "detached": "工作階段已移至背景",
+      "detached_desc": "{{shell}} 正在背景執行",
+      "detach_failed": "移至背景失敗",
+      "attached": "工作階段已恢復",
+      "attach_failed": "恢復工作階段失敗"
+    },
+    "background": {
+      "title": "背景工作階段",
+      "lines": "行",
+      "resume": "恢復",
+      "kill": "終止"
     }
   },
   "modals": {

@@ -14,7 +14,18 @@
       "load_shells_failed": "Không thể tải danh sách shell có sẵn",
       "terminal_created": "Đã tạo terminal cục bộ",
       "using_shell": "Đang sử dụng {{shell}}",
-      "create_failed": "Không thể tạo terminal cục bộ"
+      "create_failed": "Không thể tạo terminal cục bộ",
+      "detached": "Phiên đã chuyển vào nền",
+      "detached_desc": "{{shell}} đang chạy trong nền",
+      "detach_failed": "Không thể chuyển vào nền",
+      "attached": "Phiên đã được tiếp tục",
+      "attach_failed": "Không thể tiếp tục phiên"
+    },
+    "background": {
+      "title": "Phiên nền",
+      "lines": "dòng",
+      "resume": "Tiếp tục",
+      "kill": "Kết thúc"
     }
   },
   "modals": {

@@ -47,7 +47,9 @@
     "confirm_close_all_title": "Alle Tabs schließen",
     "confirm_close_all_desc": "Alle {{count}} Tabs schließen? Aktive Verbindungen werden getrennt.",
     "confirm_close_other_title": "Andere Tabs schließen",
-    "confirm_close_other_desc": "{{count}} andere Tabs schließen? Aktive Verbindungen werden getrennt."
+    "confirm_close_other_desc": "{{count}} andere Tabs schließen? Aktive Verbindungen werden getrennt.",
+    "send_to_background": "In den Hintergrund senden",
+    "child_process_warning": "Dieses Terminal hat laufende Kindprozesse. Trotzdem schließen?"
   },
   "tabs": {
     "settings": "Einstellungen",

@@ -45,6 +45,7 @@ import { api } from '../../lib/api';
 import { connectToSaved } from '../../lib/connectToSaved';
 
 import { PluginSidebarRenderer } from '../plugin/PluginSidebarRenderer';
+import { BackgroundSessionsPopover } from '../terminal/BackgroundSessionsPopover';
 
 export const Sidebar = () => {
   const { t } = useTranslation();
@@ -111,10 +112,12 @@ export const Sidebar = () => {
     nodeId: '',
   });
   const [addRootNodeOpen, setAddRootNodeOpen] = useState(false);
+  const [bgPopoverOpen, setBgPopoverOpen] = useState(false);
 
   // Local terminal store
   const createLocalTerminal = useLocalTerminalStore((s) => s.createTerminal);
   const localTerminals = useLocalTerminalStore((s) => s.terminals);
+  const backgroundSessions = useLocalTerminalStore((s) => s.backgroundSessions);
 
   // Toast hook (需要在所有使用 toast 的 useCallback 之前声明)
   const { toast } = useToast();
@@ -130,6 +133,19 @@ export const Sidebar = () => {
       console.error('Failed to create local terminal:', err);
     }
   }, [createLocalTerminal, createTab]);
+
+  // Handle reattaching a background session
+  const handleAttachBackground = useCallback(async (sessionId: string) => {
+    try {
+      const { attachTerminal } = useLocalTerminalStore.getState();
+      await attachTerminal(sessionId);
+      // Open a tab for the reattached session
+      createTab('local_terminal', sessionId);
+      setBgPopoverOpen(false);
+    } catch (err) {
+      console.error('Failed to attach background session:', err);
+    }
+  }, [createTab]);
 
   // ========== Resize Handling ==========
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -656,7 +672,7 @@ export const Sidebar = () => {
   ];
 
   const bottomButtons: SidebarButtonDef[] = [
-    { kind: 'action', key: 'local_terminal', icon: Square, titleKey: 'sidebar.actions.new_local_terminal', badge: localTerminals.size > 0 ? localTerminals.size : undefined, badgeColor: 'bg-blue-500' },
+    { kind: 'action', key: 'local_terminal', icon: Square, titleKey: 'sidebar.actions.new_local_terminal', badge: (localTerminals.size + backgroundSessions.size) > 0 ? (localTerminals.size + backgroundSessions.size) : undefined, badgeColor: backgroundSessions.size > 0 ? 'bg-amber-500' : 'bg-blue-500' },
     { kind: 'tab', key: 'file_manager', icon: FolderOpen, titleKey: 'sidebar.panels.files' },
     ...(!platform.isLinux ? [{ kind: 'tab' as const, key: platform.isMac ? 'launcher' as const : 'graphics' as const, icon: Monitor, titleKey: platform.isMac ? 'launcher.tabTitle' : 'graphics.tab_title' }] : []),
     { kind: 'tab', key: 'plugin_manager', icon: Puzzle, titleKey: 'sidebar.panels.plugins' },
@@ -685,7 +701,11 @@ export const Sidebar = () => {
     } else if (def.kind === 'toggle' && def.key === 'ai') {
       toggleAiSidebar();
     } else if (def.kind === 'action' && def.key === 'local_terminal') {
-      handleNewLocalTerminal();
+      if (backgroundSessions.size > 0) {
+        setBgPopoverOpen(!bgPopoverOpen);
+      } else {
+        handleNewLocalTerminal();
+      }
     }
   };
 
@@ -766,9 +786,18 @@ export const Sidebar = () => {
         </div>
 
         {/* Bottom: fixed */}
-        <div className="flex flex-col items-center gap-2 shrink-0">
+        <div className="flex flex-col items-center gap-2 shrink-0 relative">
           <div className="w-6 h-px bg-theme-border" />
           {bottomButtons.map(def => renderSidebarButton(def, sidebarCollapsed))}
+          {/* Background sessions popover */}
+          {bgPopoverOpen && backgroundSessions.size > 0 && (
+            <div className="absolute bottom-full left-12 mb-2 z-50">
+              <BackgroundSessionsPopover
+                onAttach={handleAttachBackground}
+                onClose={() => setBgPopoverOpen(false)}
+              />
+            </div>
+          )}
         </div>
       </div>
 

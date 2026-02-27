@@ -47,7 +47,9 @@
     "confirm_close_all_title": "すべてのタブを閉じる",
     "confirm_close_all_desc": "{{count}} 個のタブをすべて閉じますか？アクティブな接続は切断されます。",
     "confirm_close_other_title": "他のタブを閉じる",
-    "confirm_close_other_desc": "他の {{count}} 個のタブを閉じますか？アクティブな接続は切断されます。"
+    "confirm_close_other_desc": "他の {{count}} 個のタブを閉じますか？アクティブな接続は切断されます。",
+    "send_to_background": "バックグラウンドに送る",
+    "child_process_warning": "このターミナルには実行中の子プロセスがあります。それでも閉じますか？"
   },
   "tabs": {
     "settings": "設定",

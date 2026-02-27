@@ -17,7 +17,7 @@ use std::sync::Arc;
 use tauri::{AppHandle, Emitter, State};
 
 use crate::local::registry::LocalTerminalRegistry;
-use crate::local::session::{LocalTerminalInfo, SessionEvent};
+use crate::local::session::{BackgroundSessionInfo, LocalTerminalInfo, SessionEvent};
 use crate::local::shell::{default_shell, scan_shells, ShellInfo};
 
 /// Global local terminal registry state
@@ -314,6 +314,97 @@ pub async fn local_cleanup_dead_sessions(
     state: State<'_, Arc<LocalTerminalState>>,
 ) -> Result<Vec<String>, String> {
     Ok(state.registry.cleanup_dead_sessions().await)
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Background Session (Detach/Attach) Commands
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Detach a local terminal session (send to background).
+/// The PTY stays alive and output is buffered. Returns background session info.
+#[tauri::command]
+pub async fn local_detach_terminal(
+    session_id: String,
+    state: State<'_, Arc<LocalTerminalState>>,
+) -> Result<BackgroundSessionInfo, String> {
+    state
+        .registry
+        .detach_session(&session_id)
+        .await
+        .map_err(|e| format!("Failed to detach session: {}", e))
+}
+
+/// Reattach a background session. Returns replay data (raw bytes) for the frontend
+/// to write into xterm, and sets up a new event forwarder.
+#[tauri::command]
+pub async fn local_attach_terminal(
+    session_id: String,
+    state: State<'_, Arc<LocalTerminalState>>,
+    app: AppHandle,
+) -> Result<Vec<u8>, String> {
+    let (replay, mut event_rx) = state
+        .registry
+        .attach_session(&session_id)
+        .await
+        .map_err(|e| format!("Failed to attach session: {}", e))?;
+
+    // Spawn event forwarder (same pattern as local_create_terminal)
+    let app_handle = app.clone();
+    let sid = session_id.clone();
+    tokio::spawn(async move {
+        while let Some(event) = event_rx.recv().await {
+            match event {
+                SessionEvent::Data(data) => {
+                    let event = LocalTerminalDataEvent {
+                        session_id: sid.clone(),
+                        data,
+                    };
+                    if let Err(e) = app_handle.emit(&format!("local-terminal-data:{}", sid), &event)
+                    {
+                        tracing::error!("Failed to emit terminal data event: {}", e);
+                    }
+                }
+                SessionEvent::Closed(exit_code) => {
+                    let event = LocalTerminalClosedEvent {
+                        session_id: sid.clone(),
+                        exit_code,
+                    };
+                    if let Err(e) =
+                        app_handle.emit(&format!("local-terminal-closed:{}", sid), &event)
+                    {
+                        tracing::error!("Failed to emit terminal closed event: {}", e);
+                    }
+                    break;
+                }
+            }
+        }
+        tracing::debug!("Event forwarder for reattached session {} exited", sid);
+    });
+
+    tracing::info!("Reattached local terminal session: {}", session_id);
+    Ok(replay)
+}
+
+/// List all background (detached) sessions
+#[tauri::command]
+pub async fn local_list_background(
+    state: State<'_, Arc<LocalTerminalState>>,
+) -> Result<Vec<BackgroundSessionInfo>, String> {
+    Ok(state.registry.list_background_sessions().await)
+}
+
+/// Check if a session has active child processes.
+/// Used to show a confirmation dialog before killing.
+#[tauri::command]
+pub async fn local_check_child_processes(
+    session_id: String,
+    state: State<'_, Arc<LocalTerminalState>>,
+) -> Result<bool, String> {
+    state
+        .registry
+        .check_child_processes(&session_id)
+        .await
+        .map_err(|e| format!("Failed to check child processes: {}", e))
 }
 
 /// Drive / volume information returned to the frontend.

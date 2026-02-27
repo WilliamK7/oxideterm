@@ -47,7 +47,9 @@
     "confirm_close_all_title": "關閉所有標籤頁",
     "confirm_close_all_desc": "關閉全部 {{count}} 個標籤頁？活動連接將被斷開。",
     "confirm_close_other_title": "關閉其他標籤頁",
-    "confirm_close_other_desc": "關閉其他 {{count}} 個標籤頁？活動連接將被斷開。"
+    "confirm_close_other_desc": "關閉其他 {{count}} 個標籤頁？活動連接將被斷開。",
+    "send_to_background": "移至背景",
+    "child_process_warning": "此終端機有正在執行的子行程序。確定要關閉嗎？"
   },
   "tabs": {
     "settings": "設定",

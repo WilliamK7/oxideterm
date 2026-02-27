@@ -47,7 +47,9 @@
     "confirm_close_all_title": "Fechar todas as guias",
     "confirm_close_all_desc": "Fechar todas as {{count}} guias? As conexões ativas serão desconectadas.",
     "confirm_close_other_title": "Fechar outras guias",
-    "confirm_close_other_desc": "Fechar as outras {{count}} guias? As conexões ativas serão desconectadas."
+    "confirm_close_other_desc": "Fechar as outras {{count}} guias? As conexões ativas serão desconectadas.",
+    "send_to_background": "Enviar para segundo plano",
+    "child_process_warning": "Este terminal tem processos filhos em execução. Fechar mesmo assim?"
   },
   "tabs": {
     "settings": "Configurações",
