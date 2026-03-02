@@ -163,6 +163,191 @@ const getTabTitle = (
 
 import type { ReconnectJob } from '../../store/reconnectOrchestratorStore';
 
+// ─── TabItem (memoized individual tab) ───────────────────────────────────────
+
+type TabItemProps = {
+  tab: Tab;
+  tabIndex: number;
+  isActive: boolean;
+  isBeingDragged: boolean;
+  isActuallyDragging: boolean;
+  showDropIndicator: boolean;
+  closing: string | null;
+  tabCount: number;
+  tabRefsMap: React.MutableRefObject<Map<string, HTMLDivElement>>;
+  onPointerDown: (e: React.PointerEvent, tabId: string, index: number) => void;
+  onPointerMove: (e: React.PointerEvent) => void;
+  onPointerUp: (e: React.PointerEvent) => void;
+  onPointerCancel: () => void;
+  onCloseTab: (e: React.MouseEvent | null, tabId: string, sessionId: string | undefined, tabType: string) => void;
+  onReconnect: (e: React.MouseEvent, sessionId: string) => void;
+  onCancelReconnect: (e: React.MouseEvent, nodeId: string) => void;
+  onCloseOtherTabs: (keepTabId: string) => void;
+  onCloseTabsToRight: (fromIndex: number) => void;
+  onCloseAllTabs: () => void;
+  onDetachTab: (tabId: string, sessionId: string) => void;
+  onSetActiveTab: (tabId: string) => void;
+};
+
+const TabItem = React.memo<TabItemProps>(({
+  tab, tabIndex, isActive, isBeingDragged, isActuallyDragging, showDropIndicator,
+  closing, tabCount, tabRefsMap,
+  onPointerDown, onPointerMove, onPointerUp, onPointerCancel,
+  onCloseTab, onReconnect, onCancelReconnect, onCloseOtherTabs,
+  onCloseTabsToRight, onCloseAllTabs, onDetachTab, onSetActiveTab,
+}) => {
+  const { t } = useTranslation();
+
+  // Read session/connection state on demand (not subscribed — avoids re-renders on connection:update)
+  const sessions = useAppStore.getState().sessions;
+  const connections = useAppStore.getState().connections;
+  const session = tab.sessionId ? sessions.get(tab.sessionId) : undefined;
+  const connectionId = session?.connectionId;
+  const connectionState = connectionId ? connections.get(connectionId)?.state : undefined;
+
+  // Look up orchestrator job — read via hook to ensure reactivity for reconnect progress
+  const nodeId = connectionId ? topologyResolver.getNodeId(connectionId) : undefined;
+  const orchestratorGetJob = useReconnectOrchestratorStore(s => s.getJob);
+  const orchJob = nodeId ? orchestratorGetJob(nodeId) : undefined;
+  const isOrchestratorActive = orchJob && orchJob.status !== 'done' && orchJob.status !== 'failed' && orchJob.status !== 'cancelled';
+  const isManualReconnecting = !!isOrchestratorActive;
+  const showReconnectProgress = !!isOrchestratorActive;
+
+  return (
+    <ContextMenu>
+    <ContextMenuTrigger asChild>
+    <div
+      ref={(el) => {
+        if (el) tabRefsMap.current.set(tab.id, el);
+        else tabRefsMap.current.delete(tab.id);
+      }}
+      onPointerDown={(e) => onPointerDown(e, tab.id, tabIndex)}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+      onMouseDown={(e) => {
+        if (e.button === 1) {
+          e.preventDefault();
+          onCloseTab(e, tab.id, tab.sessionId, tab.type);
+        }
+      }}
+      onClick={() => {
+        if (!isActuallyDragging) onSetActiveTab(tab.id);
+      }}
+      className={cn(
+        "flex-shrink-0 group flex items-center gap-2 px-3 h-full min-w-[120px] max-w-[240px] border-r border-theme-border cursor-pointer select-none text-sm transition-colors",
+        isActive
+          ? "bg-theme-bg-panel text-theme-text border-t-2 border-t-theme-accent"
+          : "bg-theme-bg text-theme-text-muted hover:bg-theme-bg-hover border-t-2 border-t-transparent",
+        showReconnectProgress && "border-t-amber-500",
+        isBeingDragged && isActuallyDragging && "opacity-50",
+        showDropIndicator && "border-l-2 border-l-theme-accent"
+      )}
+      style={isBeingDragged && isActuallyDragging ? { cursor: 'grabbing' } : undefined}
+    >
+      {tab.type === 'plugin' && tab.icon ? <PluginTabIcon iconName={tab.icon} /> : <TabIcon type={tab.type} />}
+      {tab.type === 'terminal' && connectionState && (
+        <ConnectionDot state={typeof connectionState === 'string' ? connectionState : 'error'} />
+      )}
+      <span className="truncate flex-1">{getTabTitle(tab, sessions, t)}</span>
+
+      {/* Reconnect progress indicator with hover timeline */}
+      {showReconnectProgress && orchJob && nodeId && (
+        <ReconnectIndicator
+          job={orchJob}
+          nodeId={nodeId}
+          onCancel={onCancelReconnect}
+          t={t}
+        />
+      )}
+
+      {/* Normal tab controls */}
+      {!showReconnectProgress && (
+        <div className="flex items-center gap-0.5">
+          {/* Refresh button for terminal tabs */}
+          {tab.type === 'terminal' && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={(e) => tab.sessionId && onReconnect(e, tab.sessionId)}
+                  disabled={isManualReconnecting}
+                  className={cn(
+                    "opacity-0 group-hover:opacity-100 hover:bg-theme-bg-hover rounded p-0.5 transition-opacity",
+                    isActive && "opacity-100",
+                    isManualReconnecting && "opacity-100"
+                  )}
+                >
+                  <RefreshCw className={cn("h-3 w-3", isManualReconnecting && "animate-spin")} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{t('tabbar.reconnect')}</TooltipContent>
+            </Tooltip>
+          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={(e) => onCloseTab(e, tab.id, tab.sessionId, tab.type)}
+                disabled={tab.sessionId ? closing === tab.sessionId : false}
+                className={cn(
+                  "opacity-0 group-hover:opacity-100 hover:bg-theme-bg-hover rounded p-0.5 transition-opacity",
+                  isActive && "opacity-100",
+                  (tab.sessionId && closing === tab.sessionId) && "opacity-100"
+                )}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{t('tabbar.close_tab')}</TooltipContent>
+          </Tooltip>
+        </div>
+      )}
+    </div>
+    </ContextMenuTrigger>
+    <ContextMenuContent>
+      <ContextMenuItem onSelect={() => {
+        const currentSessions = useAppStore.getState().sessions;
+        const title = getTabTitle(tab, currentSessions, t);
+        navigator.clipboard.writeText(title);
+      }}>
+        <Copy className="h-3.5 w-3.5 mr-2" />
+        {t('tabbar.copy_title')}
+      </ContextMenuItem>
+      {/* Send to Background — only for local terminal tabs */}
+      {tab.type === 'local_terminal' && tab.sessionId && (
+        <>
+          <ContextMenuSeparator />
+          <ContextMenuItem onSelect={() => onDetachTab(tab.id, tab.sessionId!)}>
+            <CirclePause className="h-3.5 w-3.5 mr-2" />
+            {t('tabbar.send_to_background')}
+          </ContextMenuItem>
+        </>
+      )}
+      <ContextMenuSeparator />
+      <ContextMenuItem onSelect={() => onCloseTab(null, tab.id, tab.sessionId, tab.type)}>
+        {t('tabbar.close_tab')}
+      </ContextMenuItem>
+      <ContextMenuItem
+        onSelect={() => onCloseOtherTabs(tab.id)}
+        disabled={tabCount <= 1}
+      >
+        {t('tabbar.close_other_tabs')}
+      </ContextMenuItem>
+      <ContextMenuItem
+        onSelect={() => onCloseTabsToRight(tabIndex)}
+        disabled={tabIndex >= tabCount - 1}
+      >
+        {t('tabbar.close_tabs_to_right')}
+      </ContextMenuItem>
+      <ContextMenuSeparator />
+      <ContextMenuItem onSelect={() => onCloseAllTabs()}>
+        {t('tabbar.close_all_tabs')}
+      </ContextMenuItem>
+    </ContextMenuContent>
+    </ContextMenu>
+  );
+});
+TabItem.displayName = 'TabItem';
+
 const ReconnectIndicator = ({
   job,
   nodeId,
@@ -224,18 +409,15 @@ const ReconnectIndicator = ({
 
 export const TabBar = () => {
   const { t } = useTranslation();
-  const {
-    tabs,
-    activeTabId,
-    setActiveTab,
-    closeTab,
-    closeTerminalSession,
-    moveTab,
-    sessions,
-    connections,
-    networkOnline
-  } = useAppStore();
-  const orchestratorGetJob = useReconnectOrchestratorStore((s) => s.getJob);
+  // Individual selectors — only re-render when the specific slice changes
+  const tabs = useAppStore(s => s.tabs);
+  const activeTabId = useAppStore(s => s.activeTabId);
+  const networkOnline = useAppStore(s => s.networkOnline);
+  // Stable function refs — never change, won't cause re-renders
+  const setActiveTab = useAppStore(s => s.setActiveTab);
+  const closeTab = useAppStore(s => s.closeTab);
+  const closeTerminalSession = useAppStore(s => s.closeTerminalSession);
+  const moveTab = useAppStore(s => s.moveTab);
   const orchestratorScheduleReconnect = useReconnectOrchestratorStore((s) => s.scheduleReconnect);
   const orchestratorCancel = useReconnectOrchestratorStore((s) => s.cancel);
   const [closing, setClosing] = React.useState<string | null>(null);
@@ -368,7 +550,8 @@ export const TabBar = () => {
   const handleReconnect = async (e: React.MouseEvent, sessionId: string) => {
     e.stopPropagation();
     // 从 session 获取 connectionId，再通过 topologyResolver 获取 nodeId
-    const session = sessions.get(sessionId);
+    const currentSessions = useAppStore.getState().sessions;
+    const session = currentSessions.get(sessionId);
     const connectionId = session?.connectionId;
     const nodeId = connectionId ? topologyResolver.getNodeId(connectionId) : undefined;
     
@@ -425,7 +608,7 @@ export const TabBar = () => {
       setClosing(sessionId);
       try {
         // 检查 session 是否使用新的连接池架构
-        const session = sessions.get(sessionId);
+        const session = useAppStore.getState().sessions.get(sessionId);
         if (session?.connectionId) {
           // 使用新 API 释放终端（会减少连接引用计数）
           await closeTerminalSession(sessionId);
@@ -501,155 +684,36 @@ export const TabBar = () => {
         >
         {/* 最内层（渲染层）：inline-flex 让子元素一行排列，不换行 */}
         <div className="inline-flex h-full">
-          {tabs.map((tab) => {
-            const isActive = tab.id === activeTabId;
-            const session = tab.sessionId ? sessions.get(tab.sessionId) : undefined;
-            
-            // Look up orchestrator job for this tab's node
-            const connectionId = session?.connectionId;
-            const connectionState = connectionId ? connections.get(connectionId)?.state : undefined;
-            const nodeId = connectionId ? topologyResolver.getNodeId(connectionId) : undefined;
-            const orchJob = nodeId ? orchestratorGetJob(nodeId) : undefined;
-            const isOrchestratorActive = orchJob && orchJob.status !== 'done' && orchJob.status !== 'failed' && orchJob.status !== 'cancelled';
-            const isManualReconnecting = !!isOrchestratorActive;
-            const showReconnectProgress = !!isOrchestratorActive;
-
-            const tabIndex = tabs.indexOf(tab);
+          {tabs.map((tab, tabIndex) => {
             const isBeingDragged = dragState?.tabId === tab.id;
             const currentDropTarget = dropTargetIndex.current;
             const showDropIndicator = isActuallyDragging && currentDropTarget === tabIndex && dragState?.fromIndex !== tabIndex;
 
             return (
-              // 每个 Tab 必须 flex-shrink-0，防止被挤压
-              <ContextMenu key={tab.id}>
-              <ContextMenuTrigger asChild>
-              <div
-                ref={(el) => {
-                  if (el) tabRefsMap.current.set(tab.id, el);
-                  else tabRefsMap.current.delete(tab.id);
-                }}
-                onPointerDown={(e) => handlePointerDown(e, tab.id, tabIndex)}
+              <TabItem
+                key={tab.id}
+                tab={tab}
+                tabIndex={tabIndex}
+                isActive={tab.id === activeTabId}
+                isBeingDragged={!!isBeingDragged}
+                isActuallyDragging={isActuallyDragging}
+                showDropIndicator={!!showDropIndicator}
+                closing={closing}
+                tabCount={tabs.length}
+                tabRefsMap={tabRefsMap}
+                onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerCancel={handlePointerCancel}
-                onMouseDown={(e) => {
-                  if (e.button === 1) {
-                    e.preventDefault();
-                    handleCloseTab(e, tab.id, tab.sessionId, tab.type);
-                  }
-                }}
-                onClick={() => {
-                  if (!isActuallyDragging) setActiveTab(tab.id);
-                }}
-                className={cn(
-                  "flex-shrink-0 group flex items-center gap-2 px-3 h-full min-w-[120px] max-w-[240px] border-r border-theme-border cursor-pointer select-none text-sm transition-colors",
-                  isActive
-                    ? "bg-theme-bg-panel text-theme-text border-t-2 border-t-theme-accent"
-                    : "bg-theme-bg text-theme-text-muted hover:bg-theme-bg-hover border-t-2 border-t-transparent",
-                  showReconnectProgress && "border-t-amber-500",
-                  isBeingDragged && isActuallyDragging && "opacity-50",
-                  showDropIndicator && "border-l-2 border-l-theme-accent"
-                )}
-                style={isBeingDragged && isActuallyDragging ? { cursor: 'grabbing' } : undefined}
-              >
-                {tab.type === 'plugin' && tab.icon ? <PluginTabIcon iconName={tab.icon} /> : <TabIcon type={tab.type} />}
-                {tab.type === 'terminal' && connectionState && (
-                  <ConnectionDot state={typeof connectionState === 'string' ? connectionState : 'error'} />
-                )}
-                <span className="truncate flex-1">{getTabTitle(tab, sessions, t)}</span>
-
-                {/* Reconnect progress indicator with hover timeline */}
-                {showReconnectProgress && orchJob && nodeId && (
-                  <ReconnectIndicator
-                    job={orchJob}
-                    nodeId={nodeId}
-                    onCancel={handleCancelReconnect}
-                    t={t}
-                  />
-                )}
-
-                {/* Normal tab controls */}
-                {!showReconnectProgress && (
-                  <div className="flex items-center gap-0.5">
-                    {/* Refresh button for terminal tabs */}
-                    {tab.type === 'terminal' && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={(e) => tab.sessionId && handleReconnect(e, tab.sessionId)}
-                            disabled={isManualReconnecting}
-                            className={cn(
-                              "opacity-0 group-hover:opacity-100 hover:bg-theme-bg-hover rounded p-0.5 transition-opacity",
-                              isActive && "opacity-100",
-                              isManualReconnecting && "opacity-100"
-                            )}
-                          >
-                            <RefreshCw className={cn("h-3 w-3", isManualReconnecting && "animate-spin")} />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">{t('tabbar.reconnect')}</TooltipContent>
-                      </Tooltip>
-                    )}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={(e) => handleCloseTab(e, tab.id, tab.sessionId, tab.type)}
-                          disabled={tab.sessionId ? closing === tab.sessionId : false}
-                          className={cn(
-                            "opacity-0 group-hover:opacity-100 hover:bg-theme-bg-hover rounded p-0.5 transition-opacity",
-                            isActive && "opacity-100",
-                            (tab.sessionId && closing === tab.sessionId) && "opacity-100"
-                          )}
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">{t('tabbar.close_tab')}</TooltipContent>
-                    </Tooltip>
-                  </div>
-                )}
-              </div>
-              </ContextMenuTrigger>
-              <ContextMenuContent>
-                <ContextMenuItem onSelect={() => {
-                  const title = getTabTitle(tab, sessions, t);
-                  navigator.clipboard.writeText(title);
-                }}>
-                  <Copy className="h-3.5 w-3.5 mr-2" />
-                  {t('tabbar.copy_title')}
-                </ContextMenuItem>
-                {/* Send to Background — only for local terminal tabs */}
-                {tab.type === 'local_terminal' && tab.sessionId && (
-                  <>
-                    <ContextMenuSeparator />
-                    <ContextMenuItem onSelect={() => handleDetachTab(tab.id, tab.sessionId!)}>
-                      <CirclePause className="h-3.5 w-3.5 mr-2" />
-                      {t('tabbar.send_to_background')}
-                    </ContextMenuItem>
-                  </>
-                )}
-                <ContextMenuSeparator />
-                <ContextMenuItem onSelect={() => handleCloseTab(null, tab.id, tab.sessionId, tab.type)}>
-                  {t('tabbar.close_tab')}
-                </ContextMenuItem>
-                <ContextMenuItem
-                  onSelect={() => handleCloseOtherTabs(tab.id)}
-                  disabled={tabs.length <= 1}
-                >
-                  {t('tabbar.close_other_tabs')}
-                </ContextMenuItem>
-                <ContextMenuItem
-                  onSelect={() => handleCloseTabsToRight(tabIndex)}
-                  disabled={tabIndex >= tabs.length - 1}
-                >
-                  {t('tabbar.close_tabs_to_right')}
-                </ContextMenuItem>
-                <ContextMenuSeparator />
-                <ContextMenuItem onSelect={() => handleCloseAllTabs()}>
-                  {t('tabbar.close_all_tabs')}
-                </ContextMenuItem>
-              </ContextMenuContent>
-              </ContextMenu>
+                onCloseTab={handleCloseTab}
+                onReconnect={handleReconnect}
+                onCancelReconnect={handleCancelReconnect}
+                onCloseOtherTabs={handleCloseOtherTabs}
+                onCloseTabsToRight={handleCloseTabsToRight}
+                onCloseAllTabs={handleCloseAllTabs}
+                onDetachTab={handleDetachTab}
+                onSetActiveTab={setActiveTab}
+              />
             );
           })}
         </div>

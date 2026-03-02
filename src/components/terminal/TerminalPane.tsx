@@ -23,7 +23,7 @@ interface TerminalPaneProps {
  * - Passes paneId/tabId for Registry registration
  * - Handles focus callbacks
  */
-export const TerminalPane: React.FC<TerminalPaneProps> = ({
+export const TerminalPane = React.memo<TerminalPaneProps>(({
   pane,
   tabId,
   isActive,
@@ -120,6 +120,8 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({
       )}
     </div>
   );
-};
+});
+
+TerminalPane.displayName = 'TerminalPane';
 
 export default TerminalPane;

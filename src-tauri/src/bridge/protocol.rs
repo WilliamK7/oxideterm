@@ -74,34 +74,38 @@ pub enum Frame {
 impl Frame {
     /// Encode frame into bytes
     pub fn encode(&self) -> Bytes {
-        let mut buf = BytesMut::new();
-
         match self {
             Frame::Data(data) => {
+                let mut buf = BytesMut::with_capacity(HEADER_SIZE + data.len());
                 buf.put_u8(MessageType::Data.as_byte());
                 buf.put_u32(data.len() as u32);
                 buf.extend_from_slice(data);
+                buf.freeze()
             }
             Frame::Resize { cols, rows } => {
+                let mut buf = BytesMut::with_capacity(HEADER_SIZE + 4);
                 buf.put_u8(MessageType::Resize.as_byte());
                 buf.put_u32(4); // 2 bytes cols + 2 bytes rows
                 buf.put_u16(*cols);
                 buf.put_u16(*rows);
+                buf.freeze()
             }
             Frame::Heartbeat(seq) => {
+                let mut buf = BytesMut::with_capacity(HEADER_SIZE + 4);
                 buf.put_u8(MessageType::Heartbeat.as_byte());
                 buf.put_u32(4); // 4 bytes sequence number
                 buf.put_u32(*seq);
+                buf.freeze()
             }
             Frame::Error(msg) => {
                 let msg_bytes = msg.as_bytes();
+                let mut buf = BytesMut::with_capacity(HEADER_SIZE + msg_bytes.len());
                 buf.put_u8(MessageType::Error.as_byte());
                 buf.put_u32(msg_bytes.len() as u32);
                 buf.extend_from_slice(msg_bytes);
+                buf.freeze()
             }
         }
-
-        buf.freeze()
     }
 
     /// Try to decode a frame from bytes

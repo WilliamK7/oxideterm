@@ -32,7 +32,7 @@ impl NodeEventSequencer {
         self.counters
             .entry(node_id.to_string())
             .or_insert_with(|| AtomicU64::new(0))
-            .fetch_add(1, Ordering::SeqCst)
+            .fetch_add(1, Ordering::Relaxed)
             + 1 // 从 1 开始，0 保留给"未初始化"
     }
 
@@ -43,7 +43,7 @@ impl NodeEventSequencer {
     pub fn current(&self, node_id: &str) -> u64 {
         self.counters
             .get(node_id)
-            .map(|c| c.load(Ordering::SeqCst))
+            .map(|c| c.load(Ordering::Acquire))
             .unwrap_or(0)
     }
 

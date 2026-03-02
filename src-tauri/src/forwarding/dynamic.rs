@@ -123,7 +123,7 @@ impl DynamicForwardHandle {
     /// Stop the SOCKS5 proxy and wait for active connections to close
     pub async fn stop(&self) {
         info!("Stopping SOCKS5 proxy on {}", self.bound_addr);
-        self.running.store(false, Ordering::SeqCst);
+        self.running.store(false, Ordering::Release);
         let _ = self.stop_tx.send(()).await;
 
         // 等待所有活跃连接关闭（最多等待 5 秒）
@@ -144,7 +144,7 @@ impl DynamicForwardHandle {
 
     /// Check if the proxy is still running
     pub fn is_running(&self) -> bool {
-        self.running.load(Ordering::SeqCst)
+        self.running.load(Ordering::Acquire)
     }
 
     /// Get current stats
@@ -245,7 +245,7 @@ pub async fn start_dynamic_forward_with_disconnect(
                 accept_result = listener.accept() => {
                     match accept_result {
                         Ok((stream, peer_addr)) => {
-                            if !running_clone.load(Ordering::SeqCst) {
+                            if !running_clone.load(Ordering::Acquire) {
                                 break ExitReason::StopRequested;
                             }
 
@@ -295,7 +295,7 @@ pub async fn start_dynamic_forward_with_disconnect(
             }
         };
 
-        running_clone.store(false, Ordering::SeqCst);
+        running_clone.store(false, Ordering::Release);
 
         // Signal all child tasks to shutdown
         // Ignore error if no receivers (all connections already closed)

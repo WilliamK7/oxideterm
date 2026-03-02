@@ -38,7 +38,7 @@ function App() {
   // Shell launcher state
   const [shellLauncherOpen, setShellLauncherOpen] = useState(false);
   const { createTerminal, loadShells, shellsLoaded } = useLocalTerminalStore();
-  const { createTab, activeTabId, tabs, closeTab } = useAppStore();
+  const createTab = useAppStore(s => s.createTab);
   
   // Command palette state
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -49,12 +49,12 @@ function App() {
   // Font size HUD
   const { showFontSize, FontSizeHUD } = useFontSizeHUD();
 
-  // Determine if a terminal is currently active
-  const isTerminalActive = useMemo(() => {
-    if (!activeTabId) return false;
-    const activeTab = tabs.find(t => t.id === activeTabId);
-    return activeTab?.type === 'terminal' || activeTab?.type === 'local_terminal';
-  }, [activeTabId, tabs]);
+  // Determine if a terminal is currently active (inline selector avoids subscribing to full tabs array)
+  const isTerminalActive = useAppStore(s => {
+    if (!s.activeTabId) return false;
+    const tab = s.tabs.find(t => t.id === s.activeTabId);
+    return tab?.type === 'terminal' || tab?.type === 'local_terminal';
+  });
 
   // Load shells on mount
   useEffect(() => {
@@ -185,7 +185,10 @@ function App() {
       key: 'w',
       ctrl: true,
       shift: false,
-      action: () => { if (activeTabId) closeTab(activeTabId); },
+      action: () => {
+        const id = useAppStore.getState().activeTabId;
+        if (id) useAppStore.getState().closeTab(id);
+      },
       description: 'Close current tab',
       terminalBehavior: 'always' as const,
     },
@@ -201,7 +204,7 @@ function App() {
       key: ',',
       ctrl: true,
       shift: false,
-      action: () => createTab('settings'),
+      action: () => useAppStore.getState().createTab('settings'),
       description: 'Open settings',
       terminalBehavior: 'always' as const,
     },
@@ -274,7 +277,7 @@ function App() {
       description: 'Show keyboard shortcuts',
       terminalBehavior: 'always' as const,
     },
-  ], [handleCreateLocalTerminal, activeTabId, closeTab, createTab]);
+  ], [handleCreateLocalTerminal]);
 
   // Use unified keyboard manager for app shortcuts
   // Context: terminal is active, no panels open at app level

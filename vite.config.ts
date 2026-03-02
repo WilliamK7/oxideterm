@@ -28,6 +28,8 @@ export default defineConfig(async () => {
             '@xterm/addon-fit',
             '@xterm/addon-search',
             '@xterm/addon-web-links',
+            '@xterm/addon-image',
+            '@xterm/addon-unicode11',
           ],
           // React core
           'vendor': ['react', 'react-dom', 'zustand'],

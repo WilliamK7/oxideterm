@@ -82,8 +82,8 @@ pub struct TransferPermit {
 impl Drop for TransferPermit {
     fn drop(&mut self) {
         let result = self.active_count.fetch_update(
-            Ordering::SeqCst,
-            Ordering::SeqCst,
+            Ordering::AcqRel,
+            Ordering::Acquire,
             |n| n.checked_sub(1),
         );
         match result {
@@ -157,14 +157,14 @@ impl TransferManager {
     /// Update the maximum concurrent transfer limit
     pub fn set_max_concurrent(&self, max: usize) {
         let clamped = max.clamp(1, MAX_POSSIBLE_CONCURRENT);
-        self.max_concurrent.store(clamped, Ordering::SeqCst);
+        self.max_concurrent.store(clamped, Ordering::Release);
         info!("Max concurrent transfers set to: {}", clamped);
     }
 
     /// Update the speed limit (in KB/s, 0 = unlimited)
     pub fn set_speed_limit_kbps(&self, kbps: usize) {
         let bps = kbps * 1024;
-        self.speed_limit_bps.store(bps, Ordering::SeqCst);
+        self.speed_limit_bps.store(bps, Ordering::Release);
         if kbps > 0 {
             info!("Speed limit set to: {} KB/s", kbps);
         } else {
@@ -174,7 +174,7 @@ impl TransferManager {
 
     /// Get current speed limit in bytes per second (0 = unlimited)
     pub fn get_speed_limit_bps(&self) -> usize {
-        self.speed_limit_bps.load(Ordering::SeqCst)
+        self.speed_limit_bps.load(Ordering::Acquire)
     }
 
     /// Get a shared reference to the speed limit atomic for passing to transfer loops
@@ -218,7 +218,7 @@ impl TransferManager {
         // Wait until we're below the configured limit
         loop {
             let current = self.active_count.load(Ordering::Acquire);
-            let max = self.max_concurrent.load(Ordering::SeqCst);
+            let max = self.max_concurrent.load(Ordering::Acquire);
             if current < max {
                 break;
             }
@@ -235,11 +235,11 @@ impl TransferManager {
                 // This should never happen as we own the semaphore and never close it
                 panic!("TransferManager semaphore was unexpectedly closed - this is a bug")
             });
-        let new_count = self.active_count.fetch_add(1, Ordering::SeqCst) + 1;
+        let new_count = self.active_count.fetch_add(1, Ordering::AcqRel) + 1;
         debug!(
             "Acquired transfer permit, active count: {}/{}",
             new_count,
-            self.max_concurrent.load(Ordering::SeqCst)
+            self.max_concurrent.load(Ordering::Relaxed)
         );
         TransferPermit {
             _permit: permit,
@@ -254,7 +254,7 @@ impl TransferManager {
 
     /// Get maximum concurrent transfers
     pub fn max_concurrent(&self) -> usize {
-        self.max_concurrent.load(Ordering::SeqCst)
+        self.max_concurrent.load(Ordering::Acquire)
     }
 
     /// Get the number of currently registered (tracked) transfers
@@ -310,8 +310,8 @@ impl TransferManager {
     /// Decrement active count (called when transfer completes)
     pub fn on_transfer_complete(&self) {
         let result = self.active_count.fetch_update(
-            Ordering::SeqCst,
-            Ordering::SeqCst,
+            Ordering::AcqRel,
+            Ordering::Acquire,
             |n| n.checked_sub(1),
         );
         match result {

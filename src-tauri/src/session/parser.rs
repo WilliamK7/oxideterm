@@ -97,11 +97,12 @@ pub fn parse_terminal_output(data: &[u8]) -> Vec<TerminalLine> {
     // Get completed lines
     let lines = performer.finish();
 
-    // Convert to TerminalLine structs
+    // Convert to TerminalLine structs — share a single timestamp for the whole batch
+    let now = chrono::Utc::now().timestamp_millis() as u64;
     lines
         .into_iter()
         .filter(|line| !line.is_empty()) // Filter out empty lines
-        .map(TerminalLine::new)
+        .map(|line| TerminalLine::with_timestamp(line, now))
         .collect()
 }
 
@@ -113,11 +114,12 @@ pub fn parse_terminal_output_simple(data: &[u8]) -> Vec<TerminalLine> {
     // Strip ANSI escape codes
     let stripped = strip_ansi_escapes::strip_str(&text);
 
-    // Split into lines
+    // Split into lines — share a single timestamp for the whole batch
+    let now = chrono::Utc::now().timestamp_millis() as u64;
     stripped
         .lines()
         .filter(|line| !line.is_empty())
-        .map(|line| TerminalLine::new(line.to_string()))
+        .map(|line| TerminalLine::with_timestamp(line.to_string(), now))
         .collect()
 }
 

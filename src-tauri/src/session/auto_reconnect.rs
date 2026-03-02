@@ -70,7 +70,7 @@ impl AutoReconnectService {
 
     /// Set network status (只记录状态，不触发任何操作)
     pub fn set_network_status(&self, online: bool) {
-        self.network_online.store(online, Ordering::SeqCst);
+        self.network_online.store(online, Ordering::Release);
         info!(
             "Network status updated: online={} (no action taken - service neutralized)",
             online
@@ -79,7 +79,7 @@ impl AutoReconnectService {
 
     /// Check if network is online
     pub fn is_network_online(&self) -> bool {
-        self.network_online.load(Ordering::SeqCst)
+        self.network_online.load(Ordering::Acquire)
     }
 
     // 🛑 已移除: trigger_reconnect

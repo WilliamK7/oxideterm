@@ -284,7 +284,7 @@ pub struct ConnectionEntry {
 impl ConnectionEntry {
     /// 增加引用计数
     pub fn add_ref(&self) -> u32 {
-        let current = self.ref_count.load(Ordering::SeqCst);
+        let current = self.ref_count.load(Ordering::Acquire);
         // 防止溢出
         if current >= u32::MAX - 1 {
             warn!(
@@ -295,7 +295,7 @@ impl ConnectionEntry {
         }
         let count = self
             .ref_count
-            .fetch_add(1, Ordering::SeqCst)
+            .fetch_add(1, Ordering::AcqRel)
             .saturating_add(1);
         debug!("Connection {} ref count increased to {}", self.id, count);
         self.update_activity();
@@ -304,7 +304,7 @@ impl ConnectionEntry {
 
     /// 减少引用计数
     pub fn release(&self) -> u32 {
-        let current = self.ref_count.load(Ordering::SeqCst);
+        let current = self.ref_count.load(Ordering::Acquire);
         // 防止下溢
         if current == 0 {
             warn!(
@@ -313,7 +313,7 @@ impl ConnectionEntry {
             );
             return 0;
         }
-        let prev = self.ref_count.fetch_sub(1, Ordering::SeqCst);
+        let prev = self.ref_count.fetch_sub(1, Ordering::AcqRel);
         let count = prev.saturating_sub(1);
         debug!("Connection {} ref count decreased to {}", self.id, count);
         self.update_activity();
@@ -322,18 +322,18 @@ impl ConnectionEntry {
 
     /// 获取当前引用计数
     pub fn ref_count(&self) -> u32 {
-        self.ref_count.load(Ordering::SeqCst)
+        self.ref_count.load(Ordering::Acquire)
     }
 
     /// 更新活动时间
     pub fn update_activity(&self) {
         let now = Utc::now().timestamp() as u64;
-        self.last_active.store(now, Ordering::SeqCst);
+        self.last_active.store(now, Ordering::Release);
     }
 
     /// 获取最后活动时间
     pub fn last_active(&self) -> i64 {
-        self.last_active.load(Ordering::SeqCst) as i64
+        self.last_active.load(Ordering::Acquire) as i64
     }
 
     /// 获取连接状态
@@ -570,17 +570,17 @@ impl ConnectionEntry {
 
     /// 重置心跳失败计数
     pub fn reset_heartbeat_failures(&self) {
-        self.heartbeat_failures.store(0, Ordering::SeqCst);
+        self.heartbeat_failures.store(0, Ordering::Relaxed);
     }
 
     /// 增加心跳失败计数并返回新值
     pub fn increment_heartbeat_failures(&self) -> u32 {
-        self.heartbeat_failures.fetch_add(1, Ordering::SeqCst) + 1
+        self.heartbeat_failures.fetch_add(1, Ordering::Relaxed) + 1
     }
 
     /// 获取心跳失败计数
     pub fn heartbeat_failures(&self) -> u32 {
-        self.heartbeat_failures.load(Ordering::SeqCst)
+        self.heartbeat_failures.load(Ordering::Relaxed)
     }
 
     /// 取消心跳任务
@@ -608,8 +608,8 @@ impl ConnectionEntry {
             handle.abort();
             debug!("Connection {} reconnect task cancelled", self.id);
         }
-        self.is_reconnecting.store(false, Ordering::SeqCst);
-        self.reconnect_attempts.store(0, Ordering::SeqCst);
+        self.reconnect_attempts.store(0, Ordering::Relaxed);
+        self.is_reconnecting.store(false, Ordering::Release);
     }
 
     /// 设置重连任务句柄
@@ -619,38 +619,38 @@ impl ConnectionEntry {
             old_handle.abort();
         }
         *task = Some(handle);
-        self.is_reconnecting.store(true, Ordering::SeqCst);
+        self.is_reconnecting.store(true, Ordering::Release);
     }
 
     /// 检查是否正在重连
     pub fn is_reconnecting(&self) -> bool {
-        self.is_reconnecting.load(Ordering::SeqCst)
+        self.is_reconnecting.load(Ordering::Acquire)
     }
 
     /// 增加重连尝试次数并返回新值
     pub fn increment_reconnect_attempts(&self) -> u32 {
-        self.reconnect_attempts.fetch_add(1, Ordering::SeqCst) + 1
+        self.reconnect_attempts.fetch_add(1, Ordering::Relaxed) + 1
     }
 
     /// 获取重连尝试次数
     pub fn reconnect_attempts(&self) -> u32 {
-        self.reconnect_attempts.load(Ordering::SeqCst)
+        self.reconnect_attempts.load(Ordering::Relaxed)
     }
 
     /// 重置重连状态
     pub fn reset_reconnect_state(&self) {
-        self.is_reconnecting.store(false, Ordering::SeqCst);
-        self.reconnect_attempts.store(0, Ordering::SeqCst);
+        self.reconnect_attempts.store(0, Ordering::Relaxed);
+        self.is_reconnecting.store(false, Ordering::Release);
     }
 
     /// 生成新的重连尝试 ID 并返回
     pub fn new_attempt_id(&self) -> u64 {
-        self.current_attempt_id.fetch_add(1, Ordering::SeqCst) + 1
+        self.current_attempt_id.fetch_add(1, Ordering::Relaxed) + 1
     }
 
     /// 获取当前重连尝试 ID
     pub fn current_attempt_id(&self) -> u64 {
-        self.current_attempt_id.load(Ordering::SeqCst)
+        self.current_attempt_id.load(Ordering::Relaxed)
     }
 }
 
@@ -807,8 +807,14 @@ impl SshConnectionRegistry {
         let mut total_forwards = 0;
         let mut total_ref_count: u32 = 0;
 
-        for entry in self.connections.iter() {
-            let conn = entry.value();
+        // Collect entries first to release DashMap shard locks before awaiting
+        let entries: Vec<Arc<ConnectionEntry>> = self
+            .connections
+            .iter()
+            .map(|e| e.value().clone())
+            .collect();
+
+        for conn in &entries {
             let state = conn.state().await;
 
             match state {
@@ -1386,7 +1392,7 @@ impl SshConnectionRegistry {
 
         // 空闲时间评估：最近活动的更好
         let now = Utc::now().timestamp() as u64;
-        let last_active = conn.last_active.load(Ordering::SeqCst);
+        let last_active = conn.last_active.load(Ordering::Acquire);
         let idle_secs = now.saturating_sub(last_active);
         if idle_secs > 300 {
             // 空闲超过 5 分钟

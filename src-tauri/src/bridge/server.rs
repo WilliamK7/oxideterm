@@ -223,16 +223,16 @@ impl ConnectionState {
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap_or_default()
                 .as_millis() as u64,
-            Ordering::SeqCst,
+            Ordering::Release,
         );
     }
 
     fn next_seq(&self) -> u32 {
-        self.heartbeat_seq.fetch_add(1, Ordering::SeqCst)
+        self.heartbeat_seq.fetch_add(1, Ordering::Relaxed)
     }
 
     fn last_seen_millis(&self) -> u64 {
-        self.last_seen.load(Ordering::SeqCst)
+        self.last_seen.load(Ordering::Acquire)
     }
 }
 
@@ -1067,6 +1067,7 @@ impl WsBridge {
         let (frame_tx, mut frame_rx) = mpsc::channel::<Bytes>(FRAME_CHANNEL_CAPACITY);
         let frame_tx_ssh = frame_tx.clone();
         let frame_tx_hb = frame_tx.clone();
+        let buffer_clone = scroll_buffer.clone();
 
         let sid_in = id.clone();
         let sid_out = id.clone();
@@ -1104,6 +1105,12 @@ impl WsBridge {
         let mut ssh_out_task = tokio::spawn(async move {
             while let Ok(data) = stdout_rx.recv().await {
                 state_out.touch();
+
+                // Write to scroll buffer (aligned with V1)
+                let lines = parse_terminal_output(&data);
+                if !lines.is_empty() {
+                    buffer_clone.append_batch(lines).await;
+                }
 
                 // Forward to WebSocket
                 let frame = data_frame(Bytes::from(data)).encode();
@@ -1342,6 +1349,7 @@ impl WsBridge {
         let (frame_tx, mut frame_rx) = mpsc::channel::<Bytes>(FRAME_CHANNEL_CAPACITY);
         let frame_tx_ssh = frame_tx.clone();
         let frame_tx_hb = frame_tx.clone();
+        let buffer_clone = scroll_buffer.clone();
 
         let sid_in = id.clone();
         let sid_out = id.clone();
@@ -1373,6 +1381,12 @@ impl WsBridge {
         let mut ssh_out_task = tokio::spawn(async move {
             while let Ok(data) = stdout_rx.recv().await {
                 state_out.touch();
+
+                // Write to scroll buffer (aligned with V1)
+                let lines = parse_terminal_output(&data);
+                if !lines.is_empty() {
+                    buffer_clone.append_batch(lines).await;
+                }
 
                 // Forward to WebSocket
                 let frame = data_frame(Bytes::from(data)).encode();

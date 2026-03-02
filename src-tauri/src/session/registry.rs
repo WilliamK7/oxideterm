@@ -80,12 +80,12 @@ impl SessionRegistry {
 
     /// Set maximum concurrent sessions
     pub fn set_max_sessions(&self, max: usize) {
-        self.max_sessions.store(max, Ordering::SeqCst);
+        self.max_sessions.store(max, Ordering::Release);
     }
 
     /// Get maximum concurrent sessions
     pub fn max_sessions(&self) -> usize {
-        self.max_sessions.load(Ordering::SeqCst)
+        self.max_sessions.load(Ordering::Acquire)
     }
 
     /// Create a new session (in Disconnected state)
@@ -107,7 +107,7 @@ impl SessionRegistry {
 
         // Generate session ID
         let session_id = uuid::Uuid::new_v4().to_string();
-        let order = self.order_counter.fetch_add(1, Ordering::SeqCst);
+        let order = self.order_counter.fetch_add(1, Ordering::Relaxed);
 
         info!(
             "Creating session {}: {}@{}:{} (order: {})",
@@ -142,7 +142,7 @@ impl SessionRegistry {
 
         // Generate session ID
         let session_id = uuid::Uuid::new_v4().to_string();
-        let order = self.order_counter.fetch_add(1, Ordering::SeqCst);
+        let order = self.order_counter.fetch_add(1, Ordering::Relaxed);
 
         info!(
             "Creating session {}: {}@{}:{} (order: {}, buffer: {} lines)",
@@ -547,12 +547,12 @@ impl SessionRegistry {
 
     /// Get count of active sessions (connecting or connected) - O(1)
     pub fn active_count(&self) -> usize {
-        self.active_count.load(Ordering::SeqCst)
+        self.active_count.load(Ordering::Acquire)
     }
 
     /// Increment active session count
     fn increment_active(&self) {
-        self.active_count.fetch_add(1, Ordering::SeqCst);
+        self.active_count.fetch_add(1, Ordering::AcqRel);
     }
 
     /// Decrement active session count
@@ -560,7 +560,7 @@ impl SessionRegistry {
         // Use saturating_sub behavior to prevent underflow
         let prev = self
             .active_count
-            .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |x| {
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |x| {
                 Some(x.saturating_sub(1))
             });
         if let Ok(0) = prev {

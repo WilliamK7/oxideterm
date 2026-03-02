@@ -149,7 +149,7 @@ impl LocalTerminalSession {
         let writer = pty.clone_writer();
 
         self.pty = Some(pty);
-        self.running.store(true, Ordering::SeqCst);
+        self.running.store(true, Ordering::Release);
 
         // Create input channel for writing to PTY
         let (input_tx, mut input_rx) = mpsc::channel::<Vec<u8>>(256);
@@ -159,7 +159,7 @@ impl LocalTerminalSession {
         let running_write = self.running.clone();
         let writer_clone = writer.clone();
         tokio::spawn(async move {
-            while running_write.load(Ordering::SeqCst) {
+            while running_write.load(Ordering::Acquire) {
                 match input_rx.recv().await {
                     Some(data) => {
                         if let Ok(mut w) = writer_clone.lock() {
@@ -194,7 +194,7 @@ impl LocalTerminalSession {
             let mut remainder: Vec<u8> = Vec::new(); // UTF-8 remainder buffer
 
             loop {
-                if !running_read.load(Ordering::SeqCst) {
+                if !running_read.load(Ordering::Acquire) {
                     tracing::debug!("Read pump: session stopped");
                     break;
                 }
@@ -271,7 +271,7 @@ impl LocalTerminalSession {
             }
 
             // Notify session closed
-            running_read.store(false, Ordering::SeqCst);
+            running_read.store(false, Ordering::Release);
             let _ = rt.block_on(event_tx.send(SessionEvent::Closed(None)));
             tracing::info!("Local terminal session {} read pump exited", session_id);
         });
@@ -288,7 +288,7 @@ impl LocalTerminalSession {
 
     /// Write data to the session (input from frontend)
     pub async fn write(&self, data: &[u8]) -> Result<(), SessionError> {
-        if !self.running.load(Ordering::SeqCst) {
+        if !self.running.load(Ordering::Acquire) {
             return Err(SessionError::AlreadyClosed);
         }
 
@@ -313,7 +313,7 @@ impl LocalTerminalSession {
 
     /// Check if the session is running
     pub fn is_running(&self) -> bool {
-        self.running.load(Ordering::SeqCst)
+        self.running.load(Ordering::Acquire)
     }
 
     /// Get session info for serialization
@@ -330,12 +330,12 @@ impl LocalTerminalSession {
 
     /// Check if session is currently detached (background)
     pub fn is_detached(&self) -> bool {
-        self.detached.load(Ordering::SeqCst)
+        self.detached.load(Ordering::Acquire)
     }
 
     /// Mark session as detached (sent to background)
     pub fn detach(&self) {
-        self.detached.store(true, Ordering::SeqCst);
+        self.detached.store(true, Ordering::Release);
         if let Ok(mut ts) = self.detached_at.lock() {
             *ts = Some(std::time::Instant::now());
         }
@@ -344,7 +344,7 @@ impl LocalTerminalSession {
 
     /// Mark session as attached (brought back to foreground)
     pub fn attach(&self) {
-        self.detached.store(false, Ordering::SeqCst);
+        self.detached.store(false, Ordering::Release);
         if let Ok(mut ts) = self.detached_at.lock() {
             *ts = None;
         }
@@ -384,7 +384,7 @@ impl LocalTerminalSession {
     /// Close the session
     pub fn close(&mut self) {
         tracing::info!("Closing local terminal session {}", self.id);
-        self.running.store(false, Ordering::SeqCst);
+        self.running.store(false, Ordering::Release);
 
         // Cancel any detach TTL timer
         if let Ok(mut cancel) = self.detach_cancel.lock() {

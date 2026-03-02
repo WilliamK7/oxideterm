@@ -342,7 +342,7 @@ interface SessionNodeProps {
   renderNode: (node: UnifiedFlatNode) => React.ReactNode;
 }
 
-const SessionNode: React.FC<SessionNodeProps> = ({
+const SessionNode = React.memo<SessionNodeProps>(({
   node,
   isSelected,
   activeTerminalId,
@@ -742,7 +742,9 @@ const SessionNode: React.FC<SessionNodeProps> = ({
       {renderSubItems()}
     </div>
   );
-};
+});
+
+SessionNode.displayName = 'SessionNode';
 
 // ============================================================================
 // Main Session Tree Component

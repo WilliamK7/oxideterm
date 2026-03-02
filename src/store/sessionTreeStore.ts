@@ -2085,18 +2085,28 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
       // 从 settingsStore 获取 expandedIds
       const expandedIds = get().getExpandedIds();
       
+      // Pre-build lookup maps for O(1) access (avoids O(n) find per node)
+      const nodeById = new Map<string, FlatNode>(rawNodes.map(n => [n.id, n]));
+      const childrenByParent = new Map<string | null, FlatNode[]>();
+      for (const n of rawNodes) {
+        const pid = n.parentId ?? null;
+        let arr = childrenByParent.get(pid);
+        if (!arr) { arr = []; childrenByParent.set(pid, arr); }
+        arr.push(n);
+      }
+
       // 构建 lineGuides (连接线指示)
-      const buildLineGuides = (node: FlatNode, allNodes: FlatNode[]): boolean[] => {
+      const buildLineGuides = (node: FlatNode): boolean[] => {
         const guides: boolean[] = [];
         let current = node;
         
         // 从当前节点向上遍历，确定每一层是否需要显示连接线
         while (current.parentId) {
-          const parent = allNodes.find(n => n.id === current.parentId);
+          const parent = nodeById.get(current.parentId);
           if (!parent) break;
           
           // 检查父节点是否还有更多子节点
-          const siblings = allNodes.filter(n => n.parentId === parent.id);
+          const siblings = childrenByParent.get(parent.id) || [];
           const currentIndex = siblings.findIndex(s => s.id === current.id);
           const hasMoreSiblings = currentIndex < siblings.length - 1;
           
@@ -2110,7 +2120,7 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
       // 创建统一节点
       const unifiedNodes: UnifiedFlatNode[] = rawNodes.map(node => {
         const isExpanded = expandedIds.has(node.id);
-        const lineGuides = buildLineGuides(node, rawNodes);
+        const lineGuides = buildLineGuides(node);
         
         // 获取该节点的所有终端
         const terminalIds = nodeTerminalMap.get(node.id) || 

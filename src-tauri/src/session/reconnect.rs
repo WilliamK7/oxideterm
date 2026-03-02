@@ -155,24 +155,24 @@ impl SessionReconnector {
 
     /// Get current attempt count
     pub fn attempt_count(&self) -> u32 {
-        self.attempt_count.load(Ordering::SeqCst)
+        self.attempt_count.load(Ordering::Relaxed)
     }
 
     /// Cancel ongoing reconnection
     pub fn cancel(&self) {
         info!("Cancelling reconnection for session {}", self.session_id);
-        self.cancelled.store(true, Ordering::SeqCst);
+        self.cancelled.store(true, Ordering::Release);
     }
 
     /// Check if reconnection is cancelled
     pub fn is_cancelled(&self) -> bool {
-        self.cancelled.load(Ordering::SeqCst)
+        self.cancelled.load(Ordering::Acquire)
     }
 
     /// Reset reconnector for reuse
     pub fn reset(&self) {
-        self.attempt_count.store(0, Ordering::SeqCst);
-        self.cancelled.store(false, Ordering::SeqCst);
+        self.attempt_count.store(0, Ordering::Relaxed);
+        self.cancelled.store(false, Ordering::Release);
         self.state.store(ReconnectState::Idle as u8, Ordering::Release);
     }
 
@@ -208,10 +208,11 @@ impl SessionReconnector {
             return Err(ReconnectError::Disabled);
         }
 
-        // Reset state
+        // Reset state — Relaxed stores must precede Release stores
+        // so the Release fence publishes all preceding writes
+        self.attempt_count.store(0, Ordering::Relaxed);
         self.state.store(ReconnectState::Idle as u8, Ordering::Release);
-        self.attempt_count.store(0, Ordering::SeqCst);
-        self.cancelled.store(false, Ordering::SeqCst);
+        self.cancelled.store(false, Ordering::Release);
 
         self.emit_event(ReconnectEvent::Starting {
             session_id: self.session_id.clone(),
@@ -264,7 +265,7 @@ impl SessionReconnector {
             }
 
             // Attempt connection
-            self.attempt_count.store(attempt, Ordering::SeqCst);
+            self.attempt_count.store(attempt, Ordering::Relaxed);
             self.state.store(ReconnectState::Attempting as u8, Ordering::Release);
 
             self.emit_event(ReconnectEvent::Attempting {

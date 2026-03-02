@@ -187,17 +187,17 @@ impl HealthTracker {
 
     /// Record a keepalive packet sent
     pub fn record_sent(&self) {
-        self.packets_sent.fetch_add(1, Ordering::SeqCst);
+        self.packets_sent.fetch_add(1, Ordering::Relaxed);
         debug!(
             "Health[{}]: keepalive sent (total: {})",
             self.session_id,
-            self.packets_sent.load(Ordering::SeqCst)
+            self.packets_sent.load(Ordering::Relaxed)
         );
     }
 
     /// Record a keepalive response received with latency
     pub async fn record_response(&self, latency_ms: u64) {
-        self.packets_received.fetch_add(1, Ordering::SeqCst);
+        self.packets_received.fetch_add(1, Ordering::Relaxed);
         let offset = Instant::now()
             .duration_since(self.connected_at)
             .as_millis() as u64;
@@ -219,12 +219,12 @@ impl HealthTracker {
 
     /// Mark tracker as inactive (connection closed)
     pub fn deactivate(&self) {
-        self.active.store(false, Ordering::SeqCst);
+        self.active.store(false, Ordering::Release);
     }
 
     /// Check if tracker is active
     pub fn is_active(&self) -> bool {
-        self.active.load(Ordering::SeqCst)
+        self.active.load(Ordering::Acquire)
     }
 
     /// Get current health metrics
@@ -232,8 +232,8 @@ impl HealthTracker {
         let last_response_offset = self.last_response_offset_ms.load(Ordering::Acquire);
         let samples = self.latency_samples.read().await;
 
-        let packets_sent = self.packets_sent.load(Ordering::SeqCst);
-        let packets_received = self.packets_received.load(Ordering::SeqCst);
+        let packets_sent = self.packets_sent.load(Ordering::Relaxed);
+        let packets_received = self.packets_received.load(Ordering::Relaxed);
 
         // Calculate packet loss
         let packet_loss_percent = if packets_sent > 0 {

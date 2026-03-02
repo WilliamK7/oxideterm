@@ -33,6 +33,8 @@ type CastPlayerModal = {
 type RecordingStoreState = {
   /** Active recordings keyed by sessionId */
   recordings: Map<string, RecordingEntry>;
+  /** Volatile timer data (elapsed, eventCount) — updated every 500ms without cloning recordings */
+  recordingTicks: Map<string, { elapsed: number; eventCount: number }>;
   /** Cast player modal state */
   playerModal: CastPlayerModal;
 };
@@ -79,6 +81,7 @@ export const useRecordingStore = create<RecordingStoreState & RecordingStoreActi
   (set, get) => ({
     // ── State ──────────────────────────────────────────────────────────────
     recordings: new Map(),
+    recordingTicks: new Map(),
     playerModal: { open: false, fileName: '', content: '' },
 
     // ── Recording lifecycle ────────────────────────────────────────────────
@@ -107,16 +110,15 @@ export const useRecordingStore = create<RecordingStoreState & RecordingStoreActi
         tickTimer: null,
       };
 
-      // Update elapsed + eventCount every 500ms
+      // Update elapsed + eventCount every 500ms (lightweight — only updates recordingTicks)
       entry.tickTimer = setInterval(() => {
         const rec = get().recordings.get(sessionId);
         if (!rec) return;
-        const updated = new Map(get().recordings);
-        const meta = { ...rec.meta };
-        meta.elapsed = rec.recorder.getElapsed();
-        meta.eventCount = rec.recorder.getEventCount();
-        updated.set(sessionId, { ...rec, meta });
-        set({ recordings: updated });
+        const elapsed = rec.recorder.getElapsed();
+        const eventCount = rec.recorder.getEventCount();
+        const updated = new Map(get().recordingTicks);
+        updated.set(sessionId, { elapsed, eventCount });
+        set({ recordingTicks: updated });
       }, 500);
 
       const updated = new Map(get().recordings);
@@ -153,7 +155,9 @@ export const useRecordingStore = create<RecordingStoreState & RecordingStoreActi
 
       const updated = new Map(get().recordings);
       updated.delete(sessionId);
-      set({ recordings: updated });
+      const ticks = new Map(get().recordingTicks);
+      ticks.delete(sessionId);
+      set({ recordings: updated, recordingTicks: ticks });
 
       return content;
     },
@@ -167,7 +171,9 @@ export const useRecordingStore = create<RecordingStoreState & RecordingStoreActi
 
       const updated = new Map(get().recordings);
       updated.delete(sessionId);
-      set({ recordings: updated });
+      const ticks = new Map(get().recordingTicks);
+      ticks.delete(sessionId);
+      set({ recordings: updated, recordingTicks: ticks });
     },
 
     getRecorder: (sessionId) => {
@@ -175,7 +181,14 @@ export const useRecordingStore = create<RecordingStoreState & RecordingStoreActi
     },
 
     getRecordingMeta: (sessionId) => {
-      return get().recordings.get(sessionId)?.meta ?? null;
+      const entry = get().recordings.get(sessionId);
+      if (!entry) return null;
+      // Merge volatile tick data into static meta
+      const tick = get().recordingTicks.get(sessionId);
+      if (tick) {
+        return { ...entry.meta, elapsed: tick.elapsed, eventCount: tick.eventCount };
+      }
+      return entry.meta;
     },
 
     isRecording: (sessionId) => {

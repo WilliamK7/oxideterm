@@ -221,7 +221,7 @@ impl RemoteForwardHandle {
             "Stopping remote port forward {}:{}",
             self.config.remote_addr, self.bound_port
         );
-        self.running.store(false, Ordering::SeqCst);
+        self.running.store(false, Ordering::Release);
 
         // Cancel the forward on the server via Handle Owner Task
         if let Err(e) = self
@@ -242,11 +242,11 @@ impl RemoteForwardHandle {
         // 等待活跃连接关闭（最多等待 5 秒）
         let start = std::time::Instant::now();
         let timeout = std::time::Duration::from_secs(5);
-        while self.stats.active_connections.load(Ordering::SeqCst) > 0 {
+        while self.stats.active_connections.load(Ordering::Acquire) > 0 {
             if start.elapsed() > timeout {
                 warn!(
                     "Timeout waiting for {} active connections to close on {}:{}",
-                    self.stats.active_connections.load(Ordering::SeqCst),
+                    self.stats.active_connections.load(Ordering::Acquire),
                     self.config.remote_addr,
                     self.bound_port
                 );
@@ -258,7 +258,7 @@ impl RemoteForwardHandle {
 
     /// Check if the forward is still running
     pub fn is_running(&self) -> bool {
-        self.running.load(Ordering::SeqCst)
+        self.running.load(Ordering::Acquire)
     }
 
     /// Get current stats
@@ -343,7 +343,7 @@ pub async fn start_remote_forward_with_disconnect(
                 ExitReason::SshDisconnected
             }
         };
-        running_clone.store(false, Ordering::SeqCst);
+        running_clone.store(false, Ordering::Release);
 
         // Unregister from registry on exit
         REMOTE_FORWARD_REGISTRY

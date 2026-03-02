@@ -200,6 +200,9 @@ const MAX_OPEN_TABS = 20;
 // Store
 // ═══════════════════════════════════════════════════════════════════════════
 
+// Module-level throttle map for updateTabCursor debouncing
+const _cursorThrottleTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
 export const useIdeStore = create<IdeState & IdeActions>()(
   subscribeWithSelector(
     persist(
@@ -591,13 +594,19 @@ export const useIdeStore = create<IdeState & IdeActions>()(
         },
 
         updateTabCursor: (tabId, line, col) => {
-          set(state => ({
-            tabs: state.tabs.map(t =>
-              t.id === tabId
-                ? { ...t, cursor: { line, col } }
-                : t
-            ),
-          }));
+          // Throttled: batch rapid cursor updates to reduce store churn
+          const key = tabId;
+          if (_cursorThrottleTimers.has(key)) clearTimeout(_cursorThrottleTimers.get(key));
+          _cursorThrottleTimers.set(key, setTimeout(() => {
+            _cursorThrottleTimers.delete(key);
+            set(state => ({
+              tabs: state.tabs.map(t =>
+                t.id === tabId
+                  ? { ...t, cursor: { line, col } }
+                  : t
+              ),
+            }));
+          }, 100));
         },
 
         togglePinTab: (tabId) => {
