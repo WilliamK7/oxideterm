@@ -1,14 +1,14 @@
 # Third-Party Notices (Frontend)
 
 This file lists third-party components used by the frontend (including transitive production dependencies) and their declared licenses.
-Generated: 2026-03-01T15:50:49.584Z
+Generated: 2026-03-02T10:37:17.868Z
 
 ## Summary
 - MIT: 220
 - ISC: 34
 - Apache-2.0: 18
 - BSD-3-Clause: 8
-- MIT OR Apache-2.0: 4
+- MIT OR Apache-2.0: 6
 - BSD-2-Clause: 4
 - MPL-2.0: 1
 - Apache-2.0 OR MIT: 1
@@ -123,7 +123,9 @@ Generated: 2026-03-01T15:50:49.584Z
 | @tauri-apps/plugin-dialog | 2.6.0 | MIT OR Apache-2.0 | https://github.com/tauri-apps/plugins-workspace#readme |
 | @tauri-apps/plugin-fs | 2.4.5 | MIT OR Apache-2.0 | https://github.com/tauri-apps/plugins-workspace#readme |
 | @tauri-apps/plugin-opener | 2.5.3 | MIT OR Apache-2.0 | https://github.com/tauri-apps/plugins-workspace#readme |
+| @tauri-apps/plugin-process | 2.3.1 | MIT OR Apache-2.0 | https://github.com/tauri-apps/plugins-workspace#readme |
 | @tauri-apps/plugin-shell | 2.3.4 | MIT OR Apache-2.0 | https://github.com/tauri-apps/plugins-workspace#readme |
+| @tauri-apps/plugin-updater | 2.10.0 | MIT OR Apache-2.0 | https://github.com/tauri-apps/plugins-workspace#readme |
 | @types/d3 | 7.4.3 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/d3 |
 | @types/d3-array | 3.2.2 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/d3-array |
 | @types/d3-axis | 3.0.6 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/d3-axis |
