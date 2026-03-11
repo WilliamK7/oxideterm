@@ -88,7 +88,14 @@
       "model_switched_warning": "모델 컨텍스트가 축소되었습니다. 현재 대화가 새 한도의 {{percentage}}%를 사용하고 있습니다.",
       "compact_button": "압축",
       "view_original": "원본 보기",
-      "compacted_messages": "{{count}}개 메시지 압축됨"
+      "compacted_messages": "{{count}}개 메시지 압축됨",
+      "system_instructions": "시스템 지침",
+      "tool_definitions": "도구 정의",
+      "reserved_output": "예약된 출력",
+      "user_context": "사용자 컨텍스트",
+      "messages_label": "메시지",
+      "tool_results": "도구 결과",
+      "compress_dialog": "대화 압축"
     },
     "model_selector": {
       "no_key": "키 없음",

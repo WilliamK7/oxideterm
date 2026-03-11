@@ -88,7 +88,14 @@
       "model_switched_warning": "模型上下文已縮小，目前對話使用了新限制的 {{percentage}}%。",
       "compact_button": "壓縮",
       "view_original": "檢視原始訊息",
-      "compacted_messages": "已壓縮 {{count}} 條訊息"
+      "compacted_messages": "已壓縮 {{count}} 條訊息",
+      "system_instructions": "系統指令",
+      "tool_definitions": "工具定義",
+      "reserved_output": "預留輸出",
+      "user_context": "使用者上下文",
+      "messages_label": "訊息",
+      "tool_results": "工具結果",
+      "compress_dialog": "壓縮對話"
     },
     "model_selector": {
       "no_key": "無金鑰",

@@ -1,16 +1,22 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Info } from 'lucide-react';
+import { Info, Shrink } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useAiChatStore } from '../../store/aiChatStore';
 import { useSettingsStore } from '../../store/settingsStore';
-import { estimateTokens, getModelContextWindow } from '../../lib/ai/tokenUtils';
+import { estimateTokens, estimateToolDefinitionsTokens, getModelContextWindow, responseReserve } from '../../lib/ai/tokenUtils';
 import { DEFAULT_SYSTEM_PROMPT, CONTEXT_WARNING_THRESHOLD, CONTEXT_DANGER_THRESHOLD } from '../../lib/ai/constants';
+import { getToolsForContext } from '../../lib/ai/tools';
+import { useSessionTreeStore } from '../../store/sessionTreeStore';
 
-interface TokenBreakdown {
-  system: number;
-  history: number;
-  context: number;
+interface DetailedTokenBreakdown {
+  systemInstructions: number;
+  toolDefinitions: number;
+  reservedOutput: number;
+  messages: number;
+  toolResults: number;
   total: number;
+  maxTokens: number;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -24,7 +30,11 @@ interface ContextIndicatorProps {
 export function ContextIndicator({ pendingInput = '' }: ContextIndicatorProps) {
   const { t } = useTranslation();
   const aiSettings = useSettingsStore((s) => s.settings.ai);
-  const { activeConversationId, conversations } = useAiChatStore();
+  const { activeConversationId, conversations, compactConversation } = useAiChatStore();
+  const nodes = useSessionTreeStore((s) => s.nodes);
+  const [showPopover, setShowPopover] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
   
   // Get active conversation
   const conversation = conversations.find((c) => c.id === activeConversationId);
@@ -34,38 +44,59 @@ export function ContextIndicator({ pendingInput = '' }: ContextIndicatorProps) {
     || aiSettings.providers?.find(p => p.id === aiSettings.activeProviderId)?.defaultModel
     || aiSettings.model
     || '';
-  
-  // Calculate token breakdown
-  const breakdown = useMemo<TokenBreakdown>(() => {
-    // System prompt tokens (custom or default)
+
+  // Context window size
+  const maxTokens = useMemo(() => {
+    return getModelContextWindow(activeModel, aiSettings.modelContextWindows, aiSettings.activeProviderId ?? undefined);
+  }, [activeModel, aiSettings.modelContextWindows, aiSettings.activeProviderId]);
+
+  // Calculate detailed token breakdown
+  const breakdown = useMemo<DetailedTokenBreakdown>(() => {
+    // System prompt tokens
     const effectivePrompt = aiSettings.customSystemPrompt?.trim() || DEFAULT_SYSTEM_PROMPT;
-    const systemTokens = estimateTokens(effectivePrompt);
+    const systemInstructions = estimateTokens(effectivePrompt);
     
-    // History tokens (all messages — the API layer trims dynamically)
-    let historyTokens = 0;
+    // Tool definitions tokens
+    const toolUseEnabled = aiSettings.toolUse?.enabled === true;
+    let toolDefinitions = 0;
+    if (toolUseEnabled) {
+      const hasAnySSH = nodes.some(n =>
+        n.runtime?.status === 'connected' || n.runtime?.status === 'active' || n.runtime?.connectionId
+      );
+      const tools = getToolsForContext(null, hasAnySSH);
+      toolDefinitions = estimateToolDefinitionsTokens(tools);
+    }
+
+    // Reserved output tokens
+    const reservedOutput = responseReserve(maxTokens);
+
+    // Messages vs tool results
+    let messages = 0;
+    let toolResults = 0;
     if (conversation) {
       for (const msg of conversation.messages) {
         if (msg.role === 'user' || msg.role === 'assistant') {
-          historyTokens += estimateTokens(msg.content);
+          messages += estimateTokens(msg.content);
+          // Count tokens from tool call arguments and results
+          if (msg.toolCalls) {
+            for (const tc of msg.toolCalls) {
+              toolResults += estimateTokens(tc.arguments);
+              if (tc.result) {
+                toolResults += estimateTokens(tc.result.output);
+              }
+            }
+          }
         }
       }
     }
     
-    // Pending input + context
-    const contextTokens = estimateTokens(pendingInput);
+    // Pending input
+    messages += estimateTokens(pendingInput);
     
-    return {
-      system: systemTokens,
-      history: historyTokens,
-      context: contextTokens,
-      total: systemTokens + historyTokens + contextTokens,
-    };
-  }, [conversation?.messages, pendingInput, aiSettings.customSystemPrompt]);
-  
-  // Context window from cached provider data or fallback pattern matching
-  const maxTokens = useMemo(() => {
-    return getModelContextWindow(activeModel, aiSettings.modelContextWindows, aiSettings.activeProviderId ?? undefined);
-  }, [activeModel, aiSettings.modelContextWindows, aiSettings.activeProviderId]);
+    const total = systemInstructions + toolDefinitions + reservedOutput + messages + toolResults;
+    
+    return { systemInstructions, toolDefinitions, reservedOutput, messages, toolResults, total, maxTokens };
+  }, [conversation?.messages, pendingInput, aiSettings.customSystemPrompt, aiSettings.toolUse?.enabled, maxTokens, nodes]);
   
   const percentage = Math.min((breakdown.total / maxTokens) * 100, 100);
   const isWarning = percentage > CONTEXT_WARNING_THRESHOLD * 100;
@@ -89,35 +120,134 @@ export function ContextIndicator({ pendingInput = '' }: ContextIndicatorProps) {
     if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
     return n.toString();
   };
-  
-  // Build tooltip text
-  const tooltipText = [
-    `${t('ai.context.system')}: ${formatTokens(breakdown.system)}`,
-    `${t('ai.context.history')}: ${formatTokens(breakdown.history)}`,
-    `${t('ai.context.pending')}: ${formatTokens(breakdown.context)}`,
-    `${t('ai.context.total')}: ${formatTokens(breakdown.total)} / ${formatTokens(maxTokens)}`,
-    isDanger ? `⚠️ ${t('ai.context.warning_limit')}` : '',
-  ].filter(Boolean).join('\n');
+
+  // Calculate percentage of context window for each category
+  const pct = (n: number) => {
+    if (maxTokens === 0) return '0%';
+    const p = (n / maxTokens) * 100;
+    return p < 0.1 ? '<0.1%' : `${p.toFixed(1)}%`;
+  };
+
+  // Close popover on outside click
+  useEffect(() => {
+    if (!showPopover) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        popoverRef.current && !popoverRef.current.contains(e.target as Node) &&
+        triggerRef.current && !triggerRef.current.contains(e.target as Node)
+      ) {
+        setShowPopover(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showPopover]);
+
+  const handleCompact = useCallback(async () => {
+    setShowPopover(false);
+    await compactConversation();
+  }, [compactConversation]);
   
   return (
-    <div 
-      className="flex items-center gap-1.5 sm:gap-2 cursor-help group shrink-0"
-      title={tooltipText}
-    >
-      <Info className={`w-3 h-3 shrink-0 ${textColor} opacity-50 group-hover:opacity-100`} />
-      
-      {/* Mini progress bar */}
-      <div className="w-10 sm:w-16 h-1 bg-theme-border/20 rounded-full overflow-hidden">
-        <div 
-          className={`h-full ${barColor}`}
-          style={{ width: `${percentage}%` }}
-        />
+    <div className="relative" ref={triggerRef}>
+      <div 
+        className="flex items-center gap-1.5 sm:gap-2 cursor-pointer group shrink-0"
+        onClick={() => setShowPopover(!showPopover)}
+      >
+        <Info className={cn('w-3 h-3 shrink-0 opacity-50 group-hover:opacity-100', textColor)} />
+        
+        {/* Mini progress bar */}
+        <div className="w-10 sm:w-16 h-1 bg-theme-border/20 rounded-full overflow-hidden">
+          <div 
+            className={`h-full ${barColor}`}
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
+        
+        {/* Token count - always visible but compact */}
+        <span className={cn('text-[9px] font-mono opacity-60 whitespace-nowrap', textColor)}>
+          {formatTokens(breakdown.total)}
+        </span>
       </div>
-      
-      {/* Token count - always visible but compact */}
-      <span className={`text-[9px] font-mono ${textColor} opacity-60 whitespace-nowrap`}>
-        {formatTokens(breakdown.total)}
-      </span>
+
+      {/* Detail popover */}
+      {showPopover && (
+        <div
+          ref={popoverRef}
+          className="absolute bottom-full left-0 mb-2 w-60 bg-theme-bg-secondary border border-theme-border/30 rounded-lg shadow-xl z-50 overflow-hidden"
+        >
+          {/* Header: Context Window */}
+          <div className="px-3 pt-3 pb-2">
+            <div className="text-[11px] font-semibold text-theme-text mb-0.5">
+              {t('ai.context.breakdown')}
+            </div>
+            <div className="flex items-baseline justify-between mb-1.5">
+              <span className="text-[12px] font-mono text-theme-text">
+                {formatTokens(breakdown.total)} / {formatTokens(maxTokens)} tokens
+              </span>
+              <span className={cn('text-[11px] font-mono font-semibold', textColor)}>
+                {Math.round(percentage)}%
+              </span>
+            </div>
+            {/* Full-width progress bar */}
+            <div className="w-full h-1 bg-theme-border/20 rounded-full overflow-hidden">
+              <div 
+                className={`h-full ${barColor} transition-all duration-300`}
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="border-t border-theme-border/10" />
+
+          {/* System section */}
+          <div className="px-3 py-2">
+            <div className="text-[10px] font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5">
+              {t('ai.context.system')}
+            </div>
+            <BreakdownRow label={t('ai.context.system_instructions')} value={pct(breakdown.systemInstructions)} />
+            <BreakdownRow label={t('ai.context.tool_definitions')} value={pct(breakdown.toolDefinitions)} />
+            <BreakdownRow label={t('ai.context.reserved_output')} value={pct(breakdown.reservedOutput)} />
+          </div>
+
+          <div className="border-t border-theme-border/10" />
+
+          {/* User Context section */}
+          <div className="px-3 py-2">
+            <div className="text-[10px] font-semibold text-theme-text-muted uppercase tracking-wider mb-1.5">
+              {t('ai.context.user_context')}
+            </div>
+            <BreakdownRow label={t('ai.context.messages_label')} value={pct(breakdown.messages)} />
+            <BreakdownRow label={t('ai.context.tool_results')} value={pct(breakdown.toolResults)} />
+          </div>
+
+          {/* Compact button */}
+          {conversation && conversation.messages.length >= 4 && (
+            <>
+              <div className="border-t border-theme-border/10" />
+              <div className="px-3 py-2">
+                <button
+                  onClick={handleCompact}
+                  className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-theme-text bg-theme-border/10 hover:bg-theme-border/20 rounded-md transition-colors"
+                >
+                  <Shrink className="w-3 h-3" />
+                  {t('ai.context.compress_dialog')}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** A single row in the breakdown panel */
+function BreakdownRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between py-0.5">
+      <span className="text-[11px] text-theme-text-muted">{label}</span>
+      <span className="text-[11px] font-mono text-theme-text">{value}</span>
     </div>
   );
 }

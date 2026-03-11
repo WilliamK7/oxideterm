@@ -88,7 +88,14 @@
       "model_switched_warning": "モデルのコンテキストが縮小しました。現在の会話は新しい制限の {{percentage}}% を使用しています。",
       "compact_button": "圧縮",
       "view_original": "元のメッセージを表示",
-      "compacted_messages": "{{count}} 件のメッセージを圧縮しました"
+      "compacted_messages": "{{count}} 件のメッセージを圧縮しました",
+      "system_instructions": "システム指示",
+      "tool_definitions": "ツール定義",
+      "reserved_output": "出力予約",
+      "user_context": "ユーザーコンテキスト",
+      "messages_label": "メッセージ",
+      "tool_results": "ツール結果",
+      "compress_dialog": "対話を圧縮"
     },
     "model_selector": {
       "no_key": "キーなし",

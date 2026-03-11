@@ -88,7 +88,14 @@
       "model_switched_warning": "Der Modellkontext wurde verkleinert. Die aktuelle Konversation nutzt {{percentage}}% des neuen Limits.",
       "compact_button": "Komprimieren",
       "view_original": "Original anzeigen",
-      "compacted_messages": "{{count}} Nachrichten komprimiert"
+      "compacted_messages": "{{count}} Nachrichten komprimiert",
+      "system_instructions": "Systemanweisungen",
+      "tool_definitions": "Werkzeugdefinitionen",
+      "reserved_output": "Reservierte Ausgabe",
+      "user_context": "Benutzerkontext",
+      "messages_label": "Nachrichten",
+      "tool_results": "Werkzeugergebnisse",
+      "compress_dialog": "Dialog komprimieren"
     },
     "model_selector": {
       "no_key": "Kein Schlüssel",

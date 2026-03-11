@@ -41,6 +41,21 @@ export function estimateTokens(text: string): number {
   return Math.ceil(raw * TOKEN_SAFETY_MARGIN);
 }
 
+/**
+ * Estimate tokens consumed by tool definitions (JSON Schema sent to the model).
+ * Serializes each tool's name + description + parameters to JSON and counts tokens.
+ */
+export function estimateToolDefinitionsTokens(tools: Array<{ name: string; description: string; parameters: Record<string, unknown> }> | undefined): number {
+  if (!tools || tools.length === 0) return 0;
+  let total = 0;
+  for (const tool of tools) {
+    // Each tool is sent as { type: "function", function: { name, description, parameters } }
+    // The wrapper adds ~10 tokens overhead per tool
+    total += 10 + estimateTokens(tool.name) + estimateTokens(tool.description) + estimateTokens(JSON.stringify(tool.parameters));
+  }
+  return total;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Context Window Lookup
 // ═══════════════════════════════════════════════════════════════════════════

@@ -88,7 +88,14 @@
       "model_switched_warning": "模型上下文已缩小，当前对话使用了新限制的 {{percentage}}%。",
       "compact_button": "压缩",
       "view_original": "查看原始消息",
-      "compacted_messages": "已压缩 {{count}} 条消息"
+      "compacted_messages": "已压缩 {{count}} 条消息",
+      "system_instructions": "系统指令",
+      "tool_definitions": "工具定义",
+      "reserved_output": "预留输出",
+      "user_context": "用户上下文",
+      "messages_label": "消息",
+      "tool_results": "工具结果",
+      "compress_dialog": "压缩对话"
     },
     "model_selector": {
       "no_key": "无密钥",

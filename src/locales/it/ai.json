@@ -88,7 +88,14 @@
       "model_switched_warning": "Il contesto del modello è stato ridotto. La conversazione attuale utilizza il {{percentage}}% del nuovo limite.",
       "compact_button": "Compatta",
       "view_original": "Visualizza originale",
-      "compacted_messages": "{{count}} messaggi compattati"
+      "compacted_messages": "{{count}} messaggi compattati",
+      "system_instructions": "Istruzioni di sistema",
+      "tool_definitions": "Definizioni degli strumenti",
+      "reserved_output": "Output riservato",
+      "user_context": "Contesto utente",
+      "messages_label": "Messaggi",
+      "tool_results": "Risultati degli strumenti",
+      "compress_dialog": "Comprimi dialogo"
     },
     "model_selector": {
       "no_key": "Nessuna chiave",
