@@ -10,7 +10,7 @@ import { estimateTokens, trimHistoryToTokenBudget, getModelContextWindow, respon
 import type { ChatMessage as ProviderChatMessage } from '../lib/ai/providers';
 import type { AiChatMessage, AiConversation, AiToolCall } from '../types';
 import { DEFAULT_SYSTEM_PROMPT, COMPACTION_TRIGGER_THRESHOLD } from '../lib/ai/constants';
-import { BUILTIN_TOOLS, READ_ONLY_TOOLS, CONTEXT_FREE_TOOLS, SESSION_ID_TOOLS, getToolsForContext, executeTool, type ToolExecutionContext } from '../lib/ai/tools';
+import { BUILTIN_TOOLS, CONTEXT_FREE_TOOLS, SESSION_ID_TOOLS, getToolsForContext, executeTool, type ToolExecutionContext } from '../lib/ai/tools';
 import i18n from '../i18n';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -626,7 +626,7 @@ export const useAiChatStore = create<AiChatStore>()((set, get) => ({
 
     // Tool use guidance — let AI know how to discover sessions
     if (aiSettings.toolUse?.enabled === true) {
-      systemPrompt += `\n\nYou have access to tools that can interact with multiple terminal sessions (SSH and local). Use list_sessions to discover all open sessions and their node IDs. For tools that operate on a specific node, pass the node_id parameter to target any session — not just the currently active one. Use get_terminal_buffer to read output from any session. Use list_connections for SSH connection health. Use list_port_forwards and get_detected_ports for port management.`;
+      systemPrompt += `\n\nYou have access to tools that can interact with multiple terminal sessions (SSH and local). Use list_sessions to discover open sessions. For node-scoped tools, pass node_id to target any SSH node — not just the currently active one. For terminal_exec, you may also pass session_id to send a command directly into an open SSH or local terminal session. Use get_terminal_buffer to read output from any session. Use list_connections for SSH connection health. Use list_port_forwards and get_detected_ports for port management.`;
     }
 
     apiMessages.push({
@@ -728,8 +728,7 @@ export const useAiChatStore = create<AiChatStore>()((set, get) => ({
 
       // Tool use configuration
       const toolUseEnabled = aiSettings.toolUse?.enabled === true;
-      const autoApproveReadOnly = aiSettings.toolUse?.autoApproveReadOnly !== false;
-      const autoApproveAll = aiSettings.toolUse?.autoApproveAll === true;
+      const autoApproveTools = aiSettings.toolUse?.autoApproveTools ?? {};
 
       // Dynamic tool trimming: only include tools relevant to current tab type
       let toolDefs = toolUseEnabled ? BUILTIN_TOOLS : undefined;
@@ -790,6 +789,37 @@ export const useAiChatStore = create<AiChatStore>()((set, get) => ({
       const persistedToolCalls: AiToolCall[] = [];
       let accumulatedContent = ''; // Preserves text from intermediate rounds for UI display
 
+      const parseToolArguments = (rawArguments: string): Record<string, unknown> | null => {
+        try {
+          const parsed = JSON.parse(rawArguments);
+          if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+            return null;
+          }
+          return parsed as Record<string, unknown>;
+        } catch {
+          return null;
+        }
+      };
+
+      const canRunWithoutActiveNode = (toolCall: { name: string; arguments: string }): boolean => {
+        if (CONTEXT_FREE_TOOLS.has(toolCall.name) || SESSION_ID_TOOLS.has(toolCall.name)) {
+          return true;
+        }
+
+        const parsedArgs = parseToolArguments(toolCall.arguments);
+        const nodeId = typeof parsedArgs?.node_id === 'string' ? parsedArgs.node_id.trim() : '';
+        if (nodeId.length > 0) {
+          return true;
+        }
+
+        if (toolCall.name !== 'terminal_exec') {
+          return false;
+        }
+
+        const sessionId = typeof parsedArgs?.session_id === 'string' ? parsedArgs.session_id.trim() : '';
+        return sessionId.length > 0;
+      };
+
       // eslint-disable-next-line no-constant-condition
       while (true) {
         const completedToolCalls: Array<{ id: string; name: string; arguments: string }> = [];
@@ -829,11 +859,9 @@ export const useAiChatStore = create<AiChatStore>()((set, get) => ({
 
         // Check if all requested tools are context-free when no node is active
         if (toolContext.activeNodeId === null) {
-          const needsNode = completedToolCalls.some(
-            tc => !CONTEXT_FREE_TOOLS.has(tc.name) && !SESSION_ID_TOOLS.has(tc.name)
-          );
+          const needsNode = completedToolCalls.some(tc => !canRunWithoutActiveNode(tc));
           if (needsNode) {
-            fullContent += '\n\n[Some tools require an active terminal session. Please open a terminal tab first, or use list_sessions to discover available sessions and pass node_id explicitly.]';
+            fullContent += '\n\n[Some tools require an active terminal session. Please open a terminal tab first, or use list_sessions to discover available sessions and pass node_id or session_id explicitly.]';
             updateContent(accumulatedContent + fullContent, true, false);
             break;
           }
@@ -863,10 +891,19 @@ export const useAiChatStore = create<AiChatStore>()((set, get) => ({
         // Show tool calls in UI immediately
         updateContent(accumulatedContent + fullContent, true, false, [...persistedToolCalls]);
 
-        // Approve tools based on settings
+        // Approve tools based on per-tool settings
+        const availableToolNames = new Set(toolDefs?.map(t => t.name) ?? []);
         for (const tc of toolCallEntries) {
-          const isReadOnly = READ_ONLY_TOOLS.has(tc.name);
-          if (autoApproveAll || (autoApproveReadOnly && isReadOnly)) {
+          if (!availableToolNames.has(tc.name)) {
+            tc.status = 'rejected';
+            tc.result = {
+              toolCallId: tc.id,
+              toolName: tc.name,
+              success: false,
+              output: '',
+              error: 'Tool not available in current context.',
+            };
+          } else if (autoApproveTools[tc.name] === true) {
             tc.status = 'approved';
           } else {
             tc.status = 'rejected';
@@ -875,7 +912,7 @@ export const useAiChatStore = create<AiChatStore>()((set, get) => ({
               toolName: tc.name,
               success: false,
               output: '',
-              error: 'Tool call requires explicit approval. Enable auto-approve-all in AI settings to allow write tools.',
+              error: 'Tool call requires explicit approval. Enable auto-approve for this tool in AI settings.',
             };
           }
         }
@@ -899,9 +936,8 @@ export const useAiChatStore = create<AiChatStore>()((set, get) => ({
           updateContent(accumulatedContent + fullContent, true, false, [...persistedToolCalls]);
 
           let parsedArgs: Record<string, unknown> = {};
-          try {
-            parsedArgs = JSON.parse(tc.arguments);
-          } catch {
+          const maybeParsedArgs = parseToolArguments(tc.arguments);
+          if (!maybeParsedArgs) {
             tc.status = 'error';
             tc.result = {
               toolCallId: tc.id, toolName: tc.name,
@@ -916,6 +952,7 @@ export const useAiChatStore = create<AiChatStore>()((set, get) => ({
             updateContent(accumulatedContent + fullContent, true, false, [...persistedToolCalls]);
             continue;
           }
+          parsedArgs = maybeParsedArgs;
 
           const result = await executeTool(tc.name, parsedArgs, toolContext);
           result.toolCallId = tc.id;

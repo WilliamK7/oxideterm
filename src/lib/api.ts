@@ -1197,6 +1197,14 @@ export const api = {
     return invoke('local_get_drives');
   },
 
+  /**
+   * Execute a command locally and capture stdout/stderr (AI tool use).
+   */
+  localExecCommand: async (command: string, cwd?: string, timeoutSecs?: number): Promise<import('../types').LocalExecResult> => {
+    if (USE_MOCK) return { stdout: '', stderr: '', exitCode: 0, timedOut: false };
+    return invoke('local_exec_command', { command, cwd, timeoutSecs });
+  },
+
   // ═══════════════════════════════════════════════════════════════════════════
   // IDE Mode Commands
   // ═══════════════════════════════════════════════════════════════════════════

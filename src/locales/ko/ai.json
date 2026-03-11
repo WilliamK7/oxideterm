@@ -137,7 +137,21 @@
         "ide_get_open_files": "열린 파일",
         "ide_get_file_content": "파일 내용",
         "ide_get_project_info": "프로젝트 정보",
-        "ide_apply_edit": "편집 적용"
+        "ide_apply_edit": "편집 적용",
+        "local_list_shells": "셸 목록",
+        "local_get_terminal_info": "터미널 정보",
+        "local_exec": "로컬 실행",
+        "local_get_drives": "드라이브 목록",
+        "get_settings": "설정 조회",
+        "update_setting": "설정 변경",
+        "get_pool_stats": "풀 통계",
+        "set_pool_config": "풀 설정",
+        "get_all_health": "전체 상태",
+        "get_resource_metrics": "메트릭",
+        "list_saved_connections": "저장된 연결",
+        "search_saved_connections": "연결 검색",
+        "get_session_tree": "세션 트리",
+        "list_plugins": "플러그인 목록"
       }
     }
   }

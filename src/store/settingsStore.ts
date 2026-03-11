@@ -202,10 +202,12 @@ export interface AiSettings {
   toolUse?: {
     /** Master switch for tool use — default false */
     enabled: boolean;
-    /** Auto-approve read-only tools (read_file, list_directory, grep_search, git_status) */
-    autoApproveReadOnly: boolean;
-    /** Auto-approve ALL tools including writes — advanced/dangerous */
-    autoApproveAll: boolean;
+    /**
+     * Per-tool auto-approve map.
+     * Key = tool name, value = true means auto-approve (no confirmation).
+     * Tools not in the map require manual approval.
+     */
+    autoApproveTools: Record<string, boolean>;
   };
 }
 
@@ -366,8 +368,56 @@ const defaultAiSettings: AiSettings = {
   customSystemPrompt: '',            // Default: use built-in prompt
   toolUse: {
     enabled: false,                  // Default: disabled until user opts in
-    autoApproveReadOnly: true,       // Default: auto-approve read-only tools
-    autoApproveAll: false,           // Default: require approval for write tools
+    autoApproveTools: {
+      // Read-only tools: auto-approve by default
+      read_file: true,
+      list_directory: true,
+      grep_search: true,
+      git_status: true,
+      list_sessions: true,
+      get_terminal_buffer: true,
+      search_terminal: true,
+      list_connections: true,
+      list_port_forwards: true,
+      get_detected_ports: true,
+      get_connection_health: true,
+      sftp_list_dir: true,
+      sftp_read_file: true,
+      sftp_stat: true,
+      sftp_get_cwd: true,
+      ide_get_open_files: true,
+      ide_get_file_content: true,
+      ide_get_project_info: true,
+      // Local terminal (read-only)
+      local_list_shells: true,
+      local_get_terminal_info: true,
+      local_get_drives: true,
+      // Settings (read-only)
+      get_settings: true,
+      // Connection pool (read-only)
+      get_pool_stats: true,
+      // Connection monitor (read-only)
+      get_all_health: true,
+      get_resource_metrics: true,
+      // Session manager (all read-only)
+      list_saved_connections: true,
+      search_saved_connections: true,
+      get_session_tree: true,
+      // Plugin manager (read-only)
+      list_plugins: true,
+      // Write tools: require approval by default
+      terminal_exec: false,
+      write_file: false,
+      create_port_forward: false,
+      stop_port_forward: false,
+      ide_apply_edit: false,
+      // Local terminal (write)
+      local_exec: false,
+      // Settings (write)
+      update_setting: false,
+      // Connection pool (write)
+      set_pool_config: false,
+    },
   },
 };
 
@@ -438,7 +488,21 @@ function mergeWithDefaults(saved: Partial<PersistedSettingsV2>): PersistedSettin
     connectionDefaults: { ...defaults.connectionDefaults, ...saved.connectionDefaults },
     treeUI: { ...defaults.treeUI, ...saved.treeUI },
     sidebarUI: { ...defaults.sidebarUI, ...saved.sidebarUI },
-    ai: { ...defaults.ai, ...saved.ai },
+    ai: {
+      ...defaults.ai,
+      ...saved.ai,
+      // Deep merge toolUse.autoApproveTools so new tools get defaults
+      toolUse: saved.ai?.toolUse
+        ? {
+            ...defaults.ai.toolUse,
+            ...saved.ai.toolUse,
+            autoApproveTools: {
+              ...defaults.ai.toolUse?.autoApproveTools,
+              ...saved.ai.toolUse.autoApproveTools,
+            },
+          }
+        : defaults.ai.toolUse,
+    },
     localTerminal: saved.localTerminal
       ? { ...defaults.localTerminal!, ...saved.localTerminal }
       : defaults.localTerminal,
@@ -518,6 +582,49 @@ function migrateAiProviders(settings: PersistedSettingsV2): PersistedSettingsV2 
   return newSettings;
 }
 
+/**
+ * Migrate old autoApproveReadOnly/autoApproveAll booleans → per-tool autoApproveTools map.
+ * Old format: { enabled, autoApproveReadOnly, autoApproveAll }
+ * New format: { enabled, autoApproveTools: Record<string, boolean> }
+ */
+function migrateToolUseSettings(settings: PersistedSettingsV2): PersistedSettingsV2 {
+  const toolUse = settings.ai.toolUse;
+  if (!toolUse) return settings;
+
+  // Already migrated: has autoApproveTools
+  if ('autoApproveTools' in toolUse && toolUse.autoApproveTools && typeof toolUse.autoApproveTools === 'object') {
+    return settings;
+  }
+
+  // Old format detected — convert
+  const oldReadOnly = (toolUse as Record<string, unknown>).autoApproveReadOnly !== false;
+  const oldAll = (toolUse as Record<string, unknown>).autoApproveAll === true;
+  const defaults = createDefaultSettings();
+  const defaultTools = defaults.ai.toolUse!.autoApproveTools;
+
+  const autoApproveTools: Record<string, boolean> = {};
+  for (const [name, defaultVal] of Object.entries(defaultTools)) {
+    if (oldAll) {
+      autoApproveTools[name] = true;
+    } else if (oldReadOnly && defaultVal) {
+      autoApproveTools[name] = true;
+    } else {
+      autoApproveTools[name] = false;
+    }
+  }
+
+  console.log('[SettingsStore] Migrated toolUse to per-tool approval format');
+  const newSettings: PersistedSettingsV2 = {
+    ...settings,
+    ai: {
+      ...settings.ai,
+      toolUse: { enabled: toolUse.enabled, autoApproveTools },
+    },
+  };
+  persistSettings(newSettings);
+  return newSettings;
+}
+
 /** Load settings from localStorage, detect and clean legacy formats */
 function loadSettings(): PersistedSettingsV2 {
   try {
@@ -528,7 +635,9 @@ function loadSettings(): PersistedSettingsV2 {
         // Valid v2 format, merge with defaults for any new fields
         const settings = mergeWithDefaults(parsed);
         // Migrate: ensure providers array exists
-        return migrateAiProviders(settings);
+        const migrated = migrateAiProviders(settings);
+        // Migrate: convert old autoApproveReadOnly/autoApproveAll to per-tool map
+        return migrateToolUseSettings(migrated);
       }
     }
 
@@ -543,7 +652,7 @@ function loadSettings(): PersistedSettingsV2 {
   }
 
   const defaults = createDefaultSettings();
-  return migrateAiProviders(defaults);
+  return migrateToolUseSettings(migrateAiProviders(defaults));
 }
 
 /** Persist settings to localStorage */

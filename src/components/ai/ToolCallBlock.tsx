@@ -1,5 +1,5 @@
 import { memo, useState, useCallback } from 'react';
-import { ChevronDown, ChevronRight, Terminal, FileText, FolderOpen, Search, GitBranch, Pen, Loader2, CheckCircle2, XCircle, AlertTriangle, Package, Network, Radio, CirclePlus, CircleStop, Activity, HardDrive, FolderSearch, FileCode, Code2, Info } from 'lucide-react';
+import { ChevronDown, ChevronRight, Terminal, FileText, FolderOpen, Search, GitBranch, Pen, Loader2, CheckCircle2, XCircle, AlertTriangle, Package, Network, Radio, CirclePlus, CircleStop, Activity, HardDrive, FolderSearch, FileCode, Code2, Info, ListTree, Settings, Puzzle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils';
 import type { AiToolCall } from '../../types';
@@ -36,6 +36,26 @@ const TOOL_ICONS: Record<string, React.ElementType> = {
   ide_get_file_content: FileCode,
   ide_get_project_info: Code2,
   ide_apply_edit: Pen,
+  // Local terminal tools
+  local_list_shells: Terminal,
+  local_get_terminal_info: ListTree,
+  local_exec: Terminal,
+  local_get_drives: HardDrive,
+  // Settings tools
+  get_settings: Settings,
+  update_setting: Settings,
+  // Connection pool tools
+  get_pool_stats: Activity,
+  set_pool_config: Settings,
+  // Connection monitor tools
+  get_all_health: Activity,
+  get_resource_metrics: Activity,
+  // Session manager tools
+  list_saved_connections: Network,
+  search_saved_connections: Search,
+  get_session_tree: ListTree,
+  // Plugin manager tools
+  list_plugins: Puzzle,
 };
 
 function StatusIcon({ status }: { status: AiToolCall['status'] }) {

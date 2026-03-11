@@ -435,6 +435,7 @@ pub fn run() {
         commands::allow_asset_file,
         commands::revoke_asset_file,
         commands::get_audio_metadata,
+        commands::local_exec_command,
         // Session commands (v2 with registry)
         commands::disconnect_v2,
         commands::list_sessions_v2,

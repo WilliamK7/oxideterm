@@ -1059,3 +1059,145 @@ pub fn get_audio_metadata(path: String) -> Result<AudioMetadata, String> {
         has_cover,
     })
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Local command execution (for AI tool use)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Result of a local command execution
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LocalExecResult {
+    pub stdout: String,
+    pub stderr: String,
+    pub exit_code: Option<i32>,
+    pub timed_out: bool,
+}
+
+/// Commands that are denied for security reasons (regex patterns)
+static EXEC_DENY_PATTERNS: std::sync::LazyLock<Vec<regex::Regex>> = std::sync::LazyLock::new(|| {
+    [
+        // Destructive filesystem
+        r"\brm\s+.*\s+/(\s|$|\*)",
+        r"\brm\s+(-[a-zA-Z]*)*\s*--no-preserve-root",
+        r"\bmkfs\b",
+        r"\bdd\s+if=",
+        r"\bfdisk\b",
+        r"\bchmod\s+777\s+/",
+        r"\bchown\s+-R\s+.*\s+/",
+        // Privilege escalation
+        r"\bsudo\b",
+        r"\bdoas\b",
+        r"\bpkexec\b",
+        r"\brunuser\b",
+        r"\brun0\b",
+        r"\bsu\s+-?c\b",
+        // System control
+        r"\bshutdown\b",
+        r"\breboot\b",
+        r"\bhalt\b",
+        r"\bpoweroff\b",
+        r"\bsystemctl\s+(disable|mask)\b",
+        // Resource exhaustion (fork bomb)
+        r":\(\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;?\s*:",
+        // Network
+        r"\biptables\s+-F\b",
+        // Remote code execution via pipe
+        r"\b(curl|wget)\b[^\n]*\|\s*(sh|bash|zsh)\b",
+        r"\bbase64\b[^\n]*\|\s*(sh|bash|zsh)\b",
+        r"\bprintf\b[^\n]*\|\s*(sh|bash|zsh)\b",
+        r"\becho\b[^\n]*\|\s*(sh|bash|zsh)\b",
+        // Dangerous builtins
+        r"\beval\b",
+        r"(^|[;&|]\s*)exec\s",
+        r"\bsource\s",
+    ]
+    .iter()
+    .filter_map(|p| regex::Regex::new(p).ok())
+    .collect()
+});
+
+fn is_exec_denied(command: &str) -> bool {
+    EXEC_DENY_PATTERNS.iter().any(|re| re.is_match(command))
+}
+
+/// Truncate a string at a valid UTF-8 char boundary.
+fn truncate_str(s: &str, max_bytes: usize) -> String {
+    if s.len() <= max_bytes {
+        return s.to_owned();
+    }
+    // Find the largest char boundary <= max_bytes
+    let mut end = max_bytes;
+    while end > 0 && !s.is_char_boundary(end) {
+        end -= 1;
+    }
+    format!("{}...(truncated)", &s[..end])
+}
+
+/// Execute a command locally and capture stdout/stderr.
+/// Used by the AI tool system for local terminal tab.
+#[tauri::command]
+pub async fn local_exec_command(
+    command: String,
+    cwd: Option<String>,
+    timeout_secs: Option<u64>,
+) -> Result<LocalExecResult, String> {
+    if command.trim().is_empty() {
+        return Err("Command cannot be empty".to_string());
+    }
+
+    if is_exec_denied(&command) {
+        return Err("Command denied for security reasons".to_string());
+    }
+
+    let timeout = timeout_secs.unwrap_or(30).min(60);
+
+    let mut cmd = if cfg!(target_os = "windows") {
+        let mut c = tokio::process::Command::new("cmd");
+        c.args(["/C", &command]);
+        c
+    } else {
+        let mut c = tokio::process::Command::new("sh");
+        c.args(["-c", &command]);
+        c
+    };
+
+    if let Some(ref dir) = cwd {
+        let path = std::path::Path::new(dir);
+        if !path.exists() {
+            return Err(format!("Working directory does not exist: {}", dir));
+        }
+        cmd.current_dir(path);
+    }
+
+    cmd.stdout(std::process::Stdio::piped());
+    cmd.stderr(std::process::Stdio::piped());
+
+    let child = cmd.spawn().map_err(|e| format!("Failed to spawn command: {}", e))?;
+
+    match tokio::time::timeout(
+        std::time::Duration::from_secs(timeout),
+        child.wait_with_output(),
+    )
+    .await
+    {
+        Ok(Ok(output)) => {
+            let max_bytes = 64 * 1024; // 64KB cap
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            Ok(LocalExecResult {
+                stdout: truncate_str(&stdout, max_bytes),
+                stderr: truncate_str(&stderr, max_bytes),
+                exit_code: output.status.code(),
+                timed_out: false,
+            })
+        }
+        Ok(Err(e)) => Err(format!("Command execution failed: {}", e)),
+        Err(_) => Ok(LocalExecResult {
+            stdout: String::new(),
+            stderr: format!("Command timed out after {}s", timeout),
+            exit_code: None,
+            timed_out: true,
+        }),
+    }
+}

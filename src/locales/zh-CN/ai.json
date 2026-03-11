@@ -137,7 +137,21 @@
         "ide_get_open_files": "打开的文件",
         "ide_get_file_content": "文件内容",
         "ide_get_project_info": "项目信息",
-        "ide_apply_edit": "应用编辑"
+        "ide_apply_edit": "应用编辑",
+        "local_list_shells": "列出 Shell",
+        "local_get_terminal_info": "终端信息",
+        "local_exec": "本地执行",
+        "local_get_drives": "列出驱动器",
+        "get_settings": "获取设置",
+        "update_setting": "修改设置",
+        "get_pool_stats": "连接池统计",
+        "set_pool_config": "连接池配置",
+        "get_all_health": "全部健康状态",
+        "get_resource_metrics": "资源指标",
+        "list_saved_connections": "已保存连接",
+        "search_saved_connections": "搜索连接",
+        "get_session_tree": "会话树",
+        "list_plugins": "列出插件"
       }
     }
   }

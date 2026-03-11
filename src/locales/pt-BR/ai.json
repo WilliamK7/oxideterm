@@ -137,7 +137,21 @@
         "ide_get_open_files": "Arquivos abertos",
         "ide_get_file_content": "Conteúdo arquivo",
         "ide_get_project_info": "Info projeto",
-        "ide_apply_edit": "Aplicar edição"
+        "ide_apply_edit": "Aplicar edição",
+        "local_list_shells": "Listar shells",
+        "local_get_terminal_info": "Info terminal",
+        "local_exec": "Executar local",
+        "local_get_drives": "Listar discos",
+        "get_settings": "Configurações",
+        "update_setting": "Alterar config.",
+        "get_pool_stats": "Estatísticas pool",
+        "set_pool_config": "Config pool",
+        "get_all_health": "Saúde geral",
+        "get_resource_metrics": "Métricas",
+        "list_saved_connections": "Conexões salvas",
+        "search_saved_connections": "Buscar conexões",
+        "get_session_tree": "Árvore de sessões",
+        "list_plugins": "Listar plugins"
       }
     }
   }

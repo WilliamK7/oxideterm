@@ -137,7 +137,21 @@
         "ide_get_open_files": "Open Files",
         "ide_get_file_content": "File Content",
         "ide_get_project_info": "Project Info",
-        "ide_apply_edit": "Apply Edit"
+        "ide_apply_edit": "Apply Edit",
+        "local_list_shells": "List Shells",
+        "local_get_terminal_info": "Terminal Info",
+        "local_exec": "Local Exec",
+        "local_get_drives": "List Drives",
+        "get_settings": "Get Settings",
+        "update_setting": "Update Setting",
+        "get_pool_stats": "Pool Stats",
+        "set_pool_config": "Pool Config",
+        "get_all_health": "All Health",
+        "get_resource_metrics": "Metrics",
+        "list_saved_connections": "Saved Connections",
+        "search_saved_connections": "Search Connections",
+        "get_session_tree": "Session Tree",
+        "list_plugins": "List Plugins"
       }
     }
   }

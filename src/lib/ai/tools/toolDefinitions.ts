@@ -16,7 +16,7 @@ export const BUILTIN_TOOLS: AiToolDefinition[] = [
   {
     name: 'terminal_exec',
     description:
-      'Execute a shell command on the connected remote server (or local terminal) and return stdout/stderr. Use this for running shell commands, inspecting system state, building projects, etc.',
+      'Execute a shell command on a remote node or send a command into an existing terminal session. Use node_id for direct remote execution with captured stdout/stderr. Use session_id to send a command to an open SSH/local terminal session.',
     parameters: {
       type: 'object',
       properties: {
@@ -36,7 +36,11 @@ export const BUILTIN_TOOLS: AiToolDefinition[] = [
         },
         node_id: {
           type: 'string',
-          description: 'Target node ID. If omitted, uses the active terminal. Use list_sessions to discover nodes.',
+          description: 'Target node ID for direct remote execution. If omitted, uses the active remote terminal when available. Use list_sessions to discover nodes.',
+        },
+        session_id: {
+          type: 'string',
+          description: 'Target open terminal session ID. Use this to send a command into an existing SSH or local terminal session discovered via list_sessions.',
         },
       },
       required: ['command'],
@@ -496,6 +500,158 @@ export const IDE_TOOL_DEFS: AiToolDefinition[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Local Terminal Tools — Available only when local_terminal tab is active
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const LOCAL_TOOL_DEFS: AiToolDefinition[] = [
+  {
+    name: 'local_list_shells',
+    description: 'List all available shells on the local machine. Returns shell name, path, and whether it is the default shell.',
+    parameters: { type: 'object', properties: {} },
+  },
+  {
+    name: 'local_get_terminal_info',
+    description: 'List all local terminal sessions (active and background). Returns session IDs, shell info, dimensions, and running state.',
+    parameters: { type: 'object', properties: {} },
+  },
+  {
+    name: 'local_exec',
+    description: 'Execute a command on the local machine and return stdout/stderr/exit_code. Use for quick one-shot commands, not interactive programs.',
+    parameters: {
+      type: 'object',
+      properties: {
+        command: { type: 'string', description: 'The shell command to execute.' },
+        cwd: { type: 'string', description: 'Working directory. Optional.' },
+        timeout_secs: { type: 'number', minimum: 1, maximum: 60, description: 'Timeout in seconds. Default: 30. Max: 60.' },
+      },
+      required: ['command'],
+    },
+  },
+  {
+    name: 'local_get_drives',
+    description: 'List local drives/volumes with path, name, type, total/available space, and read-only status.',
+    parameters: { type: 'object', properties: {} },
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Settings Tools — Available only when settings tab is active
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const SETTINGS_TOOL_DEFS: AiToolDefinition[] = [
+  {
+    name: 'get_settings',
+    description: 'Read application settings. Optionally specify a section name to get only that section (e.g. "terminal", "ai", "appearance").',
+    parameters: {
+      type: 'object',
+      properties: {
+        section: { type: 'string', description: 'Settings section name. If omitted, returns all settings.' },
+      },
+    },
+  },
+  {
+    name: 'update_setting',
+    description: 'Update a single setting value. Specify the section and the key-value pair to change. Cannot modify ai.toolUse settings.',
+    parameters: {
+      type: 'object',
+      properties: {
+        section: { type: 'string', description: 'Settings section (e.g. "terminal", "appearance", "ai", "sftp").' },
+        key: { type: 'string', description: 'The setting key within the section.' },
+        value: { description: 'The new value for the setting.' },
+      },
+      required: ['section', 'key', 'value'],
+    },
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Connection Pool Tools — Available only when connection_pool tab is active
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const POOL_TOOL_DEFS: AiToolDefinition[] = [
+  {
+    name: 'get_pool_stats',
+    description: 'Get SSH connection pool statistics: active, idle, reconnecting, and total connection counts, plus pool configuration.',
+    parameters: { type: 'object', properties: {} },
+  },
+  {
+    name: 'set_pool_config',
+    description: 'Update SSH connection pool configuration (idle timeout, max connections, keep-alive interval).',
+    parameters: {
+      type: 'object',
+      properties: {
+        idle_timeout_secs: { type: 'number', minimum: 0, description: 'Idle timeout in seconds before recycling a connection. 0 = no timeout.' },
+        max_connections: { type: 'number', minimum: 1, maximum: 100, description: 'Maximum number of pooled connections.' },
+        keepalive_interval_secs: { type: 'number', minimum: 0, description: 'Keep-alive interval in seconds. 0 = disabled.' },
+      },
+    },
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Connection Monitor Tools — Available only when connection_monitor tab is active
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const MONITOR_TOOL_DEFS: AiToolDefinition[] = [
+  {
+    name: 'get_all_health',
+    description: 'Get health status summary for all SSH connections. Returns latency, uptime, packet loss, and health grade per connection.',
+    parameters: { type: 'object', properties: {} },
+  },
+  {
+    name: 'get_resource_metrics',
+    description: 'Get real-time resource metrics (CPU, memory, network, disk) for a specific connection.',
+    parameters: {
+      type: 'object',
+      properties: {
+        connection_id: { type: 'string', description: 'Connection ID to get metrics for. Use list_connections or get_all_health to find IDs.' },
+      },
+      required: ['connection_id'],
+    },
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Session Manager Tools — Available only when session_manager tab is active
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const SESSION_MGR_TOOL_DEFS: AiToolDefinition[] = [
+  {
+    name: 'list_saved_connections',
+    description: 'List all saved connection configurations. Returns host, port, username, name, and creation date. Passwords and key paths are excluded.',
+    parameters: { type: 'object', properties: {} },
+  },
+  {
+    name: 'search_saved_connections',
+    description: 'Search saved connections by keyword (matches host, username, name).',
+    parameters: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search keyword.' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'get_session_tree',
+    description: 'Get the current session tree structure showing all open sessions, their hierarchy, connection state, and tab types.',
+    parameters: { type: 'object', properties: {} },
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Plugin Manager Tools — Available only when plugin_manager tab is active
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const PLUGIN_TOOL_DEFS: AiToolDefinition[] = [
+  {
+    name: 'list_plugins',
+    description: 'List all installed plugins with their ID, name, version, enabled/disabled state, and error status.',
+    parameters: { type: 'object', properties: {} },
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Safety Classification
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -521,6 +677,23 @@ export const READ_ONLY_TOOLS = new Set([
   'ide_get_open_files',
   'ide_get_file_content',
   'ide_get_project_info',
+  // Local terminal (read-only subset)
+  'local_list_shells',
+  'local_get_terminal_info',
+  'local_get_drives',
+  // Settings (read-only)
+  'get_settings',
+  // Connection pool (read-only)
+  'get_pool_stats',
+  // Connection monitor (read-only)
+  'get_all_health',
+  'get_resource_metrics',
+  // Session manager (all read-only)
+  'list_saved_connections',
+  'search_saved_connections',
+  'get_session_tree',
+  // Plugin manager (read-only)
+  'list_plugins',
 ]);
 
 /** Tools that modify state — require explicit user approval */
@@ -530,6 +703,12 @@ export const WRITE_TOOLS = new Set([
   'create_port_forward',
   'stop_port_forward',
   'ide_apply_edit',
+  // Local terminal (write)
+  'local_exec',
+  // Settings (write)
+  'update_setting',
+  // Connection pool (write)
+  'set_pool_config',
 ]);
 
 /** Tools that do NOT require any node context — work globally or read from local stores */
@@ -542,6 +721,26 @@ export const CONTEXT_FREE_TOOLS = new Set([
   'ide_get_file_content',
   'ide_get_project_info',
   'ide_apply_edit',
+  // Local terminal tools
+  'local_list_shells',
+  'local_get_terminal_info',
+  'local_exec',
+  'local_get_drives',
+  // Settings tools
+  'get_settings',
+  'update_setting',
+  // Connection pool tools
+  'get_pool_stats',
+  'set_pool_config',
+  // Connection monitor tools
+  'get_all_health',
+  'get_resource_metrics',
+  // Session manager tools
+  'list_saved_connections',
+  'search_saved_connections',
+  'get_session_tree',
+  // Plugin manager tools
+  'list_plugins',
 ]);
 
 /** Tools that use session_id parameter instead of node_id */
@@ -576,6 +775,107 @@ export const IDE_ONLY_TOOLS = new Set([
   'ide_apply_edit',
 ]);
 
+/** Tools only shown when local_terminal tab is active */
+export const LOCAL_ONLY_TOOLS = new Set([
+  'local_list_shells',
+  'local_get_terminal_info',
+  'local_exec',
+  'local_get_drives',
+]);
+
+/** Tools only shown when settings tab is active */
+export const SETTINGS_ONLY_TOOLS = new Set([
+  'get_settings',
+  'update_setting',
+]);
+
+/** Tools only shown when connection_pool tab is active */
+export const POOL_ONLY_TOOLS = new Set([
+  'get_pool_stats',
+  'set_pool_config',
+]);
+
+/** Tools only shown when connection_monitor tab is active */
+export const MONITOR_ONLY_TOOLS = new Set([
+  'get_all_health',
+  'get_resource_metrics',
+]);
+
+/** Tools only shown when session_manager tab is active */
+export const SESSION_MGR_ONLY_TOOLS = new Set([
+  'list_saved_connections',
+  'search_saved_connections',
+  'get_session_tree',
+]);
+
+/** Tools only shown when plugin_manager tab is active */
+export const PLUGIN_MGR_ONLY_TOOLS = new Set([
+  'list_plugins',
+]);
+
+/**
+ * Grouped tool list for settings UI.
+ * Groups: terminal → session → infrastructure → sftp → ide
+ * Each group is split into read-only and write sub-groups.
+ */
+export const TOOL_GROUPS: { groupKey: string; readOnly: string[]; write: string[] }[] = [
+  {
+    groupKey: 'terminal',
+    readOnly: ['read_file', 'list_directory', 'grep_search', 'git_status'],
+    write: ['terminal_exec', 'write_file'],
+  },
+  {
+    groupKey: 'session',
+    readOnly: ['list_sessions', 'get_terminal_buffer', 'search_terminal'],
+    write: [],
+  },
+  {
+    groupKey: 'infrastructure',
+    readOnly: ['list_connections', 'get_connection_health', 'list_port_forwards', 'get_detected_ports'],
+    write: ['create_port_forward', 'stop_port_forward'],
+  },
+  {
+    groupKey: 'sftp',
+    readOnly: ['sftp_list_dir', 'sftp_read_file', 'sftp_stat', 'sftp_get_cwd'],
+    write: [],
+  },
+  {
+    groupKey: 'ide',
+    readOnly: ['ide_get_open_files', 'ide_get_file_content', 'ide_get_project_info'],
+    write: ['ide_apply_edit'],
+  },
+  {
+    groupKey: 'local_terminal',
+    readOnly: ['local_list_shells', 'local_get_terminal_info', 'local_get_drives'],
+    write: ['local_exec'],
+  },
+  {
+    groupKey: 'settings',
+    readOnly: ['get_settings'],
+    write: ['update_setting'],
+  },
+  {
+    groupKey: 'connection_pool',
+    readOnly: ['get_pool_stats'],
+    write: ['set_pool_config'],
+  },
+  {
+    groupKey: 'connection_monitor',
+    readOnly: ['get_all_health', 'get_resource_metrics'],
+    write: [],
+  },
+  {
+    groupKey: 'session_manager',
+    readOnly: ['list_saved_connections', 'search_saved_connections', 'get_session_tree'],
+    write: [],
+  },
+  {
+    groupKey: 'plugin_manager',
+    readOnly: ['list_plugins'],
+    write: [],
+  },
+];
+
 /**
  * Get relevant tool definitions based on active tab type and session context.
  * Completely hides tools irrelevant to the active tab, saving tokens and focus.
@@ -585,7 +885,17 @@ export function getToolsForContext(
   hasAnySSHSession: boolean,
 ): AiToolDefinition[] {
   // Combine all tools into a single pool
-  const allTools = [...BUILTIN_TOOLS, ...SFTP_TOOL_DEFS, ...IDE_TOOL_DEFS];
+  const allTools = [
+    ...BUILTIN_TOOLS,
+    ...SFTP_TOOL_DEFS,
+    ...IDE_TOOL_DEFS,
+    ...LOCAL_TOOL_DEFS,
+    ...SETTINGS_TOOL_DEFS,
+    ...POOL_TOOL_DEFS,
+    ...MONITOR_TOOL_DEFS,
+    ...SESSION_MGR_TOOL_DEFS,
+    ...PLUGIN_TOOL_DEFS,
+  ];
   
   return allTools.filter(t => {
     // SSH-only tools: hide when only local terminals and no SSH sessions
@@ -593,15 +903,15 @@ export function getToolsForContext(
       if (!hasAnySSHSession) return false;
     }
     
-    // SFTP-only tools: only show on SFTP tab
-    if (SFTP_ONLY_TOOLS.has(t.name)) {
-      return activeTabType === 'sftp';
-    }
-    
-    // IDE-only tools: only show on IDE tab
-    if (IDE_ONLY_TOOLS.has(t.name)) {
-      return activeTabType === 'ide';
-    }
+    // Tab-specific tools: only show on their respective tabs
+    if (SFTP_ONLY_TOOLS.has(t.name)) return activeTabType === 'sftp';
+    if (IDE_ONLY_TOOLS.has(t.name)) return activeTabType === 'ide';
+    if (LOCAL_ONLY_TOOLS.has(t.name)) return activeTabType === 'local_terminal';
+    if (SETTINGS_ONLY_TOOLS.has(t.name)) return activeTabType === 'settings';
+    if (POOL_ONLY_TOOLS.has(t.name)) return activeTabType === 'connection_pool';
+    if (MONITOR_ONLY_TOOLS.has(t.name)) return activeTabType === 'connection_monitor';
+    if (SESSION_MGR_ONLY_TOOLS.has(t.name)) return activeTabType === 'session_manager';
+    if (PLUGIN_MGR_ONLY_TOOLS.has(t.name)) return activeTabType === 'plugin_manager';
     
     return true;
   });

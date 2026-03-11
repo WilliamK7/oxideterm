@@ -30,8 +30,9 @@ import {
     SelectLabel,
     SelectSeparator
 } from '../ui/select';
-import { Monitor, Key, Terminal as TerminalIcon, Shield, Plus, Trash2, FolderInput, Sparkles, Square, HardDrive, HelpCircle, Github, ExternalLink, Keyboard, RefreshCw, ImageIcon, X, Code2, WifiOff, Download, Upload, Network, ArrowLeftRight, Settings, Folder, ListTree, Rocket, Puzzle, Activity, Loader2, CheckCircle2, ArrowDownToLine, RotateCw, Wrench } from 'lucide-react';
+import { Monitor, Key, Terminal as TerminalIcon, Shield, Plus, Trash2, FolderInput, Sparkles, Square, HardDrive, HelpCircle, Github, ExternalLink, Keyboard, RefreshCw, ImageIcon, X, Code2, WifiOff, Download, Upload, Network, ArrowLeftRight, Settings, Folder, ListTree, Rocket, Puzzle, Activity, Loader2, CheckCircle2, ArrowDownToLine, RotateCw, Wrench, FileText, Pen, FolderOpen, Search, GitBranch, Radio, CirclePlus, CircleStop, FolderSearch, FileCode, Info } from 'lucide-react';
 import { api } from '../../lib/api';
+import { TOOL_GROUPS, WRITE_TOOLS } from '../../lib/ai/tools';
 import { useLocalTerminalStore } from '../../store/localTerminalStore';
 import { SshKeyInfo, SshHostInfo } from '../../types';
 import { themes, getTerminalTheme, getCustomThemes, isCustomTheme, exportTheme, importTheme } from '../../lib/themes';
@@ -902,6 +903,36 @@ const BackgroundImageSection = ({ terminal, updateTerminal }: BackgroundImageSec
             </div>
         </div>
     );
+};
+
+/** Icon map for per-tool approval UI */
+const TOOL_ICON_MAP: Record<string, React.ElementType> = {
+    terminal_exec: TerminalIcon, read_file: FileText, write_file: Pen,
+    list_directory: FolderOpen, grep_search: Search, git_status: GitBranch,
+    list_sessions: Network, get_terminal_buffer: TerminalIcon, search_terminal: Search,
+    list_connections: Network, list_port_forwards: Radio, get_detected_ports: Radio,
+    get_connection_health: Activity, create_port_forward: CirclePlus, stop_port_forward: CircleStop,
+    sftp_list_dir: FolderSearch, sftp_read_file: HardDrive, sftp_stat: Info, sftp_get_cwd: HardDrive,
+    ide_get_open_files: FileCode, ide_get_file_content: FileCode, ide_get_project_info: Code2, ide_apply_edit: Pen,
+    // Local terminal
+    local_list_shells: TerminalIcon, local_get_terminal_info: ListTree, local_exec: TerminalIcon, local_get_drives: HardDrive,
+    // Settings
+    get_settings: Settings, update_setting: Settings,
+    // Connection pool
+    get_pool_stats: Activity, set_pool_config: Settings,
+    // Connection monitor
+    get_all_health: Activity, get_resource_metrics: Activity,
+    // Session manager
+    list_saved_connections: Network, search_saved_connections: Search, get_session_tree: ListTree,
+    // Plugin manager
+    list_plugins: Puzzle,
+};
+
+/** Group icon map for tool group headers */
+const TOOL_GROUP_ICONS: Record<string, React.ElementType> = {
+    terminal: TerminalIcon, session: Network, infrastructure: Radio, sftp: FolderInput, ide: Code2,
+    local_terminal: TerminalIcon, settings: Settings, connection_pool: Activity,
+    connection_monitor: Activity, session_manager: Network, plugin_manager: Puzzle,
 };
 
 export const SettingsView = () => {
@@ -2181,51 +2212,121 @@ export const SettingsView = () => {
                                             id="tool-use-enabled"
                                             checked={ai.toolUse?.enabled ?? false}
                                             onCheckedChange={(checked) => {
-                                                updateAi('toolUse', { ...(ai.toolUse ?? { enabled: false, autoApproveReadOnly: true, autoApproveAll: false }), enabled: !!checked });
+                                                updateAi('toolUse', { ...(ai.toolUse ?? { enabled: false, autoApproveTools: {} }), enabled: !!checked });
                                             }}
                                         />
                                     </div>
 
-                                    {/* Sub-options — only visible when tool use enabled */}
-                                    <div className={ai.toolUse?.enabled ? "space-y-4 ml-4 pl-4 border-l border-theme-border/30" : "opacity-40 pointer-events-none space-y-4 ml-4 pl-4 border-l border-theme-border/30"}>
-                                        {/* Auto-approve read-only */}
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <Label className="text-theme-text text-sm">{t('settings_view.ai.tool_use_auto_approve_read')}</Label>
-                                                <p className="text-xs text-theme-text-muted mt-0.5">{t('settings_view.ai.tool_use_auto_approve_read_hint')}</p>
-                                            </div>
-                                            <Checkbox
-                                                id="tool-use-auto-approve-read"
-                                                checked={ai.toolUse?.autoApproveReadOnly ?? true}
-                                                onCheckedChange={(checked) => {
-                                                    updateAi('toolUse', { ...(ai.toolUse ?? { enabled: false, autoApproveReadOnly: true, autoApproveAll: false }), autoApproveReadOnly: !!checked });
+                                    {/* Per-tool approval — only visible when tool use enabled */}
+                                    <div className={ai.toolUse?.enabled ? "space-y-5 ml-4 pl-4 border-l border-theme-border/30" : "opacity-40 pointer-events-none space-y-5 ml-4 pl-4 border-l border-theme-border/30"}>
+                                        <p className="text-xs text-theme-text-muted">{t('settings_view.ai.tool_use_approve_hint')}</p>
+
+                                        {/* Approve All / Revoke All buttons */}
+                                        <div className="flex gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const all: Record<string, boolean> = {};
+                                                    for (const g of TOOL_GROUPS) {
+                                                        for (const name of [...g.readOnly, ...g.write]) all[name] = true;
+                                                    }
+                                                    updateAi('toolUse', { ...(ai.toolUse ?? { enabled: false, autoApproveTools: {} }), autoApproveTools: all });
                                                 }}
-                                            />
+                                                className="text-xs px-3 py-1 rounded border border-theme-border text-theme-text-muted hover:bg-theme-bg-hover/50 transition-colors cursor-pointer"
+                                            >
+                                                {t('settings_view.ai.tool_use_approve_all')}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const none: Record<string, boolean> = {};
+                                                    for (const g of TOOL_GROUPS) {
+                                                        for (const name of [...g.readOnly, ...g.write]) none[name] = false;
+                                                    }
+                                                    updateAi('toolUse', { ...(ai.toolUse ?? { enabled: false, autoApproveTools: {} }), autoApproveTools: none });
+                                                }}
+                                                className="text-xs px-3 py-1 rounded border border-theme-border text-theme-text-muted hover:bg-theme-bg-hover/50 transition-colors cursor-pointer"
+                                            >
+                                                {t('settings_view.ai.tool_use_approve_none')}
+                                            </button>
                                         </div>
 
-                                        {/* Auto-approve all (dangerous) */}
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <Label className="text-theme-text text-sm">{t('settings_view.ai.tool_use_auto_approve_all')}</Label>
-                                                <p className="text-xs text-theme-text-muted mt-0.5">{t('settings_view.ai.tool_use_auto_approve_all_hint')}</p>
-                                            </div>
-                                            <Checkbox
-                                                id="tool-use-auto-approve-all"
-                                                checked={ai.toolUse?.autoApproveAll ?? false}
-                                                onCheckedChange={(checked) => {
-                                                    updateAi('toolUse', { ...(ai.toolUse ?? { enabled: false, autoApproveReadOnly: true, autoApproveAll: false }), autoApproveAll: !!checked });
-                                                }}
-                                            />
-                                        </div>
+                                        {/* Tool groups */}
+                                        {TOOL_GROUPS.map((group) => {
+                                            const GroupIcon = TOOL_GROUP_ICONS[group.groupKey] ?? Wrench;
+                                            const approveTools = ai.toolUse?.autoApproveTools ?? {};
+                                            const toggleTool = (toolName: string) => {
+                                                const next = { ...approveTools, [toolName]: !approveTools[toolName] };
+                                                updateAi('toolUse', { ...(ai.toolUse ?? { enabled: false, autoApproveTools: {} }), autoApproveTools: next });
+                                            };
+                                            const renderToolButton = (toolName: string) => {
+                                                const Icon = TOOL_ICON_MAP[toolName] ?? Wrench;
+                                                const checked = approveTools[toolName] === true;
+                                                const isWrite = WRITE_TOOLS.has(toolName);
+                                                return (
+                                                    <button
+                                                        key={toolName}
+                                                        type="button"
+                                                        aria-pressed={checked}
+                                                        onClick={() => toggleTool(toolName)}
+                                                        className={cn(
+                                                            "flex items-center gap-2 rounded-md border px-3 py-2 text-xs transition-colors cursor-pointer select-none",
+                                                            checked
+                                                                ? isWrite
+                                                                    ? "border-amber-500/60 bg-amber-500/10 text-amber-400"
+                                                                    : "border-theme-accent/60 bg-theme-accent/10 text-theme-accent"
+                                                                : "border-theme-border bg-theme-bg-panel/30 text-theme-text-muted hover:border-theme-border hover:bg-theme-bg-hover/50"
+                                                        )}
+                                                    >
+                                                        <Icon className="size-3.5 shrink-0" />
+                                                        <span className="truncate">{t(`tool_use.tool_names.${toolName}`, { defaultValue: toolName })}</span>
+                                                    </button>
+                                                );
+                                            };
+                                            return (
+                                                <div key={group.groupKey}>
+                                                    <div className="flex items-center gap-1.5 mb-2">
+                                                        <GroupIcon className="size-3.5 text-theme-text-muted" />
+                                                        <span className="text-xs font-medium text-theme-text uppercase tracking-wider">
+                                                            {t(`settings_view.ai.tool_use_group_${group.groupKey}`)}
+                                                        </span>
+                                                    </div>
+                                                    {group.readOnly.length > 0 && (
+                                                        <div className="mb-2">
+                                                            <span className="text-[10px] text-theme-text-muted/60 uppercase tracking-widest">
+                                                                {t('settings_view.ai.tool_use_subgroup_read_only')}
+                                                            </span>
+                                                            <div className="grid grid-cols-3 gap-1.5 mt-1">
+                                                                {group.readOnly.map(renderToolButton)}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {group.write.length > 0 && (
+                                                        <div>
+                                                            <span className="text-[10px] text-amber-400/70 uppercase tracking-widest">
+                                                                {t('settings_view.ai.tool_use_subgroup_write')}
+                                                            </span>
+                                                            <div className="grid grid-cols-3 gap-1.5 mt-1">
+                                                                {group.write.map(renderToolButton)}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
 
-                                        {/* Warning for auto-approve-all */}
-                                        {ai.toolUse?.autoApproveAll && (
-                                            <div className="p-3 rounded bg-red-500/10 border border-red-500/20">
-                                                <p className="text-xs text-red-400 leading-relaxed">
-                                                    <span className="font-semibold">⚠</span> {t('settings_view.ai.tool_use_auto_approve_all_warning')}
-                                                </p>
-                                            </div>
-                                        )}
+                                        {/* Write tools warning */}
+                                        {(() => {
+                                            const approveTools = ai.toolUse?.autoApproveTools ?? {};
+                                            const anyWriteApproved = [...WRITE_TOOLS].some(name => approveTools[name] === true);
+                                            return anyWriteApproved ? (
+                                                <div className="p-3 rounded bg-amber-500/10 border border-amber-500/20">
+                                                    <p className="text-xs text-amber-400 leading-relaxed">
+                                                        <span className="font-semibold">⚠</span> {t('settings_view.ai.tool_use_write_warning')}
+                                                    </p>
+                                                </div>
+                                            ) : null;
+                                        })()}
                                     </div>
                                 </div>
                             </div>

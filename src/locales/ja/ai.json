@@ -137,7 +137,21 @@
         "ide_get_open_files": "開いたファイル",
         "ide_get_file_content": "ファイル内容",
         "ide_get_project_info": "プロジェクト情報",
-        "ide_apply_edit": "編集適用"
+        "ide_apply_edit": "編集適用",
+        "local_list_shells": "シェル一覧",
+        "local_get_terminal_info": "ターミナル情報",
+        "local_exec": "ローカル実行",
+        "local_get_drives": "ドライブ一覧",
+        "get_settings": "設定取得",
+        "update_setting": "設定変更",
+        "get_pool_stats": "プール統計",
+        "set_pool_config": "プール設定",
+        "get_all_health": "全ヘルス",
+        "get_resource_metrics": "メトリクス",
+        "list_saved_connections": "保存済み接続",
+        "search_saved_connections": "接続検索",
+        "get_session_tree": "セッションツリー",
+        "list_plugins": "プラグイン一覧"
       }
     }
   }

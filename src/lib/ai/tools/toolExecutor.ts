@@ -27,7 +27,9 @@ import { useSessionTreeStore } from '../../../store/sessionTreeStore';
 import { useAppStore } from '../../../store/appStore';
 import { useLocalTerminalStore } from '../../../store/localTerminalStore';
 import { useIdeStore } from '../../../store/ideStore';
-import { findPaneBySessionId, getTerminalBuffer } from '../../terminalRegistry';
+import { useSettingsStore } from '../../../store/settingsStore';
+import { usePluginStore } from '../../../store/pluginStore';
+import { findPaneBySessionId, getTerminalBuffer, writeToTerminal } from '../../terminalRegistry';
 
 /** Max output size returned from a tool execution (bytes) */
 const MAX_OUTPUT_BYTES = 8192;
@@ -94,6 +96,7 @@ export async function executeTool(
 ): Promise<AiToolResult> {
   const startTime = Date.now();
   const toolCallId = `exec-${Date.now()}`;
+  const explicitNodeId = typeof args.node_id === 'string' ? args.node_id.trim() : '';
 
   try {
     // Context-free tools — no node required
@@ -113,6 +116,40 @@ export async function executeTool(
           return execIdeGetProjectInfo(startTime, toolCallId);
         case 'ide_apply_edit':
           return await execIdeApplyEdit(args, startTime, toolCallId);
+        // Local terminal tools
+        case 'local_list_shells':
+          return await execLocalListShells(startTime, toolCallId);
+        case 'local_get_terminal_info':
+          return await execLocalGetTerminalInfo(startTime, toolCallId);
+        case 'local_exec':
+          return await execLocalExec(args, startTime, toolCallId);
+        case 'local_get_drives':
+          return await execLocalGetDrives(startTime, toolCallId);
+        // Settings tools
+        case 'get_settings':
+          return execGetSettings(args, startTime, toolCallId);
+        case 'update_setting':
+          return execUpdateSetting(args, startTime, toolCallId);
+        // Connection pool tools
+        case 'get_pool_stats':
+          return await execGetPoolStats(startTime, toolCallId);
+        case 'set_pool_config':
+          return await execSetPoolConfig(args, startTime, toolCallId);
+        // Connection monitor tools
+        case 'get_all_health':
+          return await execGetAllHealth(startTime, toolCallId);
+        case 'get_resource_metrics':
+          return await execGetResourceMetrics(args, startTime, toolCallId);
+        // Session manager tools
+        case 'list_saved_connections':
+          return await execListSavedConnections(startTime, toolCallId);
+        case 'search_saved_connections':
+          return await execSearchSavedConnections(args, startTime, toolCallId);
+        case 'get_session_tree':
+          return await execGetSessionTree(startTime, toolCallId);
+        // Plugin manager tools
+        case 'list_plugins':
+          return execListPlugins(startTime, toolCallId);
         default:
           return { toolCallId, toolName, success: false, output: '', error: `Unknown context-free tool: ${toolName}`, durationMs: Date.now() - startTime };
       }
@@ -130,15 +167,22 @@ export async function executeTool(
       }
     }
 
+    if (toolName === 'terminal_exec' && explicitNodeId.length === 0) {
+      const sessionId = typeof args.session_id === 'string' ? args.session_id.trim() : '';
+      if (sessionId) {
+        return await execTerminalCommandToSession(args, sessionId, startTime, toolCallId);
+      }
+    }
+
     // Node-ID tools — resolve target node
-    const resolved = await resolveNodeForTool(args.node_id as string | undefined, context);
+    const resolved = await resolveNodeForTool(explicitNodeId || undefined, context);
     if (!resolved) {
       return {
         toolCallId,
         toolName,
         success: false,
         output: '',
-        error: 'No target node available. Use list_sessions to find a target, then pass node_id.',
+        error: 'No target node or terminal session available. Use list_sessions to find a target, then pass node_id or session_id.',
         durationMs: Date.now() - startTime,
       };
     }
@@ -238,6 +282,54 @@ async function execTerminalCommand(
     output: text,
     error: result.exitCode !== 0 && result.exitCode !== null ? `Exit code: ${result.exitCode}` : undefined,
     truncated,
+    durationMs: Date.now() - startTime,
+  };
+}
+
+async function execTerminalCommandToSession(
+  args: Record<string, unknown>,
+  sessionId: string,
+  startTime: number,
+  toolCallId: string,
+): Promise<AiToolResult> {
+  const command = typeof args.command === 'string' ? args.command.trim() : '';
+  if (!command) {
+    return { toolCallId, toolName: 'terminal_exec', success: false, output: '', error: 'Missing required argument: command', durationMs: Date.now() - startTime };
+  }
+
+  if (isCommandDenied(command)) {
+    return { toolCallId, toolName: 'terminal_exec', success: false, output: '', error: 'Command rejected: matches security deny-list', durationMs: Date.now() - startTime };
+  }
+
+  const paneId = findPaneBySessionId(sessionId);
+  if (!paneId) {
+    return {
+      toolCallId,
+      toolName: 'terminal_exec',
+      success: false,
+      output: '',
+      error: `Open terminal session not found: ${sessionId}`,
+      durationMs: Date.now() - startTime,
+    };
+  }
+
+  const sent = writeToTerminal(paneId, `${command}\r`);
+  if (!sent) {
+    return {
+      toolCallId,
+      toolName: 'terminal_exec',
+      success: false,
+      output: '',
+      error: `Terminal session is not writable: ${sessionId}`,
+      durationMs: Date.now() - startTime,
+    };
+  }
+
+  return {
+    toolCallId,
+    toolName: 'terminal_exec',
+    success: true,
+    output: `Command sent to terminal session ${sessionId}: ${command}`,
     durationMs: Date.now() - startTime,
   };
 }
@@ -1016,6 +1108,273 @@ async function execIdeApplyEdit(
   } catch (e) {
     return { toolCallId, toolName: 'ide_apply_edit', success: false, output: '', error: e instanceof Error ? e.message : 'Failed to apply edit', durationMs: Date.now() - startTime };
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Local Terminal Tool Executors
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function execLocalListShells(startTime: number, toolCallId: string): Promise<AiToolResult> {
+  try {
+    const shells = await api.localListShells();
+    const output = shells.map((s: { id: string; label: string; path: string; isDefault?: boolean }) =>
+      `${s.label} (${s.path})${s.isDefault ? ' [default]' : ''}`
+    ).join('\n');
+    return { toolCallId, toolName: 'local_list_shells', success: true, output: output || 'No shells found', durationMs: Date.now() - startTime };
+  } catch (e) {
+    return { toolCallId, toolName: 'local_list_shells', success: false, output: '', error: e instanceof Error ? e.message : String(e), durationMs: Date.now() - startTime };
+  }
+}
+
+async function execLocalGetTerminalInfo(startTime: number, toolCallId: string): Promise<AiToolResult> {
+  try {
+    const [terminals, backgrounds] = await Promise.all([
+      api.localListTerminals(),
+      api.localListBackground(),
+    ]);
+    const lines: string[] = [];
+    if (terminals.length > 0) {
+      lines.push('Active terminals:');
+      terminals.forEach((t) => {
+        lines.push(`  ${t.id} — ${t.shell?.path || 'unknown'} (${t.cols}×${t.rows})`);
+      });
+    }
+    if (backgrounds.length > 0) {
+      lines.push('Background sessions:');
+      backgrounds.forEach((b) => {
+        lines.push(`  ${b.id} — ${b.shell?.path || 'unknown'}`);
+      });
+    }
+    return { toolCallId, toolName: 'local_get_terminal_info', success: true, output: lines.length > 0 ? lines.join('\n') : 'No local terminals', durationMs: Date.now() - startTime };
+  } catch (e) {
+    return { toolCallId, toolName: 'local_get_terminal_info', success: false, output: '', error: e instanceof Error ? e.message : String(e), durationMs: Date.now() - startTime };
+  }
+}
+
+async function execLocalExec(args: Record<string, unknown>, startTime: number, toolCallId: string): Promise<AiToolResult> {
+  const command = args.command as string | undefined;
+  if (!command) {
+    return { toolCallId, toolName: 'local_exec', success: false, output: '', error: 'Missing required argument: command', durationMs: Date.now() - startTime };
+  }
+
+  if (isCommandDenied(command)) {
+    return { toolCallId, toolName: 'local_exec', success: false, output: '', error: 'Command denied by safety policy', durationMs: Date.now() - startTime };
+  }
+
+  try {
+    const result = await api.localExecCommand(
+      command,
+      args.cwd as string | undefined,
+      args.timeout_secs as number | undefined,
+    );
+
+    if (result.timedOut) {
+      return { toolCallId, toolName: 'local_exec', success: false, output: result.stderr, error: 'Command timed out', durationMs: Date.now() - startTime };
+    }
+
+    const parts: string[] = [];
+    if (result.stdout) parts.push(result.stdout);
+    if (result.stderr) parts.push(`[stderr]\n${result.stderr}`);
+    parts.push(`[exit_code: ${result.exitCode ?? 'unknown'}]`);
+
+    return { toolCallId, toolName: 'local_exec', success: (result.exitCode === 0), output: parts.join('\n'), durationMs: Date.now() - startTime };
+  } catch (e) {
+    return { toolCallId, toolName: 'local_exec', success: false, output: '', error: e instanceof Error ? e.message : String(e), durationMs: Date.now() - startTime };
+  }
+}
+
+async function execLocalGetDrives(startTime: number, toolCallId: string): Promise<AiToolResult> {
+  try {
+    const drives = await api.localGetDrives();
+    const output = drives.map((d) => {
+      const total = d.totalSpace ? `${(d.totalSpace / (1024 ** 3)).toFixed(1)}GB` : '?';
+      const avail = d.availableSpace ? `${(d.availableSpace / (1024 ** 3)).toFixed(1)}GB free` : '';
+      return `${d.path} — ${d.name} (${d.driveType}) ${total} ${avail}${d.isReadOnly ? ' [read-only]' : ''}`.trim();
+    }).join('\n');
+    return { toolCallId, toolName: 'local_get_drives', success: true, output: output || 'No drives found', durationMs: Date.now() - startTime };
+  } catch (e) {
+    return { toolCallId, toolName: 'local_get_drives', success: false, output: '', error: e instanceof Error ? e.message : String(e), durationMs: Date.now() - startTime };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Settings Tool Executors
+// ═══════════════════════════════════════════════════════════════════════════
+
+function execGetSettings(args: Record<string, unknown>, startTime: number, toolCallId: string): AiToolResult {
+  const section = args.section as string | undefined;
+  const settings = useSettingsStore.getState().settings;
+
+  if (section) {
+    const sectionData = (settings as unknown as Record<string, unknown>)[section];
+    if (sectionData === undefined) {
+      return { toolCallId, toolName: 'get_settings', success: false, output: '', error: `Unknown settings section: ${section}`, durationMs: Date.now() - startTime };
+    }
+    return { toolCallId, toolName: 'get_settings', success: true, output: JSON.stringify(sectionData, null, 2), durationMs: Date.now() - startTime };
+  }
+
+  return { toolCallId, toolName: 'get_settings', success: true, output: JSON.stringify(settings, null, 2), durationMs: Date.now() - startTime };
+}
+
+function execUpdateSetting(args: Record<string, unknown>, startTime: number, toolCallId: string): AiToolResult {
+  const section = args.section as string | undefined;
+  const key = args.key as string | undefined;
+  const value = args.value;
+
+  if (!section || !key || value === undefined) {
+    return { toolCallId, toolName: 'update_setting', success: false, output: '', error: 'Missing required arguments: section, key, value', durationMs: Date.now() - startTime };
+  }
+
+  // Security: only allow modifying safe setting sections
+  const ALLOWED_SECTIONS = new Set(['terminal', 'appearance', 'connectionDefaults', 'sftp', 'ide', 'reconnect', 'general']);
+  if (!ALLOWED_SECTIONS.has(section)) {
+    return { toolCallId, toolName: 'update_setting', success: false, output: '', error: `Cannot modify '${section}' settings — only ${[...ALLOWED_SECTIONS].join(', ')} are allowed`, durationMs: Date.now() - startTime };
+  }
+
+  try {
+    const store = useSettingsStore.getState();
+    const updateMethod = `update${section.charAt(0).toUpperCase()}${section.slice(1)}` as keyof typeof store;
+    if (typeof store[updateMethod] !== 'function') {
+      return { toolCallId, toolName: 'update_setting', success: false, output: '', error: `No update method for section: ${section}`, durationMs: Date.now() - startTime };
+    }
+    (store[updateMethod] as (patch: Record<string, unknown>) => void)({ [key]: value });
+    return { toolCallId, toolName: 'update_setting', success: true, output: `Updated ${section}.${key}`, durationMs: Date.now() - startTime };
+  } catch (e) {
+    return { toolCallId, toolName: 'update_setting', success: false, output: '', error: e instanceof Error ? e.message : String(e), durationMs: Date.now() - startTime };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Connection Pool Tool Executors
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function execGetPoolStats(startTime: number, toolCallId: string): Promise<AiToolResult> {
+  try {
+    const stats = await api.sshGetPoolStats();
+    return { toolCallId, toolName: 'get_pool_stats', success: true, output: JSON.stringify(stats, null, 2), durationMs: Date.now() - startTime };
+  } catch (e) {
+    return { toolCallId, toolName: 'get_pool_stats', success: false, output: '', error: e instanceof Error ? e.message : String(e), durationMs: Date.now() - startTime };
+  }
+}
+
+async function execSetPoolConfig(args: Record<string, unknown>, startTime: number, toolCallId: string): Promise<AiToolResult> {
+  try {
+    // Build a full config object, using defaults for missing fields
+    const idleTimeout = typeof args.idle_timeout_secs === 'number' ? args.idle_timeout_secs : 300;
+    const maxConns = typeof args.max_connections === 'number' ? Math.max(1, Math.min(100, args.max_connections as number)) : 10;
+
+    const config: import('../../../types').ConnectionPoolConfig = {
+      idleTimeoutSecs: idleTimeout,
+      maxConnections: maxConns,
+      protectOnExit: true,
+    };
+
+    await api.sshSetPoolConfig(config);
+    const changed = Object.entries(args).filter(([k]) => ['idle_timeout_secs', 'max_connections', 'keepalive_interval_secs'].includes(k)).map(([k]) => k);
+    return { toolCallId, toolName: 'set_pool_config', success: true, output: `Pool config updated: ${changed.join(', ') || 'no changes'}`, durationMs: Date.now() - startTime };
+  } catch (e) {
+    return { toolCallId, toolName: 'set_pool_config', success: false, output: '', error: e instanceof Error ? e.message : String(e), durationMs: Date.now() - startTime };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Connection Monitor Tool Executors
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function execGetAllHealth(startTime: number, toolCallId: string): Promise<AiToolResult> {
+  try {
+    const health = await api.getAllHealthStatus();
+    return { toolCallId, toolName: 'get_all_health', success: true, output: JSON.stringify(health, null, 2), durationMs: Date.now() - startTime };
+  } catch (e) {
+    return { toolCallId, toolName: 'get_all_health', success: false, output: '', error: e instanceof Error ? e.message : String(e), durationMs: Date.now() - startTime };
+  }
+}
+
+async function execGetResourceMetrics(args: Record<string, unknown>, startTime: number, toolCallId: string): Promise<AiToolResult> {
+  const connectionId = args.connection_id as string | undefined;
+  if (!connectionId) {
+    return { toolCallId, toolName: 'get_resource_metrics', success: false, output: '', error: 'Missing required argument: connection_id', durationMs: Date.now() - startTime };
+  }
+
+  try {
+    const metrics = await api.getResourceMetrics(connectionId);
+    return { toolCallId, toolName: 'get_resource_metrics', success: true, output: JSON.stringify(metrics, null, 2), durationMs: Date.now() - startTime };
+  } catch (e) {
+    return { toolCallId, toolName: 'get_resource_metrics', success: false, output: '', error: e instanceof Error ? e.message : String(e), durationMs: Date.now() - startTime };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Session Manager Tool Executors
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function execListSavedConnections(startTime: number, toolCallId: string): Promise<AiToolResult> {
+  try {
+    const connections = await api.getConnections();
+    // Filter out sensitive fields (passwords, key paths)
+    const safe = connections.map((c) => ({
+      id: c.id,
+      host: c.host,
+      port: c.port,
+      username: c.username,
+      name: c.name,
+      created_at: c.created_at,
+      group: c.group,
+    }));
+    return { toolCallId, toolName: 'list_saved_connections', success: true, output: JSON.stringify(safe, null, 2), durationMs: Date.now() - startTime };
+  } catch (e) {
+    return { toolCallId, toolName: 'list_saved_connections', success: false, output: '', error: e instanceof Error ? e.message : String(e), durationMs: Date.now() - startTime };
+  }
+}
+
+async function execSearchSavedConnections(args: Record<string, unknown>, startTime: number, toolCallId: string): Promise<AiToolResult> {
+  const query = args.query as string | undefined;
+  if (!query) {
+    return { toolCallId, toolName: 'search_saved_connections', success: false, output: '', error: 'Missing required argument: query', durationMs: Date.now() - startTime };
+  }
+
+  try {
+    const connections = await api.searchConnections(query);
+    const safe = connections.map((c) => ({
+      id: c.id,
+      host: c.host,
+      port: c.port,
+      username: c.username,
+      name: c.name,
+      group: c.group,
+    }));
+    return { toolCallId, toolName: 'search_saved_connections', success: true, output: JSON.stringify(safe, null, 2), durationMs: Date.now() - startTime };
+  } catch (e) {
+    return { toolCallId, toolName: 'search_saved_connections', success: false, output: '', error: e instanceof Error ? e.message : String(e), durationMs: Date.now() - startTime };
+  }
+}
+
+async function execGetSessionTree(startTime: number, toolCallId: string): Promise<AiToolResult> {
+  try {
+    const tree = await api.getSessionTree();
+    return { toolCallId, toolName: 'get_session_tree', success: true, output: JSON.stringify(tree, null, 2), durationMs: Date.now() - startTime };
+  } catch (e) {
+    return { toolCallId, toolName: 'get_session_tree', success: false, output: '', error: e instanceof Error ? e.message : String(e), durationMs: Date.now() - startTime };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Plugin Manager Tool Executors
+// ═══════════════════════════════════════════════════════════════════════════
+
+function execListPlugins(startTime: number, toolCallId: string): AiToolResult {
+  const plugins = usePluginStore.getState().plugins;
+  const summary: { id: string; name: string; version: string; state: string; hasError: boolean }[] = [];
+  plugins.forEach((p, id) => {
+    summary.push({
+      id,
+      name: p.manifest?.name ?? id,
+      version: p.manifest?.version ?? 'unknown',
+      state: p.state,
+      hasError: !!p.error,
+    });
+  });
+  return { toolCallId, toolName: 'list_plugins', success: true, output: JSON.stringify(summary, null, 2), durationMs: Date.now() - startTime };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

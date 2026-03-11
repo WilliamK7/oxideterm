@@ -137,7 +137,21 @@
         "ide_get_open_files": "開啟的檔案",
         "ide_get_file_content": "檔案內容",
         "ide_get_project_info": "專案資訊",
-        "ide_apply_edit": "套用編輯"
+        "ide_apply_edit": "套用編輯",
+        "local_list_shells": "列出 Shell",
+        "local_get_terminal_info": "終端機資訊",
+        "local_exec": "本機執行",
+        "local_get_drives": "列出磁碟",
+        "get_settings": "取得設定",
+        "update_setting": "修改設定",
+        "get_pool_stats": "連線池統計",
+        "set_pool_config": "連線池設定",
+        "get_all_health": "全部健康狀態",
+        "get_resource_metrics": "資源指標",
+        "list_saved_connections": "已儲存連線",
+        "search_saved_connections": "搜尋連線",
+        "get_session_tree": "工作階段樹",
+        "list_plugins": "列出外掛"
       }
     }
   }
