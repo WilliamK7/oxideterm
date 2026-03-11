@@ -705,6 +705,13 @@ You have tools to interact with the user's terminal sessions and workspace. **Us
       );
       const effectiveDisabled = get().getEffectiveDisabledTools();
       toolDefs = getToolsForContext(activeTabType, hasAnySSHSession, effectiveDisabled);
+
+      // Merge MCP tools from connected servers
+      const { useMcpRegistry } = await import('../lib/ai/mcp');
+      const mcpTools = useMcpRegistry.getState().getAllMcpToolDefinitions();
+      if (mcpTools.length > 0) {
+        toolDefs = [...toolDefs, ...mcpTools];
+      }
     }
 
     const systemTokens = estimateTokens(systemPrompt) + estimateTokens(effectiveContext) + estimateToolDefinitionsTokens(toolDefs);

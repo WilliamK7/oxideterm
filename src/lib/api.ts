@@ -1343,6 +1343,34 @@ export const api = {
     if (USE_MOCK) return [];
     return invoke('check_plugin_updates', { registryUrl, installed });
   },
+
+  // ============ MCP (Model Context Protocol) ============
+
+  /** Spawn an MCP stdio server process */
+  mcpSpawnServer: async (
+    command: string,
+    args: string[],
+    env: Record<string, string>,
+  ): Promise<string> => {
+    if (USE_MOCK) return 'mock-mcp-server-id';
+    return invoke('mcp_spawn_server', { command, args, env });
+  },
+
+  /** Send a JSON-RPC request to an MCP stdio server */
+  mcpSendRequest: async (
+    serverId: string,
+    method: string,
+    params: Record<string, unknown>,
+  ): Promise<unknown> => {
+    if (USE_MOCK) return {};
+    return invoke('mcp_send_request', { serverId, method, params: JSON.stringify(params) });
+  },
+
+  /** Close an MCP stdio server */
+  mcpCloseServer: async (serverId: string): Promise<void> => {
+    if (USE_MOCK) return;
+    return invoke('mcp_close_server', { serverId });
+  },
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

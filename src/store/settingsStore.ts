@@ -221,6 +221,8 @@ export interface AiSettings {
     /** Include SFTP file browser context (CWD, selected files) */
     sftp: boolean;
   };
+  /** Configured MCP servers */
+  mcpServers?: import('../lib/ai/mcp/mcpTypes').McpServerConfig[];
 }
 
 /** Local terminal settings */

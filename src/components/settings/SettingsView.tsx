@@ -33,6 +33,7 @@ import {
 import { Monitor, Key, Terminal as TerminalIcon, Shield, Plus, Trash2, FolderInput, Sparkles, Square, HardDrive, HelpCircle, Github, ExternalLink, Keyboard, RefreshCw, ImageIcon, X, Code2, WifiOff, Download, Upload, Network, ArrowLeftRight, Settings, Folder, ListTree, Rocket, Puzzle, Activity, Loader2, CheckCircle2, ArrowDownToLine, RotateCw, Wrench, FileText, Pen, FolderOpen, Search, GitBranch, Radio, CirclePlus, CircleStop, FolderSearch, FileCode, Info, MousePointer2, FlaskConical } from 'lucide-react';
 import { api } from '../../lib/api';
 import { TOOL_GROUPS, WRITE_TOOLS, EXPERIMENTAL_TOOLS } from '../../lib/ai/tools';
+import { McpServersPanel } from './McpServersPanel';
 import { useLocalTerminalStore } from '../../store/localTerminalStore';
 import { SshKeyInfo, SshHostInfo } from '../../types';
 import { themes, getTerminalTheme, getCustomThemes, isCustomTheme, exportTheme, importTheme } from '../../lib/themes';
@@ -1893,7 +1894,7 @@ export const SettingsView = () => {
                         </div>
                     )}
 
-                    {activeTab === 'ai' && (
+                    {activeTab === 'ai' && (<>
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div>
                                 <h3 className="text-2xl font-medium text-theme-text mb-2">{t('settings_view.ai.title')}</h3>
@@ -2396,7 +2397,10 @@ export const SettingsView = () => {
                                 </div>
                             </div>
                         </div>
-                    )}
+
+                        {/* MCP Servers Section */}
+                        <McpServersPanel />
+                    </>)}
 
                     {activeTab === 'local' && (
                         <LocalTerminalSettings />

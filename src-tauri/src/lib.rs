@@ -339,7 +339,8 @@ pub fn run() {
         .manage(node_router)
         .manage(node_event_emitter.clone())
         .manage(Arc::new(PluginFileServer::new()))
-        .manage(update_manager::UpdateManagerState::default());
+        .manage(update_manager::UpdateManagerState::default())
+        .manage(Arc::new(commands::McpProcessRegistry::new()));
 
     // Conditionally add AI chat store (may be None if initialization failed)
     let builder = if let Some(ai_store) = ai_chat_store {
@@ -701,6 +702,10 @@ pub fn run() {
         update_manager::update_get_resumable_status,
         update_manager::update_cancel_resumable_install,
         update_manager::update_clear_resumable_cache,
+        // MCP commands
+        commands::mcp_spawn_server,
+        commands::mcp_send_request,
+        commands::mcp_close_server,
     ]);
     #[cfg(not(feature = "local-terminal"))]
     let builder = builder.invoke_handler(tauri::generate_handler![
@@ -968,6 +973,10 @@ pub fn run() {
         update_manager::update_get_resumable_status,
         update_manager::update_cancel_resumable_install,
         update_manager::update_clear_resumable_cache,
+        // MCP commands
+        commands::mcp_spawn_server,
+        commands::mcp_send_request,
+        commands::mcp_close_server,
     ]);
 
     builder
@@ -996,6 +1005,14 @@ pub fn run() {
                     {
                         tracing::info!("Stopping all resource profilers...");
                         profiler_registry.stop_all();
+                    }
+
+                    // Clean up MCP server processes
+                    if let Some(mcp_registry) =
+                        app_handle.try_state::<Arc<commands::McpProcessRegistry>>()
+                    {
+                        tracing::info!("Stopping all MCP servers...");
+                        tauri::async_runtime::block_on(mcp_registry.stop_all());
                     }
 
                     // Clean up BridgeManager (WebSocket servers)

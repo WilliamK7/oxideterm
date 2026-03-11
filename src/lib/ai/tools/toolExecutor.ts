@@ -233,8 +233,13 @@ export async function executeTool(
         return await execSftpStat(args, resolved, startTime, toolCallId);
       case 'sftp_get_cwd':
         return await execSftpGetCwd(resolved, startTime, toolCallId);
-      default:
+      default: {
+        // Check if this is an MCP tool (prefixed with mcp::)
+        if (toolName.startsWith('mcp::')) {
+          return await executeMcpTool(toolName, args, startTime, toolCallId);
+        }
         return { toolCallId, toolName, success: false, output: '', error: `Unknown tool: ${toolName}`, durationMs: Date.now() - startTime };
+      }
     }
   } catch (e) {
     return {
@@ -2038,4 +2043,43 @@ function formatTreeEntries(entries: AgentFileEntry[], indent: string): string {
       return prefix + children;
     })
     .join('\n');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MCP Tool Execution
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function executeMcpTool(
+  toolName: string,
+  args: Record<string, unknown>,
+  startTime: number,
+  toolCallId: string,
+): Promise<AiToolResult> {
+  const { useMcpRegistry } = await import('../mcp');
+  const registry = useMcpRegistry.getState();
+  const match = registry.findServerForTool(toolName);
+
+  if (!match) {
+    return { toolCallId, toolName, success: false, output: '', error: `No MCP server found for tool: ${toolName}`, durationMs: Date.now() - startTime };
+  }
+
+  const { server, originalName } = match;
+
+  const result = await registry.callTool(server.config.id, originalName, args);
+
+  // Extract text content from MCP result
+  const textParts = result.content
+    .filter(c => c.type === 'text' && c.text)
+    .map(c => c.text!);
+  const output = textParts.join('\n').slice(0, MAX_OUTPUT_BYTES);
+
+  return {
+    toolCallId,
+    toolName,
+    success: !result.isError,
+    output,
+    error: result.isError ? output : undefined,
+    durationMs: Date.now() - startTime,
+    truncated: textParts.join('\n').length > MAX_OUTPUT_BYTES,
+  };
 }
