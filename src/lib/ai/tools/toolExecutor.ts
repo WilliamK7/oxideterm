@@ -1915,7 +1915,7 @@ function execUpdateSetting(args: Record<string, unknown>, startTime: number, too
     if (typeof store[updateMethod] !== 'function') {
       return { toolCallId, toolName: 'update_setting', success: false, output: '', error: `No update method for section: ${section}`, durationMs: Date.now() - startTime };
     }
-    (store[updateMethod] as (patch: Record<string, unknown>) => void)({ [key]: value });
+    (store[updateMethod] as (key: string, value: unknown) => void)(key, value);
     return { toolCallId, toolName: 'update_setting', success: true, output: `Updated ${section}.${key}`, durationMs: Date.now() - startTime };
   } catch (e) {
     return { toolCallId, toolName: 'update_setting', success: false, output: '', error: e instanceof Error ? e.message : String(e), durationMs: Date.now() - startTime };
