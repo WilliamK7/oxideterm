@@ -118,9 +118,37 @@ impl StateStore {
 
         #[cfg(windows)]
         {
-            // TODO: Implement Windows ACL restrictions using winapi
-            // For now, log a warning
-            warn!("File permission restrictions not implemented on Windows - database may be world-readable");
+            // Restrict database file permissions to current user only via icacls
+            let path_str = path.to_string_lossy();
+            match std::env::var("USERNAME") {
+                Ok(username) if !username.is_empty() => {
+                    let result = std::process::Command::new("icacls")
+                        .args([
+                            &*path_str,
+                            "/inheritance:r",
+                            "/grant:r",
+                            &format!("{}:(R,W)", username),
+                        ])
+                        .output();
+                    match result {
+                        Ok(output) if output.status.success() => {
+                            info!("Set database file ACL to owner-only (Windows)");
+                        }
+                        Ok(output) => {
+                            warn!(
+                                "Failed to set ACL on database file: {}",
+                                String::from_utf8_lossy(&output.stderr)
+                            );
+                        }
+                        Err(e) => {
+                            warn!("Failed to run icacls for database file: {}", e);
+                        }
+                    }
+                }
+                _ => {
+                    warn!("Cannot determine Windows username - database ACL not restricted");
+                }
+            }
         }
 
         let store = Self { db: Arc::new(db) };

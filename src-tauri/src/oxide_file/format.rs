@@ -84,14 +84,30 @@ impl FileHeader {
             return Err(OxideFileError::InvalidMagic);
         }
 
-        let version = u32::from_le_bytes(data[5..9].try_into().unwrap());
+        let version = u32::from_le_bytes(
+            data[5..9]
+                .try_into()
+                .map_err(|_| OxideFileError::InvalidFormat("Failed to read version".to_string()))?,
+        );
         if version != VERSION {
             return Err(OxideFileError::UnsupportedVersion(version));
         }
 
-        let flags = u32::from_le_bytes(data[9..13].try_into().unwrap());
-        let metadata_length = u32::from_le_bytes(data[13..17].try_into().unwrap());
-        let encrypted_data_length = u32::from_le_bytes(data[17..21].try_into().unwrap());
+        let flags = u32::from_le_bytes(
+            data[9..13]
+                .try_into()
+                .map_err(|_| OxideFileError::InvalidFormat("Failed to read flags".to_string()))?,
+        );
+        let metadata_length = u32::from_le_bytes(
+            data[13..17].try_into().map_err(|_| {
+                OxideFileError::InvalidFormat("Failed to read metadata length".to_string())
+            })?,
+        );
+        let encrypted_data_length = u32::from_le_bytes(
+            data[17..21].try_into().map_err(|_| {
+                OxideFileError::InvalidFormat("Failed to read encrypted data length".to_string())
+            })?,
+        );
 
         Ok(Self {
             magic,

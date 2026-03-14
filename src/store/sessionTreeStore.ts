@@ -659,7 +659,7 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
       
       // 检查节点是否已在连接中（通过锁）
       if (get().isNodeConnecting(nodeId)) {
-        console.log(`[connectNode] Node ${nodeId} is already connecting (locked), skipping`);
+        console.debug(`[connectNode] Node ${nodeId} is already connecting (locked), skipping`);
         useEventLogStore.getState().addEntry({
           severity: 'info',
           category: 'connection',
@@ -672,7 +672,7 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
       
       // 检查前端状态，避免重复连接（双重检查）
       if (node.state.status === 'connecting' || node.state.status === 'connected') {
-        console.log(`[connectNode] Node ${nodeId} is already ${node.state.status}, skipping`);
+        console.debug(`[connectNode] Node ${nodeId} is already ${node.state.status}, skipping`);
         useEventLogStore.getState().addEntry({
           severity: 'info',
           category: 'connection',
@@ -689,7 +689,7 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
         return;
       }
       
-      console.log(`[connectNode] Starting connection for node ${nodeId}`);
+      console.debug(`[connectNode] Starting connection for node ${nodeId}`);
       
       try {
         // 乐观更新：立即在本地设置为 connecting
@@ -723,7 +723,7 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
         
         await get().fetchTree();
         
-        console.log(`[connectNode] Node ${nodeId} connected successfully`);
+        console.debug(`[connectNode] Node ${nodeId} connected successfully`);
         
         // 写入事件日志
         useEventLogStore.getState().addEntry({
@@ -868,14 +868,14 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
      * @returns 成功重连的节点 ID 列表
      */
     reconnectCascade: async (nodeId: string, options?: { skipChildren?: boolean }) => {
-      console.log(`[reconnectCascade] 📥 ENTRY: reconnectCascade called for node ${nodeId}`);
+      console.debug(`[reconnectCascade] 📥 ENTRY: reconnectCascade called for node ${nodeId}`);
       const node = get().getNode(nodeId);
       if (!node) {
         console.error(`[reconnectCascade] ❌ Node ${nodeId} not found!`);
         throw new Error(`Node ${nodeId} not found`);
       }
       
-      console.log(`[reconnectCascade] 🚀 Starting cascade reconnect for ${nodeId}, node status: ${node.runtime.status}`);
+      console.debug(`[reconnectCascade] 🚀 Starting cascade reconnect for ${nodeId}, node status: ${node.runtime.status}`);
       
       const reconnected: string[] = [];
       
@@ -884,7 +884,7 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
         // 使用 connectNodeWithAncestors 确保整条链路畅通
         const chainResult = await get().connectNodeWithAncestors(nodeId);
         reconnected.push(...chainResult.filter(id => !reconnected.includes(id)));
-        console.log(`[reconnectCascade] Target node ${nodeId} and ancestors connected`);
+        console.debug(`[reconnectCascade] Target node ${nodeId} and ancestors connected`);
       } catch (e) {
         const errorMsg = e instanceof Error ? e.message : String(e);
         console.error(`[reconnectCascade] Failed to reconnect node ${nodeId}:`, errorMsg);
@@ -900,7 +900,7 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
         const linkDownChildren = descendants.filter(child => linkDownNodeIds.has(child.id));
         
         if (linkDownChildren.length > 0) {
-          console.log(`[reconnectCascade] Found ${linkDownChildren.length} link-down children to reconnect`);
+          console.debug(`[reconnectCascade] Found ${linkDownChildren.length} link-down children to reconnect`);
           
           // 按深度排序，确保从上到下依次重连
           const sortedChildren = [...linkDownChildren].sort((a, b) => a.depth - b.depth);
@@ -932,7 +932,7 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
       // 3. 刷新树状态
       await get().fetchTree();
       
-      console.log(`[reconnectCascade] Completed: ${reconnected.length} nodes reconnected`);
+      console.debug(`[reconnectCascade] Completed: ${reconnected.length} nodes reconnected`);
       
       return reconnected;
     },
@@ -965,11 +965,11 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
      * @throws ConnectionChainError 如果任何节点连接失败
      */
     connectNodeWithAncestors: async (nodeId: string): Promise<string[]> => {
-      console.log(`[connectNodeWithAncestors] 📥 ENTRY: connectNodeWithAncestors called for node ${nodeId}`);
+      console.debug(`[connectNodeWithAncestors] 📥 ENTRY: connectNodeWithAncestors called for node ${nodeId}`);
       
       // ========== Step 1: 获取链式锁 ==========
       const lockAcquired = get().acquireChainLock();
-      console.log(`[connectNodeWithAncestors] Chain lock acquire attempt: ${lockAcquired ? '✅ SUCCESS' : '❌ BUSY'}`);
+      console.debug(`[connectNodeWithAncestors] Chain lock acquire attempt: ${lockAcquired ? '✅ SUCCESS' : '❌ BUSY'}`);
       if (!lockAcquired) {
         console.warn(`[connectNodeWithAncestors] Chain lock busy, rejecting request for ${nodeId}`);
         throw new Error('CHAIN_LOCK_BUSY: Another connection chain is in progress');
@@ -980,14 +980,14 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
       
       try {
         // ========== Step 2: 获取祖先路径 ==========
-        console.log(`[connectNodeWithAncestors] Fetching path for node ${nodeId}`);
+        console.debug(`[connectNodeWithAncestors] Fetching path for node ${nodeId}`);
         const pathNodes = await get().getNodePath(nodeId);
         
         if (pathNodes.length === 0) {
           throw new Error(`Node path not found for ${nodeId}`);
         }
         
-        console.log(`[connectNodeWithAncestors] Path: ${pathNodes.map(n => n.id).join(' → ')}`);
+        console.debug(`[connectNodeWithAncestors] Path: ${pathNodes.map(n => n.id).join(' → ')}`);
         
         // ========== Step 3: 跳过已连接的前缀节点 ==========
         // 找到第一个需要连接的节点（状态非 connected/active）
@@ -1015,11 +1015,11 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
         const nodesToConnect = pathNodes.slice(startIndex);
         
         if (nodesToConnect.length === 0) {
-          console.log(`[connectNodeWithAncestors] All nodes already connected`);
+          console.debug(`[connectNodeWithAncestors] All nodes already connected`);
           return pathNodes.map(n => n.id);
         }
         
-        console.log(`[connectNodeWithAncestors] Nodes to connect: ${nodesToConnect.map(n => n.id).join(' → ')}`);
+        console.debug(`[connectNodeWithAncestors] Nodes to connect: ${nodesToConnect.map(n => n.id).join(' → ')}`);
         
         // ========== Step 4: 批量获取节点级锁 ==========
         for (const node of nodesToConnect) {
@@ -1032,19 +1032,19 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
         console.debug(`[connectNodeWithAncestors] Acquired locks for ${lockedNodeIds.length} nodes`);
         
         // ========== Step 5: 焦土式清理所有待连接节点 ==========
-        console.log(`[connectNodeWithAncestors] Phase: Scorched earth cleanup`);
+        console.debug(`[connectNodeWithAncestors] Phase: Scorched earth cleanup`);
         for (const node of nodesToConnect) {
           await get().resetNodeState(node.id);
         }
         
         // ========== Step 6: 线性 await 依次连接 ==========
-        console.log(`[connectNodeWithAncestors] Phase: Linear connection`);
+        console.debug(`[connectNodeWithAncestors] Phase: Linear connection`);
         
         for (let i = 0; i < nodesToConnect.length; i++) {
           const node = nodesToConnect[i];
           const isTarget = i === nodesToConnect.length - 1;
           
-          console.log(`[connectNodeWithAncestors] Connecting node ${i + 1}/${nodesToConnect.length}: ${node.id}${isTarget ? ' (TARGET)' : ''}`);
+          console.debug(`[connectNodeWithAncestors] Connecting node ${i + 1}/${nodesToConnect.length}: ${node.id}${isTarget ? ' (TARGET)' : ''}`);
           
           try {
             // 调用单节点连接（不带锁检查，因为我们已经持有锁）
@@ -1078,7 +1078,7 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
         }
         
         // ========== 全部成功 ==========
-        console.log(`[connectNodeWithAncestors] Chain completed successfully: ${connectedNodeIds.length} nodes connected`);
+        console.debug(`[connectNodeWithAncestors] Chain completed successfully: ${connectedNodeIds.length} nodes connected`);
         
         // 刷新树状态
         await get().fetchTree();
@@ -1198,7 +1198,7 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
         console.debug(`[connectNodeInternal] Updated connectionId for ${terminalIds.length} sessions: ${response.sshConnectionId}`);
       }
       
-      console.log(`[connectNodeInternal] Node ${nodeId} connected with SSH ID: ${response.sshConnectionId}`);
+      console.debug(`[connectNodeInternal] Node ${nodeId} connected with SSH ID: ${response.sshConnectionId}`);
     },
     
     /**
@@ -1220,7 +1220,7 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
         return;
       }
       
-      console.log(`[resetNodeState] Resetting node ${nodeId}`);
+      console.debug(`[resetNodeState] Resetting node ${nodeId}`);
       
       // ========== Phase 1: 后端物理销毁 ==========
       
@@ -1321,7 +1321,7 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
       // 重建统一节点
       get().rebuildUnifiedNodes();
       
-      console.log(`[resetNodeState] Node ${nodeId} reset complete`);
+      console.debug(`[resetNodeState] Node ${nodeId} reset complete`);
     },
     
     // ========== Terminal Management ==========
@@ -1480,7 +1480,7 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
     addKbiSession: async (params) => {
       const { sessionId, wsPort, wsToken, host, port, username, displayName } = params;
       
-      console.log(`[SessionTree] Adding KBI session: ${sessionId} for ${displayName}`);
+      console.debug(`[SessionTree] Adding KBI session: ${sessionId} for ${displayName}`);
       
       try {
         // 1. Create a root node for this KBI session
@@ -1493,7 +1493,7 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
           authType: 'keyboard_interactive',
         });
         
-        console.log(`[SessionTree] KBI root node created: ${nodeId}`);
+        console.debug(`[SessionTree] KBI root node created: ${nodeId}`);
         
         // 2. The session is already connected via KBI, so we need to update the node state
         // Set the terminal session (which was created during KBI flow)
@@ -1538,7 +1538,7 @@ export const useSessionTreeStore = create<SessionTreeStore>()(
         // 5. Refresh the tree from backend to get consistent state
         await get().fetchTree();
         
-        console.log(`[SessionTree] KBI session ${sessionId} added to tree under node ${nodeId}`);
+        console.debug(`[SessionTree] KBI session ${sessionId} added to tree under node ${nodeId}`);
       } catch (error) {
         console.error(`[SessionTree] Failed to add KBI session:`, error);
         throw error;

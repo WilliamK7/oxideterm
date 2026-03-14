@@ -498,17 +498,30 @@ impl PtyHandle {
     /// Kill the entire process group (PGID) - Windows version
     #[cfg(windows)]
     pub fn kill_process_group(&self) -> Result<(), PtyError> {
-        // On Windows, we use the Windows Job API via portable-pty
-        // which should handle child process cleanup
-        // For now, we just kill the main process
-        // TODO: Implement proper job object handling for Windows
         if let Some(pid) = self.pid() {
             tracing::debug!("Killing process tree for PID {} (Windows)", pid);
 
-            // Try to use taskkill with /T flag to kill process tree
-            let _ = std::process::Command::new("taskkill")
+            // Use taskkill /F /T to force-kill the entire process tree
+            match std::process::Command::new("taskkill")
                 .args(["/F", "/T", "/PID", &pid.to_string()])
-                .output();
+                .output()
+            {
+                Ok(output) if output.status.success() => {
+                    tracing::debug!("Successfully killed process tree for PID {}", pid);
+                }
+                Ok(output) => {
+                    // taskkill may fail if process already exited, which is fine
+                    tracing::debug!(
+                        "taskkill for PID {} exited with {}: {}",
+                        pid,
+                        output.status,
+                        String::from_utf8_lossy(&output.stderr).trim()
+                    );
+                }
+                Err(e) => {
+                    tracing::warn!("Failed to run taskkill for PID {}: {}", pid, e);
+                }
+            }
         }
 
         self.kill()
