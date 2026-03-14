@@ -24,6 +24,42 @@ function makeRequest(method: string, params?: Record<string, unknown>): JsonRpcR
   return { jsonrpc: '2.0', id: nextRequestId++, method, params };
 }
 
+function makeNotification(method: string, params?: Record<string, unknown>): Omit<JsonRpcRequest, 'id'> & { id?: undefined } {
+  return { jsonrpc: '2.0', method, params } as Omit<JsonRpcRequest, 'id'> & { id?: undefined };
+}
+
+/**
+ * Retrieve the auth token for an MCP server from the OS keychain.
+ * Falls back to the legacy `authToken` field on config for migration.
+ */
+async function getMcpAuthToken(config: { id: string; authToken?: string }): Promise<string | undefined> {
+  try {
+    const keychainToken = await api.getAiProviderApiKey(`mcp:${config.id}`);
+    if (keychainToken) return keychainToken;
+  } catch {
+    // keychain access failed — fall through to legacy
+  }
+  if (config.authToken) {
+    console.info(`[MCP] Using legacy authToken for ${config.id} — migrate to keychain`);
+    return config.authToken;
+  }
+  return undefined;
+}
+
+/**
+ * Store an MCP server auth token in the OS keychain.
+ */
+export async function setMcpAuthToken(serverId: string, token: string): Promise<void> {
+  await api.setAiProviderApiKey(`mcp:${serverId}`, token);
+}
+
+/**
+ * Delete an MCP server auth token from the OS keychain.
+ */
+export async function deleteMcpAuthToken(serverId: string): Promise<void> {
+  await api.deleteAiProviderApiKey(`mcp:${serverId}`);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // SSE Transport
 // ═══════════════════════════════════════════════════════════════════════════
@@ -36,7 +72,7 @@ function validateMcpUrl(urlStr: string): URL {
   return parsed;
 }
 
-async function sseRequest(baseUrl: string, request: JsonRpcRequest, authToken?: string): Promise<JsonRpcResponse> {
+async function sseRequest(baseUrl: string, request: JsonRpcRequest | Record<string, unknown>, authToken?: string): Promise<JsonRpcResponse> {
   const base = validateMcpUrl(baseUrl);
   const url = new URL('/message', base).href;
   const controller = new AbortController();
@@ -118,7 +154,7 @@ export async function connectMcpServer(state: McpServerState): Promise<McpServer
     } else {
       // SSE transport
       const url = config.url ?? '';
-      const token = config.authToken;
+      const token = await getMcpAuthToken(config);
 
       // Initialize
       const initReq = makeRequest('initialize', {
@@ -129,9 +165,9 @@ export async function connectMcpServer(state: McpServerState): Promise<McpServer
       const initResp = await sseRequest(url, initReq, token);
       const initResult = extractResult(initResp) as { capabilities?: McpServerCapabilities } | undefined;
 
-      // Notify initialized
-      const notifyReq = makeRequest('notifications/initialized');
-      await sseRequest(url, notifyReq, token);
+      // Notify initialized (notification — no id)
+      const notifyMsg = makeNotification('notifications/initialized');
+      await sseRequest(url, notifyMsg, token);
 
       // List tools (only if server advertises tools capability)
       let tools: McpToolSchema[] = [];
@@ -182,8 +218,9 @@ export async function callMcpTool(
     const result = await stdioRequest(state.runtimeId, 'tools/call', params);
     return result as McpCallToolResult;
   } else if (state.config.transport === 'sse' && state.config.url) {
+    const token = await getMcpAuthToken(state.config);
     const req = makeRequest('tools/call', params);
-    const resp = await sseRequest(state.config.url, req, state.config.authToken);
+    const resp = await sseRequest(state.config.url, req, token);
     return extractResult(resp) as McpCallToolResult;
   }
 
@@ -202,8 +239,9 @@ export async function readMcpResource(
     if (!contents?.length) throw new Error(`Empty resource response for ${uri}`);
     return contents[0];
   } else if (state.config.transport === 'sse' && state.config.url) {
+    const token = await getMcpAuthToken(state.config);
     const req = makeRequest('resources/read', params);
-    const resp = await sseRequest(state.config.url, req, state.config.authToken);
+    const resp = await sseRequest(state.config.url, req, token);
     const result = extractResult(resp) as { contents?: McpResourceContent[] } | undefined;
     const contents = result?.contents;
     if (!contents?.length) throw new Error(`Empty resource response for ${uri}`);
@@ -220,8 +258,9 @@ export async function refreshMcpTools(state: McpServerState): Promise<McpToolSch
     const result = await stdioRequest(state.runtimeId, 'tools/list') as { tools?: McpToolSchema[] } | undefined;
     return result?.tools ?? [];
   } else if (state.config.transport === 'sse' && state.config.url) {
+    const token = await getMcpAuthToken(state.config);
     const req = makeRequest('tools/list');
-    const resp = await sseRequest(state.config.url, req, state.config.authToken);
+    const resp = await sseRequest(state.config.url, req, token);
     const result = extractResult(resp) as { tools?: McpToolSchema[] } | undefined;
     return result?.tools ?? [];
   }

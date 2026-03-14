@@ -706,11 +706,14 @@ You have tools to interact with the user's terminal sessions and workspace. **Us
       const effectiveDisabled = get().getEffectiveDisabledTools();
       toolDefs = getToolsForContext(activeTabType, hasAnySSHSession, effectiveDisabled);
 
-      // Merge MCP tools from connected servers
+      // Merge MCP tools from connected servers (respecting disabled list)
       const { useMcpRegistry } = await import('../lib/ai/mcp');
       const mcpTools = useMcpRegistry.getState().getAllMcpToolDefinitions();
       if (mcpTools.length > 0) {
-        toolDefs = [...toolDefs, ...mcpTools];
+        const filteredMcpTools = mcpTools.filter(t => !effectiveDisabled.has(t.name));
+        if (filteredMcpTools.length > 0) {
+          toolDefs = [...toolDefs, ...filteredMcpTools];
+        }
       }
     }
 
@@ -858,6 +861,10 @@ You have tools to interact with the user's terminal sessions and workspace. **Us
       };
 
       const canRunWithoutActiveNode = (toolCall: { name: string; arguments: string }): boolean => {
+        // MCP tools are external — they don't require an active terminal node
+        if (toolCall.name.startsWith('mcp::')) {
+          return true;
+        }
         if (CONTEXT_FREE_TOOLS.has(toolCall.name) || SESSION_ID_TOOLS.has(toolCall.name)) {
           return true;
         }

@@ -28,7 +28,11 @@ export type McpServerConfig = {
   env?: Record<string, string>;
   /** Whether this server is enabled */
   enabled: boolean;
-  /** SSE: Bearer token for Authorization header */
+  /**
+   * SSE: Bearer token for Authorization header.
+   * @deprecated Stored in OS keychain via `api.setAiProviderApiKey('mcp:{id}', token)`.
+   * This field is only used for migration — new tokens are never written here.
+   */
   authToken?: string;
   /** Automatically retry connection on disconnect (SSE only) */
   retryOnDisconnect?: boolean;

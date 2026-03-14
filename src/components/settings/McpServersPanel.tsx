@@ -7,7 +7,7 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '../../store/settingsStore';
-import { useMcpRegistry } from '../../lib/ai/mcp';
+import { useMcpRegistry, setMcpAuthToken, deleteMcpAuthToken } from '../../lib/ai/mcp';
 import type { McpServerConfig, McpTransport, McpServerStatus } from '../../lib/ai/mcp';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -78,11 +78,13 @@ export function McpServersPanel() {
   const mcpServers: McpServerConfig[] = ai.mcpServers ?? [];
 
   const isValidName = (name: string) => /^[a-zA-Z0-9-]+$/.test(name);
+  const isNameTaken = (name: string) => mcpServers.some(s => s.name === name);
 
-  const addServer = useCallback(() => {
-    if (!newServer.name || !isValidName(newServer.name)) return;
+  const addServer = useCallback(async () => {
+    if (!newServer.name || !isValidName(newServer.name) || isNameTaken(newServer.name)) return;
+    const id = generateId();
     const config: McpServerConfig = {
-      id: generateId(),
+      id,
       name: newServer.name,
       transport: newServer.transport ?? 'stdio',
       url: newServer.url,
@@ -90,9 +92,18 @@ export function McpServersPanel() {
       args: newServer.args?.length ? newServer.args : undefined,
       env: newServer.env && Object.keys(newServer.env).length > 0 ? newServer.env : undefined,
       enabled: true,
-      authToken: newServer.authToken || undefined,
+      // authToken intentionally omitted — stored in OS keychain
       retryOnDisconnect: newServer.retryOnDisconnect,
     };
+    // Save auth token to OS keychain FIRST (before config, to avoid config-keychain mismatch)
+    if (newServer.authToken) {
+      try {
+        await setMcpAuthToken(id, newServer.authToken);
+      } catch (e) {
+        console.error('[MCP] Failed to save auth token to keychain:', e);
+        return; // abort — don't save config without token
+      }
+    }
     updateAi('mcpServers', [...mcpServers, config]);
     setNewServer({ transport: 'stdio', enabled: true });
     setShowAuthToken(false);
@@ -105,6 +116,8 @@ export function McpServersPanel() {
     if (state && state.status === 'connected') {
       await disconnect(id);
     }
+    // Remove auth token from OS keychain
+    await deleteMcpAuthToken(id).catch(() => {});
     updateAi('mcpServers', mcpServers.filter(s => s.id !== id));
   }, [mcpServers, servers, disconnect, updateAi]);
 
@@ -340,7 +353,7 @@ export function McpServersPanel() {
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
               {t('settings_view.mcp.cancel')}
             </Button>
-            <Button onClick={addServer} disabled={!newServer.name || !isValidName(newServer.name)}>
+            <Button onClick={addServer} disabled={!newServer.name || !isValidName(newServer.name) || isNameTaken(newServer.name)}>
               {t('settings_view.mcp.add')}
             </Button>
           </DialogFooter>

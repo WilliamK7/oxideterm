@@ -346,7 +346,17 @@ export async function runAgent(task: AgentTask, signal: AbortSignal): Promise<vo
     const disabledToolNames = settings.ai.toolUse?.disabledTools ?? [];
     const disabledSet = new Set(disabledToolNames);
     const hasAnySSH = useAppStore.getState().sessions.size > 0;
-    const tools = getToolsForContext(task.contextTabType ?? null, hasAnySSH, disabledSet);
+    let tools = getToolsForContext(task.contextTabType ?? null, hasAnySSH, disabledSet);
+
+    // Merge MCP tools from connected servers (respecting disabled list)
+    const { useMcpRegistry } = await import('./mcp');
+    const mcpTools = useMcpRegistry.getState().getAllMcpToolDefinitions();
+    if (mcpTools.length > 0) {
+      const filteredMcpTools = mcpTools.filter(t => !disabledSet.has(t.name));
+      if (filteredMcpTools.length > 0) {
+        tools = [...tools, ...filteredMcpTools];
+      }
+    }
 
     // ── Build initial context ────────────────────────────────────────────
     const sessionsDesc = await getSessionsDescription();

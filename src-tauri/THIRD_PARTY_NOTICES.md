@@ -1,11 +1,11 @@
 # Third-Party Notices (Backend / Rust)
 
 This file lists third-party crates used by the Rust backend and their detected licenses (including transitive dependencies).
-Generated: 2026-03-02T10:37:11.476Z
+Generated: 2026-03-14T15:42:48.928Z
 
 ## Summary
-- MIT: 627
-- Apache-2.0: 473
+- MIT: 628
+- Apache-2.0: 474
 - Zlib: 21
 - Unicode-3.0: 19
 - BSD-3-Clause: 12
@@ -604,6 +604,7 @@ This report does not attempt to interpret SPDX boolean logic beyond simple group
 | wasm-bindgen-macro | 0.2.114 | MIT, Apache-2.0 | registry+https://github.com/rust-lang/crates.io-index |
 | wasm-bindgen-macro-support | 0.2.114 | MIT, Apache-2.0 | registry+https://github.com/rust-lang/crates.io-index |
 | wasm-bindgen-shared | 0.2.114 | MIT, Apache-2.0 | registry+https://github.com/rust-lang/crates.io-index |
+| wasm-streams | 0.4.2 | MIT, Apache-2.0 | registry+https://github.com/rust-lang/crates.io-index |
 | wasm-streams | 0.5.0 | MIT, Apache-2.0 | registry+https://github.com/rust-lang/crates.io-index |
 | web-sys | 0.3.91 | MIT, Apache-2.0 | registry+https://github.com/rust-lang/crates.io-index |
 | webkit2gtk | 2.0.2 | MIT | registry+https://github.com/rust-lang/crates.io-index |

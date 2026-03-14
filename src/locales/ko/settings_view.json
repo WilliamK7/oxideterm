@@ -333,6 +333,7 @@
       "tool_use_group_session_manager": "세션 관리",
       "tool_use_group_plugin_manager": "플러그인 관리",
       "tool_use_group_tui_interaction": "TUI 상호작용",
+      "tool_use_group_mcp": "MCP 서버",
       "experimental": "실험적",
       "tool_use_subgroup_read_only": "읽기 전용",
       "tool_use_subgroup_write": "쓰기 / 실행",

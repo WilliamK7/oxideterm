@@ -1,10 +1,10 @@
 # Third-Party Notices (Frontend)
 
 This file lists third-party components used by the frontend (including transitive production dependencies) and their declared licenses.
-Generated: 2026-03-02T10:37:17.868Z
+Generated: 2026-03-14T15:42:51.701Z
 
 ## Summary
-- MIT: 220
+- MIT: 221
 - ISC: 34
 - Apache-2.0: 18
 - BSD-3-Clause: 8
@@ -119,6 +119,7 @@ Generated: 2026-03-02T10:37:17.868Z
 | @radix-ui/react-use-size | 1.1.1 | MIT | https://radix-ui.com/primitives |
 | @radix-ui/react-visually-hidden | 1.2.3 | MIT | https://radix-ui.com/primitives |
 | @radix-ui/rect | 1.1.1 | MIT | https://radix-ui.com/primitives |
+| @replit/codemirror-indentation-markers | 6.5.3 | MIT | https://github.com/replit/codemirror-indentation-markers#readme |
 | @tauri-apps/api | 2.10.1 | Apache-2.0 OR MIT | https://github.com/tauri-apps/tauri#readme |
 | @tauri-apps/plugin-dialog | 2.6.0 | MIT OR Apache-2.0 | https://github.com/tauri-apps/plugins-workspace#readme |
 | @tauri-apps/plugin-fs | 2.4.5 | MIT OR Apache-2.0 | https://github.com/tauri-apps/plugins-workspace#readme |

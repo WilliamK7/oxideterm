@@ -9,6 +9,7 @@ import { useAppStore } from '../../store/appStore';
 import { estimateTokens, estimateToolDefinitionsTokens, getModelContextWindow, responseReserve } from '../../lib/ai/tokenUtils';
 import { DEFAULT_SYSTEM_PROMPT, CONTEXT_WARNING_THRESHOLD, CONTEXT_DANGER_THRESHOLD } from '../../lib/ai/constants';
 import { getToolsForContext } from '../../lib/ai/tools';
+import { useMcpRegistry } from '../../lib/ai/mcp';
 import { useSessionTreeStore } from '../../store/sessionTreeStore';
 
 interface DetailedTokenBreakdown {
@@ -36,6 +37,17 @@ export function ContextIndicator({ pendingInput = '' }: ContextIndicatorProps) {
   const nodes = useSessionTreeStore((s) => s.nodes);
   const activeTabId = useAppStore((s) => s.activeTabId);
   const tabs = useAppStore((s) => s.tabs);
+  const mcpToolCount = useMcpRegistry((s) => {
+    let count = 0;
+    for (const server of s.servers.values()) {
+      if (server.status === 'connected') count += server.tools.length;
+    }
+    return count;
+  });
+  const mcpToolDefs = useMemo(() => {
+    if (mcpToolCount === 0) return [];
+    return useMcpRegistry.getState().getAllMcpToolDefinitions();
+  }, [mcpToolCount]);
   const [showPopover, setShowPopover] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -68,7 +80,12 @@ export function ContextIndicator({ pendingInput = '' }: ContextIndicatorProps) {
         n.runtime?.status === 'connected' || n.runtime?.status === 'active' || n.runtime?.connectionId
       );
       const activeTab = tabs.find(t => t.id === activeTabId);
-      const tools = getToolsForContext(activeTab?.type ?? null, hasAnySSH);
+      let tools = getToolsForContext(activeTab?.type ?? null, hasAnySSH);
+      // Include MCP tools in token estimate
+      const mcpTools = mcpToolDefs;
+      if (mcpTools.length > 0) {
+        tools = [...tools, ...mcpTools];
+      }
       toolDefinitions = estimateToolDefinitionsTokens(tools);
     }
 
@@ -101,7 +118,7 @@ export function ContextIndicator({ pendingInput = '' }: ContextIndicatorProps) {
     const total = systemInstructions + toolDefinitions + reservedOutput + messages + toolResults;
     
     return { systemInstructions, toolDefinitions, reservedOutput, messages, toolResults, total, maxTokens };
-  }, [conversation?.messages, pendingInput, aiSettings.customSystemPrompt, aiSettings.toolUse?.enabled, maxTokens, nodes, activeTabId, tabs]);
+  }, [conversation?.messages, pendingInput, aiSettings.customSystemPrompt, aiSettings.toolUse?.enabled, maxTokens, nodes, activeTabId, tabs, mcpToolDefs]);
   
   const percentage = Math.min((breakdown.total / maxTokens) * 100, 100);
   const isWarning = percentage > CONTEXT_WARNING_THRESHOLD * 100;

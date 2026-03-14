@@ -333,6 +333,7 @@
       "tool_use_group_session_manager": "Gestor de sesiones",
       "tool_use_group_plugin_manager": "Gestor de plugins",
       "tool_use_group_tui_interaction": "Interacción TUI",
+      "tool_use_group_mcp": "Servidores MCP",
       "experimental": "Experimental",
       "tool_use_subgroup_read_only": "Solo lectura",
       "tool_use_subgroup_write": "Escritura / Ejecución",
