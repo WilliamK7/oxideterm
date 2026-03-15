@@ -13,6 +13,10 @@ import {
   getCombinedPaneContext
 } from '../../lib/terminalRegistry';
 import { getSftpContext } from '../../lib/sftpContextRegistry';
+import { getTokenAtCursor } from '../../lib/ai/inputParser';
+import { filterSlashCommands, type SlashCommandDef } from '../../lib/ai/slashCommands';
+import { filterParticipants, type ParticipantDef } from '../../lib/ai/participants';
+import { filterReferences, type ReferenceDef } from '../../lib/ai/references';
 
 interface ChatInputProps {
   onSend: (content: string, context?: string) => void;
@@ -31,6 +35,16 @@ export function ChatInput({ onSend, onStop, isLoading, disabled, externalValue, 
   const [fetchingContext, setFetchingContext] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // ── Autocomplete state ──
+  type AutocompleteItem = 
+    | { kind: 'slash'; def: SlashCommandDef }
+    | { kind: 'participant'; def: ParticipantDef }
+    | { kind: 'reference'; def: ReferenceDef };
+  const [acItems, setAcItems] = useState<AutocompleteItem[]>([]);
+  const [acIndex, setAcIndex] = useState(0);
+  const [acVisible, setAcVisible] = useState(false);
+  const acRef = useRef<HTMLDivElement>(null);
+
   // Sync with external value (from quick prompts)
   useEffect(() => {
     if (externalValue !== undefined && externalValue !== input) {
@@ -40,11 +54,68 @@ export function ChatInput({ onSend, onStop, isLoading, disabled, externalValue, 
     }
   }, [externalValue]);
 
-  // Notify parent of changes
+  // Notify parent of changes and update autocomplete
   const handleInputChange = (value: string) => {
     setInput(value);
     onExternalValueChange?.(value);
+    updateAutocomplete(value);
   };
+
+  // ── Autocomplete logic ──
+  const updateAutocomplete = useCallback((text: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) { setAcVisible(false); return; }
+    const cursor = textarea.selectionStart;
+    const token = getTokenAtCursor(text, cursor);
+    if (!token.type) { setAcVisible(false); return; }
+
+    let items: AutocompleteItem[] = [];
+    if (token.type === 'slash') {
+      items = filterSlashCommands(token.partial).map(def => ({ kind: 'slash' as const, def }));
+    } else if (token.type === 'participant') {
+      items = filterParticipants(token.partial).map(def => ({ kind: 'participant' as const, def }));
+    } else if (token.type === 'reference') {
+      items = filterReferences(token.partial).map(def => ({ kind: 'reference' as const, def }));
+    }
+
+    if (items.length > 0) {
+      setAcItems(items);
+      setAcIndex(0);
+      setAcVisible(true);
+    } else {
+      setAcVisible(false);
+    }
+  }, []);
+
+  const applyAutocomplete = useCallback((item: AutocompleteItem) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const cursor = textarea.selectionStart;
+    const token = getTokenAtCursor(input, cursor);
+    if (!token.type) return;
+
+    let replacement = '';
+    if (item.kind === 'slash') {
+      replacement = `/${item.def.name} `;
+    } else if (item.kind === 'participant') {
+      replacement = `@${item.def.name} `;
+    } else {
+      replacement = item.def.acceptsValue ? `#${item.def.type}:` : `#${item.def.type} `;
+    }
+
+    const before = input.slice(0, token.start);
+    const after = input.slice(cursor);
+    const newValue = before + replacement + after;
+    setInput(newValue);
+    onExternalValueChange?.(newValue);
+    setAcVisible(false);
+
+    // Move cursor after replacement
+    setTimeout(() => {
+      textarea.selectionStart = textarea.selectionEnd = before.length + replacement.length;
+      textarea.focus();
+    }, 0);
+  }, [input, onExternalValueChange]);
 
   // Get active terminal session
   const tabs = useAppStore((state) => state.tabs);
@@ -139,12 +210,36 @@ export function ChatInput({ onSend, onStop, isLoading, disabled, externalValue, 
       // Ignore Enter during IME composition (e.g., Chinese input)
       if (e.nativeEvent.isComposing || e.keyCode === 229) return;
 
+      // ── Autocomplete keyboard navigation ──
+      if (acVisible && acItems.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setAcIndex(i => (i + 1) % acItems.length);
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setAcIndex(i => (i - 1 + acItems.length) % acItems.length);
+          return;
+        }
+        if (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey)) {
+          e.preventDefault();
+          applyAutocomplete(acItems[acIndex]);
+          return;
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setAcVisible(false);
+          return;
+        }
+      }
+
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         handleSubmit();
       }
     },
-    [handleSubmit]
+    [handleSubmit, acVisible, acItems, acIndex, applyAutocomplete]
   );
 
   return (
@@ -207,7 +302,54 @@ export function ChatInput({ onSend, onStop, isLoading, disabled, externalValue, 
       )}
 
       {/* Input area — Flat, no rounded corners, integrated */}
-      <div className="flex flex-col bg-theme-bg-panel/15 border border-theme-border/40 focus-within:border-theme-accent/40">
+      <div className="relative flex flex-col bg-theme-bg-panel/15 border border-theme-border/40 focus-within:border-theme-accent/40">
+        {/* Autocomplete Popup */}
+        {acVisible && acItems.length > 0 && (
+          <div
+            ref={acRef}
+            className="absolute bottom-full left-0 right-0 mb-1 max-h-[200px] overflow-y-auto bg-theme-bg border border-theme-border/60 shadow-lg z-50"
+          >
+            {acItems.map((item, i) => {
+              const isActive = i === acIndex;
+              let label = '';
+              let desc = '';
+              let prefix = '';
+              if (item.kind === 'slash') {
+                prefix = '/';
+                label = item.def.name;
+                desc = t(item.def.descriptionKey, item.def.name);
+              } else if (item.kind === 'participant') {
+                prefix = '@';
+                label = item.def.name;
+                desc = t(item.def.descriptionKey, item.def.name);
+              } else {
+                prefix = '#';
+                label = item.def.type;
+                desc = t(item.def.descriptionKey, item.def.type);
+              }
+              return (
+                <button
+                  key={`${item.kind}-${label}`}
+                  type="button"
+                  className={`w-full flex items-center gap-2 px-3 py-1.5 text-left text-[12px] ${
+                    isActive
+                      ? 'bg-theme-accent/15 text-theme-accent'
+                      : 'text-theme-text hover:bg-theme-bg-hover/30'
+                  }`}
+                  onMouseDown={(e) => {
+                    e.preventDefault(); // Prevent blur
+                    applyAutocomplete(item);
+                  }}
+                  onMouseEnter={() => setAcIndex(i)}
+                >
+                  <span className="font-mono text-theme-accent/60 shrink-0">{prefix}{label}</span>
+                  <span className="text-theme-text-muted/50 truncate text-[11px]">{desc}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         <textarea
           ref={textareaRef}
           value={input}

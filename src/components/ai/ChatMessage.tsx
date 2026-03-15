@@ -1,6 +1,6 @@
 import { memo, useMemo, useEffect, useRef, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RotateCcw, Pencil, Trash2, Check, X, ChevronDown, ChevronRight, ChevronLeft, Archive } from 'lucide-react';
+import { RotateCcw, Pencil, Trash2, Check, X, ChevronDown, ChevronRight, ChevronLeft, Archive, MessageSquare } from 'lucide-react';
 import { emit } from '@tauri-apps/api/event';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import type { AiChatMessage } from '../../types';
@@ -23,6 +23,8 @@ interface ChatMessageProps {
   onDelete?: (messageId: string) => void;
   /** Callback to switch branch at a branch-point message */
   onSwitchBranch?: (messageId: string, branchIndex: number) => void;
+  /** Callback when a follow-up suggestion chip is clicked */
+  onSuggestionClick?: (text: string) => void;
 }
 
 // Inject markdown styles once
@@ -55,6 +57,7 @@ function arePropsEqual(prev: ChatMessageProps, next: ChatMessageProps): boolean 
     prev.message.thinkingContent === next.message.thinkingContent &&
     prev.message.isThinkingStreaming === next.message.isThinkingStreaming &&
     prev.message.toolCalls === next.message.toolCalls &&
+    prev.message.suggestions === next.message.suggestions &&
     prev.message.branches?.activeIndex === next.message.branches?.activeIndex &&
     prev.message.branches?.total === next.message.branches?.total &&
     prev.isLastAssistant === next.isLastAssistant &&
@@ -70,6 +73,7 @@ export const ChatMessage = memo(function ChatMessage({
   onEdit,
   onDelete,
   onSwitchBranch,
+  onSuggestionClick,
 }: ChatMessageProps) {
   const { t } = useTranslation();
   const isUser = message.role === 'user';
@@ -397,6 +401,23 @@ export const ChatMessage = memo(function ChatMessage({
                 <Trash2 className="w-3 h-3" />
               </button>
             )}
+          </div>
+        )}
+
+        {/* Follow-Up Suggestion Chips */}
+        {!isUser && isLastAssistant && !message.isStreaming && message.suggestions && message.suggestions.length > 0 && onSuggestionClick && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {message.suggestions.map((s, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => onSuggestionClick(s.text)}
+                className="flex items-center gap-1 px-2 py-1 text-[11px] text-theme-text-muted/70 border border-theme-border/30 hover:border-theme-accent/40 hover:text-theme-accent hover:bg-theme-accent/5 transition-colors"
+              >
+                <MessageSquare className="w-3 h-3 shrink-0" />
+                <span>{s.text}</span>
+              </button>
+            ))}
           </div>
         )}
       </div>

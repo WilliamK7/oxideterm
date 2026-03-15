@@ -1199,6 +1199,14 @@ export interface CreateLocalTerminalResponse {
 // AI Chat Types
 // ═══════════════════════════════════════════════════════════════════════════
 
+/** A follow-up suggestion chip parsed from LLM response */
+export type FollowUpSuggestion = {
+  /** Lucide icon name */
+  icon: string;
+  /** Display text for the chip */
+  text: string;
+};
+
 /**
  * A single message in an AI conversation
  */
@@ -1236,6 +1244,8 @@ export interface AiChatMessage {
     /** Snapshot of the original messages that were compacted (read-only, capped at 50) */
     originalMessages?: AiChatMessage[];
   };
+  /** Follow-up suggestions parsed from the LLM response (frontend-only) */
+  suggestions?: FollowUpSuggestion[];
   /** Branch data for edited-and-resent messages (frontend-only, not persisted) */
   branches?: {
     /** Total number of branches (including the currently active one) */

@@ -1294,11 +1294,15 @@ export const TOOL_GROUPS: { groupKey: string; readOnly: string[]; write: string[
 /**
  * Get relevant tool definitions based on active tab type and session context.
  * Completely hides tools irrelevant to the active tab, saving tokens and focus.
+ *
+ * When `participantOverride` is provided (from @participant mentions), those tools
+ * bypass the tab-specific filter and are always included.
  */
 export function getToolsForContext(
   activeTabType: TabType | null,
   hasAnySSHSession: boolean,
   disabledTools?: Set<string>,
+  participantOverride?: Set<string>,
 ): AiToolDefinition[] {
   // Combine all tools into a single pool
   const allTools = [
@@ -1320,6 +1324,9 @@ export function getToolsForContext(
   return allTools.filter(t => {
     // User-disabled tools: never sent to LLM
     if (disabledTools?.has(t.name)) return false;
+
+    // Participant override: if a tool was explicitly requested via @participant, always include it
+    if (participantOverride?.has(t.name)) return true;
 
     // SSH-only tools: hide when only local terminals and no SSH sessions
     if (SSH_ONLY_TOOLS.has(t.name)) {

@@ -11,6 +11,27 @@
 
 export const DEFAULT_SYSTEM_PROMPT = `You are a helpful terminal assistant. You help users with shell commands, scripts, and terminal operations. Be concise and direct. When providing commands, format them clearly. You can use markdown for formatting.`;
 
+/**
+ * Instruction appended to system prompt to request follow-up suggestion chips.
+ * Only injected when the model's context window is large enough (≥8K tokens).
+ * Token cost: ~120 tokens.
+ */
+export const SUGGESTIONS_INSTRUCTION = `
+
+## Follow-Up Suggestions
+
+At the END of your response, optionally include 2-4 follow-up suggestions the user might want to try next. Use this exact XML format:
+
+<suggestions>
+<s icon="IconName">Short actionable suggestion text</s>
+</suggestions>
+
+Rules:
+- Only include suggestions when they add value (skip for simple greetings or one-off answers)
+- Keep each suggestion under 60 characters
+- Use Lucide icon names: Zap, Search, Bug, FileCode, Terminal, Settings, RefreshCw, Shield, BarChart, GitBranch, Download, Upload, Eye, Wrench, Play
+- Suggestions must be contextually relevant to the conversation`;
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Token Budget Parameters
 // ═══════════════════════════════════════════════════════════════════════════

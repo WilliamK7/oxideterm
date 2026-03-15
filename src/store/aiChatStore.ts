@@ -9,8 +9,14 @@ import { getProvider } from '../lib/ai/providerRegistry';
 import { estimateTokens, estimateToolDefinitionsTokens, trimHistoryToTokenBudget, getModelContextWindow, responseReserve } from '../lib/ai/tokenUtils';
 import type { ChatMessage as ProviderChatMessage } from '../lib/ai/providers';
 import type { AiChatMessage, AiConversation, AiToolCall } from '../types';
-import { DEFAULT_SYSTEM_PROMPT, COMPACTION_TRIGGER_THRESHOLD } from '../lib/ai/constants';
+import { DEFAULT_SYSTEM_PROMPT, SUGGESTIONS_INSTRUCTION, COMPACTION_TRIGGER_THRESHOLD } from '../lib/ai/constants';
 import { CONTEXT_FREE_TOOLS, SESSION_ID_TOOLS, getToolsForContext, isCommandDenied, executeTool, type ToolExecutionContext } from '../lib/ai/tools';
+import { parseUserInput } from '../lib/ai/inputParser';
+import { resolveSlashCommand } from '../lib/ai/slashCommands';
+import { resolveParticipant, mergeParticipantTools } from '../lib/ai/participants';
+import { resolveReferenceType, resolveAllReferences } from '../lib/ai/references';
+import { parseSuggestions } from '../lib/ai/suggestionParser';
+import { detectIntent } from '../lib/ai/intentDetector';
 import i18n from '../i18n';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -538,6 +544,70 @@ export const useAiChatStore = create<AiChatStore>()((set, get) => ({
     }
 
     // ════════════════════════════════════════════════════════════════════
+    // Parse Input: /commands, @participants, #references
+    // ════════════════════════════════════════════════════════════════════
+
+    const parsed = parseUserInput(content);
+
+    // Handle client-only slash commands (e.g. /clear, /help)
+    if (parsed.slashCommand) {
+      const slashDef = resolveSlashCommand(parsed.slashCommand.name);
+      if (slashDef?.clientOnly) {
+        // Client-only commands are handled by the UI layer, not sent to LLM
+        // Emit a synthetic event so ChatInput or ChatView can handle it
+        if (slashDef.name === 'clear') {
+          // Create a fresh conversation (equivalent to "New Chat")
+          await get().createConversation();
+          return;
+        }
+        if (slashDef.name === 'compact') {
+          const activeId = get().activeConversationId;
+          if (activeId) {
+            await get().compactConversation(activeId);
+          }
+          return;
+        }
+        // /help and /tools just pass through as normal messages
+      }
+    }
+
+    // Resolve participants and build tool override set
+    let participantToolOverride: Set<string> | undefined;
+    const participantSystemHints: string[] = [];
+    if (parsed.participants.length > 0) {
+      const names = parsed.participants.map(p => p.name);
+      const merged = mergeParticipantTools(names);
+      if (merged.size > 0) {
+        participantToolOverride = merged;
+      }
+      for (const p of parsed.participants) {
+        const def = resolveParticipant(p.name);
+        if (def) {
+          participantSystemHints.push(def.systemPromptModifier);
+        }
+      }
+    }
+
+    // Resolve #references into context text (async)
+    let referenceContext = '';
+    if (parsed.references.length > 0) {
+      const validRefs = parsed.references.filter(r => resolveReferenceType(r.type));
+      if (validRefs.length > 0) {
+        try {
+          referenceContext = await resolveAllReferences(validRefs);
+        } catch (e) {
+          console.warn('[AiChatStore] Failed to resolve references:', e);
+        }
+      }
+    }
+
+    // Detect user intent for system prompt enrichment
+    const intent = detectIntent(parsed);
+
+    // Use cleaned text (without /command, @participant, #reference tokens) for the LLM
+    const cleanContent = parsed.cleanText || content;
+
+    // ════════════════════════════════════════════════════════════════════
     // Resolve Active Provider and API Key
     // ════════════════════════════════════════════════════════════════════
 
@@ -585,9 +655,13 @@ export const useAiChatStore = create<AiChatStore>()((set, get) => ({
       console.warn('[AiChatStore] Failed to gather sidebar context:', e);
     }
 
-    const effectiveContext = context || sidebarContext?.contextBlock || '';
+    const effectiveContext = [
+      context || sidebarContext?.contextBlock || '',
+      referenceContext,
+    ].filter(Boolean).join('\n\n');
 
     // Add user message (skipped during regeneration — user message is already in store)
+    // Display the original content in the UI, but API will use cleanContent
     const userMessage: AiChatMessage = {
       id: generateId(),
       role: 'user',
@@ -643,6 +717,34 @@ export const useAiChatStore = create<AiChatStore>()((set, get) => ({
 
     if (sidebarContext?.systemPromptSegment) {
       systemPrompt += `\n\n${sidebarContext.systemPromptSegment}`;
+    }
+
+    // Slash command system prompt modifier
+    if (parsed.slashCommand) {
+      const slashDef = resolveSlashCommand(parsed.slashCommand.name);
+      if (slashDef?.systemPromptModifier) {
+        systemPrompt += `\n\n## Task Mode: /${slashDef.name}\n${slashDef.systemPromptModifier}`;
+      }
+    }
+
+    // Participant system prompt modifiers
+    if (participantSystemHints.length > 0) {
+      systemPrompt += `\n\n## Active Participants\n${participantSystemHints.join('\n')}`;
+    }
+
+    // Intent-based hint (only when confidence is high enough)
+    if (intent.confidence >= 0.8 && intent.systemHint) {
+      systemPrompt += `\n\n## Detected Intent\n${intent.systemHint}`;
+    }
+
+    // Follow-up suggestions instruction (only for models with decent context)
+    const contextWindow = getModelContextWindow(
+      providerModel,
+      aiSettings.modelContextWindows,
+      providerId,
+    );
+    if (contextWindow >= 8192) {
+      systemPrompt += SUGGESTIONS_INSTRUCTION;
     }
 
     // Tool use guidance — instruct AI to actively use available tools
@@ -704,7 +806,7 @@ You have tools to interact with the user's terminal sessions and workspace. **Us
         n.runtime?.status === 'connected' || n.runtime?.status === 'active' || n.runtime?.connectionId
       );
       const effectiveDisabled = get().getEffectiveDisabledTools();
-      toolDefs = getToolsForContext(activeTabType, hasAnySSHSession, effectiveDisabled);
+      toolDefs = getToolsForContext(activeTabType, hasAnySSHSession, effectiveDisabled, participantToolOverride);
 
       // Merge MCP tools from connected servers (respecting disabled list)
       const { useMcpRegistry } = await import('../lib/ai/mcp');
@@ -718,11 +820,6 @@ You have tools to interact with the user's terminal sessions and workspace. **Us
     }
 
     const systemTokens = estimateTokens(systemPrompt) + estimateTokens(effectiveContext) + estimateToolDefinitionsTokens(toolDefs);
-    const contextWindow = getModelContextWindow(
-      providerModel,
-      aiSettings.modelContextWindows,
-      providerId,
-    );
 
     const historyMessages = get().conversations.find((c) => c.id === convId)?.messages || [];
 
@@ -746,7 +843,9 @@ You have tools to interact with the user's terminal sessions and workspace. **Us
 
     for (const msg of trimResult.messages) {
       if ((msg.role === 'user' || msg.role === 'assistant') && msg.content.trim() !== '') {
-        apiMessages.push({ role: msg.role, content: msg.content });
+        // For the current user message, use cleanContent (stripped of /@ # tokens)
+        const msgContent = msg.id === userMessage.id ? cleanContent : msg.content;
+        apiMessages.push({ role: msg.role, content: msgContent });
       }
     }
 
@@ -1158,9 +1257,17 @@ You have tools to interact with the user's terminal sessions and workspace. **Us
       let parsedThinking = thinkingContent || undefined;
 
       if (!thinkingContent && displayContent.includes('<thinking>')) {
-        const parsed = parseThinkingContent(displayContent);
-        mainContent = parsed.content;
-        parsedThinking = parsed.thinkingContent;
+        const parsedThink = parseThinkingContent(displayContent);
+        mainContent = parsedThink.content;
+        parsedThinking = parsedThink.thinkingContent;
+      }
+
+      // Parse follow-up suggestions from the response
+      let parsedSuggestions: import('../lib/ai/suggestionParser').FollowUpSuggestion[] | undefined;
+      const sugResult = parseSuggestions(mainContent);
+      if (sugResult.suggestions.length > 0) {
+        mainContent = sugResult.cleanContent;
+        parsedSuggestions = sugResult.suggestions;
       }
 
       // Final update with parsed content
@@ -1178,6 +1285,7 @@ You have tools to interact with the user's terminal sessions and workspace. **Us
                     isThinkingStreaming: false,
                     isStreaming: false,
                     ...(persistedToolCalls.length > 0 ? { toolCalls: [...persistedToolCalls] } : {}),
+                    ...(parsedSuggestions ? { suggestions: parsedSuggestions } : {}),
                   }
                 : m
             ),

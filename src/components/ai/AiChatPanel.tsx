@@ -385,6 +385,7 @@ export function AiChatPanel() {
                 onEdit={handleEdit}
                 onDelete={handleDeleteMessage}
                 onSwitchBranch={handleSwitchBranch}
+                onSuggestionClick={(text) => handleSend(text)}
               />
             ))}
             <div ref={messagesEndRef} className="h-4" />
