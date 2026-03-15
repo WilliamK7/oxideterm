@@ -33,6 +33,7 @@ import {
   Eye,
   ArrowLeft,
   FastForward,
+  ScanSearch,
 } from 'lucide-react';
 import { useAgentStore } from '../../store/agentStore';
 import { useAppStore } from '../../store/appStore';
@@ -41,7 +42,7 @@ import { runAgent } from '../../lib/ai/agentOrchestrator';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
-import type { AgentTask, AgentStep, AutonomyLevel } from '../../types';
+import type { AgentTask, AgentStep, AutonomyLevel, AgentRolesConfig } from '../../types';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Autonomy Level Selector
@@ -92,6 +93,180 @@ const AutonomySelector = memo(() => {
   );
 });
 AutonomySelector.displayName = 'AutonomySelector';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Agent Roles Configuration (Planner / Reviewer)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const DEFAULT_ROLES: AgentRolesConfig = {
+  planner: { enabled: false, providerId: null, model: null },
+  reviewer: { enabled: false, providerId: null, model: null, interval: 5 },
+};
+
+const RoleModelSelect = memo(({
+  label,
+  enabled,
+  providerId,
+  model,
+  onToggle,
+  onChange,
+  disabled,
+  children,
+}: {
+  label: string;
+  enabled: boolean;
+  providerId: string | null;
+  model: string | null;
+  onToggle: (enabled: boolean) => void;
+  onChange: (providerId: string, model: string) => void;
+  disabled?: boolean;
+  children?: React.ReactNode;
+}) => {
+  const providers = useSettingsStore((s) => s.settings.ai.providers);
+  const enabledProviders = useMemo(
+    () => providers.filter((p) => p.enabled),
+    [providers],
+  );
+
+  const activeProvider = useMemo(
+    () => enabledProviders.find((p) => p.id === providerId) || enabledProviders[0],
+    [enabledProviders, providerId],
+  );
+
+  const models = useMemo(
+    () => activeProvider?.models ?? [],
+    [activeProvider],
+  );
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onToggle(!enabled)}
+          disabled={disabled}
+          className={cn(
+            'w-7 h-4 rounded-full relative transition-colors flex-shrink-0',
+            enabled ? 'bg-theme-accent' : 'bg-theme-border',
+            disabled && 'opacity-50 cursor-not-allowed',
+          )}
+          aria-label={label}
+        >
+          <span className={cn(
+            'absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform',
+            enabled ? 'translate-x-3.5' : 'translate-x-0.5',
+          )} />
+        </button>
+        <span className="text-xs font-medium text-theme-text">{label}</span>
+      </div>
+      {enabled && (
+        <div className="flex items-center gap-1.5 pl-9">
+          <Select
+            value={providerId || ''}
+            onValueChange={(val) => {
+              const p = enabledProviders.find((p) => p.id === val);
+              onChange(val, p?.defaultModel || p?.models?.[0] || '');
+            }}
+            disabled={disabled}
+          >
+            <SelectTrigger className="h-6 text-[11px] min-w-0 flex-1">
+              <SelectValue placeholder="Provider" />
+            </SelectTrigger>
+            <SelectContent>
+              {enabledProviders.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.name || p.type}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={model || ''}
+            onValueChange={(val) => onChange(providerId || activeProvider?.id || '', val)}
+            disabled={disabled || models.length === 0}
+          >
+            <SelectTrigger className="h-6 text-[11px] min-w-0 flex-1 max-w-[140px]">
+              <SelectValue placeholder="Model" />
+            </SelectTrigger>
+            <SelectContent>
+              {models.map((m) => (
+                <SelectItem key={m} value={m}>{m}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+});
+RoleModelSelect.displayName = 'RoleModelSelect';
+
+const AgentRolesPanel = memo(() => {
+  const { t } = useTranslation();
+  const isRunning = useAgentStore((s) => s.isRunning);
+  const agentRoles = useSettingsStore((s) => s.settings.ai.agentRoles) ?? DEFAULT_ROLES;
+  const updateAi = useSettingsStore((s) => s.updateAi);
+  const [expanded, setExpanded] = useState(false);
+
+  const updateRole = useCallback(
+    (patch: Partial<AgentRolesConfig>) => {
+      updateAi('agentRoles', { ...DEFAULT_ROLES, ...agentRoles, ...patch });
+    },
+    [agentRoles, updateAi],
+  );
+
+  const hasActiveRole = agentRoles.planner.enabled || agentRoles.reviewer.enabled;
+
+  return (
+    <div>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1.5 text-[11px] text-theme-text-muted hover:text-theme-text transition-colors w-full"
+      >
+        {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+        <span className="font-medium">{t('agent.roles.title')}</span>
+        {hasActiveRole && <span className="w-1.5 h-1.5 rounded-full bg-theme-accent" />}
+      </button>
+      {expanded && (
+        <div className="mt-2 space-y-3 pl-1">
+          <RoleModelSelect
+            label={t('agent.roles.planner')}
+            enabled={agentRoles.planner.enabled}
+            providerId={agentRoles.planner.providerId}
+            model={agentRoles.planner.model}
+            onToggle={(enabled) => updateRole({ planner: { ...agentRoles.planner, enabled } })}
+            onChange={(pid, m) => updateRole({ planner: { ...agentRoles.planner, providerId: pid, model: m } })}
+            disabled={isRunning}
+          />
+          <RoleModelSelect
+            label={t('agent.roles.reviewer')}
+            enabled={agentRoles.reviewer.enabled}
+            providerId={agentRoles.reviewer.providerId}
+            model={agentRoles.reviewer.model}
+            onToggle={(enabled) => updateRole({ reviewer: { ...agentRoles.reviewer, enabled } })}
+            onChange={(pid, m) => updateRole({ reviewer: { ...agentRoles.reviewer, providerId: pid, model: m } })}
+            disabled={isRunning}
+          >
+            <div className="flex items-center gap-1 ml-1">
+              <span className="text-[10px] text-theme-text-muted">{t('agent.roles.interval')}</span>
+              <input
+                type="number"
+                min={1}
+                max={20}
+                value={agentRoles.reviewer.interval || 5}
+                onChange={(e) => {
+                  const val = Math.max(1, Math.min(20, parseInt(e.target.value) || 5));
+                  updateRole({ reviewer: { ...agentRoles.reviewer, interval: val } });
+                }}
+                disabled={isRunning}
+                className="w-10 h-6 text-[11px] text-center rounded border border-theme-border bg-theme-bg text-theme-text"
+              />
+            </div>
+          </RoleModelSelect>
+        </div>
+      )}
+    </div>
+  );
+});
+AgentRolesPanel.displayName = 'AgentRolesPanel';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Task Input
@@ -256,6 +431,7 @@ const STEP_ICONS: Record<AgentStep['type'], React.ElementType> = {
   error: XCircle,
   user_input: Shield,
   verify: CheckCircle2,
+  review: ScanSearch,
 };
 
 const StepEntry = memo(({ step }: { step: AgentStep }) => {
@@ -895,9 +1071,10 @@ export const AgentPanel = () => {
         />
       </div>
 
-      {/* Autonomy Selector */}
-      <div className="px-4 py-2 border-b border-theme-border">
+      {/* Autonomy Selector + Roles */}
+      <div className="px-4 py-2 border-b border-theme-border space-y-2">
         <AutonomySelector />
+        <AgentRolesPanel />
       </div>
 
       {/* Scrollable Content */}

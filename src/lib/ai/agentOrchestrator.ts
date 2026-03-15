@@ -16,6 +16,8 @@ import { useSessionTreeStore } from '../../store/sessionTreeStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { getProvider } from './providerRegistry';
 import { buildAgentSystemPrompt } from './agentSystemPrompt';
+import { buildPlannerSystemPrompt } from './agentPlanner';
+import { buildReviewerSystemPrompt, buildReviewPrompt, parseReview, DEFAULT_REVIEW_INTERVAL } from './agentReviewer';
 import { getToolsForContext, isCommandDenied, executeTool, READ_ONLY_TOOLS } from './tools';
 import { estimateTokens, getModelContextWindow, responseReserve } from './tokenUtils';
 import { getActiveCwd } from '../terminalRegistry';
@@ -23,8 +25,8 @@ import { nodeGetState, nodeAgentStatus } from '../api';
 import { api } from '../api';
 import i18n from '../../i18n';
 import { useToastStore } from '../../hooks/useToast';
-import type { ChatMessage } from './providers';
-import type { AgentTask, AgentStep, AgentApproval, AgentPlanStep, AiToolResult } from '../../types';
+import type { ChatMessage, AiStreamProvider } from './providers';
+import type { AgentTask, AgentStep, AgentApproval, AgentPlanStep, AiToolResult, AgentRoleConfig, AgentReviewerConfig } from '../../types';
 import type { ToolExecutionContext } from './tools';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -244,6 +246,10 @@ function rebuildMessagesFromSteps(messages: ChatMessage[], steps: AgentStep[]): 
             });
           }
           break;
+        case 'review':
+          // Reviewer feedback — inject as assistant context
+          messages.push({ role: 'assistant', content: step.content });
+          break;
         // observation, error, user_input, verify — skip (already captured in tool results)
       }
     }
@@ -381,6 +387,46 @@ async function getApiKeyForProvider(providerId: string, providerType: string): P
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Helper: Resolve role-specific provider/model config
+// Falls back to task default if role is not configured or disabled
+// ═══════════════════════════════════════════════════════════════════════════
+
+type ResolvedRoleConfig = {
+  provider: AiStreamProvider;
+  baseUrl: string;
+  model: string;
+  apiKey: string;
+};
+
+async function resolveRoleConfig(
+  roleConfig: AgentRoleConfig | AgentReviewerConfig | undefined,
+  fallback: { provider: AiStreamProvider; baseUrl: string; model: string; apiKey: string },
+): Promise<ResolvedRoleConfig> {
+  if (!roleConfig?.enabled || !roleConfig.providerId || !roleConfig.model) {
+    return fallback;
+  }
+
+  const settings = useSettingsStore.getState().settings;
+  const roleProvider = settings.ai.providers.find(p => p.id === roleConfig.providerId);
+  if (!roleProvider || !roleProvider.enabled || !roleProvider.baseUrl) {
+    return fallback;
+  }
+
+  try {
+    const roleAiProvider = getProvider(roleProvider.type);
+    const roleApiKey = await getApiKeyForProvider(roleProvider.id, roleProvider.type);
+    return {
+      provider: roleAiProvider,
+      baseUrl: roleProvider.baseUrl,
+      model: roleConfig.model,
+      apiKey: roleApiKey,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Main Entry: Run Agent
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -406,6 +452,14 @@ export async function runAgent(task: AgentTask, signal: AbortSignal): Promise<vo
 
     const aiProvider = getProvider(provider.type);
     const apiKey = await getApiKeyForProvider(provider.id, provider.type);
+
+    // ── Resolve role-specific configs ────────────────────────────────────
+    const agentRoles = settings.ai.agentRoles;
+    const executorFallback = { provider: aiProvider, baseUrl: provider.baseUrl, model: task.model, apiKey };
+    const plannerConfig = await resolveRoleConfig(agentRoles?.planner, executorFallback);
+    const reviewerRoleConfig = agentRoles?.reviewer;
+    const reviewerConfig = await resolveRoleConfig(reviewerRoleConfig, executorFallback);
+    const reviewInterval = reviewerRoleConfig?.enabled ? (reviewerRoleConfig.interval ?? DEFAULT_REVIEW_INTERVAL) : 0;
 
     // ── Get available tools (inherit tab context from task creation) ─────
     const disabledToolNames = settings.ai.toolUse?.disabledTools ?? [];
@@ -470,41 +524,74 @@ export async function runAgent(task: AgentTask, signal: AbortSignal): Promise<vo
       startRound = task.resumeFromRound;
       store().setTaskStatus('executing');
     } else {
-      // ── Phase 1: Planning (normal path) ────────────────────────────────
+      // ── Phase 1: Planning ──────────────────────────────────────────────
+      // Use planner role if configured (may use a different, cheaper/faster model)
+      const useDedicatedPlanner = !!agentRoles?.planner?.enabled && !!agentRoles.planner.providerId && !!agentRoles.planner.model;
+
       const planStep = createStep(0, 'plan', '');
       store().appendStep(planStep);
       store().updateStep(planStep.id, { status: 'running' });
 
       let planText = '';
       let planThinking = '';
-      const planConfig = {
-        baseUrl: provider.baseUrl,
-        model: task.model,
-        apiKey,
-        tools,
-      };
 
-      try {
-        for await (const event of aiProvider.streamCompletion(planConfig, messages, signal)) {
-          if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
-          if (event.type === 'content') {
-            planText += event.content;
-          }
-          if (event.type === 'thinking') {
-            planThinking += event.content;
-          }
-          if (event.type === 'error') {
-            throw new Error(event.message);
-          }
-        }
-      } catch (planErr) {
-        // Ensure plan step is marked as error on failure
-        store().updateStep(planStep.id, {
-          status: 'error',
-          content: planText || (planErr instanceof Error ? planErr.message : String(planErr)),
-          durationMs: Date.now() - planStep.timestamp,
+      if (useDedicatedPlanner) {
+        // Dedicated planner: Use planner-specific prompt (no tools, plan-only)
+        const plannerPrompt = buildPlannerSystemPrompt({
+          autonomyLevel: task.autonomyLevel,
+          maxRounds: task.maxRounds,
+          availableSessions: sessionsDesc,
         });
-        throw planErr;
+        const plannerMessages: ChatMessage[] = [
+          { role: 'system', content: plannerPrompt + (cwd ? `\nCurrent working directory: ${cwd}` : '') },
+          { role: 'user', content: `Task: ${task.goal}` },
+        ];
+        const planLlmConfig = {
+          baseUrl: plannerConfig.baseUrl,
+          model: plannerConfig.model,
+          apiKey: plannerConfig.apiKey,
+          tools: [], // Planner does not call tools
+        };
+
+        try {
+          for await (const event of plannerConfig.provider.streamCompletion(planLlmConfig, plannerMessages, signal)) {
+            if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+            if (event.type === 'content') planText += event.content;
+            if (event.type === 'thinking') planThinking += event.content;
+            if (event.type === 'error') throw new Error(event.message);
+          }
+        } catch (planErr) {
+          store().updateStep(planStep.id, {
+            status: 'error',
+            content: planText || (planErr instanceof Error ? planErr.message : String(planErr)),
+            durationMs: Date.now() - planStep.timestamp,
+          });
+          throw planErr;
+        }
+      } else {
+        // Default: executor model handles planning (existing behavior)
+        const planLlmConfig = {
+          baseUrl: provider.baseUrl,
+          model: task.model,
+          apiKey,
+          tools,
+        };
+
+        try {
+          for await (const event of aiProvider.streamCompletion(planLlmConfig, messages, signal)) {
+            if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+            if (event.type === 'content') planText += event.content;
+            if (event.type === 'thinking') planThinking += event.content;
+            if (event.type === 'error') throw new Error(event.message);
+          }
+        } catch (planErr) {
+          store().updateStep(planStep.id, {
+            status: 'error',
+            content: planText || (planErr instanceof Error ? planErr.message : String(planErr)),
+            durationMs: Date.now() - planStep.timestamp,
+          });
+          throw planErr;
+        }
       }
 
       // Parse plan
@@ -869,6 +956,71 @@ export async function runAgent(task: AgentTask, signal: AbortSignal): Promise<vo
       const allSucceeded = toolResults.every(tr => !tr.content?.startsWith('Error:') && !tr.content?.startsWith('User rejected'));
       if (allSucceeded && store().activeTask?.plan) {
         store().advancePlanStep();
+      }
+
+      // ── Reviewer Check ────────────────────────────────────────────────
+      // Invoke the reviewer at configured intervals to audit recent actions
+      if (reviewInterval > 0 && round > 0 && ((round + 1) % reviewInterval === 0)) {
+        if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+
+        try {
+          const currentSteps = store().activeTask?.steps ?? [];
+          // Get recent steps for the reviewer (last reviewInterval rounds)
+          const recentSteps = currentSteps.filter(
+            s => s.roundIndex > round - reviewInterval && s.roundIndex <= round,
+          );
+
+          if (recentSteps.length > 0) {
+            const reviewerPrompt = buildReviewerSystemPrompt();
+            const reviewContent = buildReviewPrompt(task.goal, recentSteps, round, task.maxRounds);
+            const reviewMessages: ChatMessage[] = [
+              { role: 'system', content: reviewerPrompt },
+              { role: 'user', content: reviewContent },
+            ];
+
+            const reviewLlmConfig = {
+              baseUrl: reviewerConfig.baseUrl,
+              model: reviewerConfig.model,
+              apiKey: reviewerConfig.apiKey,
+              tools: [], // Reviewer does not call tools
+            };
+
+            let reviewText = '';
+            for await (const event of reviewerConfig.provider.streamCompletion(reviewLlmConfig, reviewMessages, signal)) {
+              if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+              if (event.type === 'content') reviewText += event.content;
+              if (event.type === 'error') throw new Error(event.message);
+            }
+
+            // Record review step
+            const reviewStep = createStep(round, 'review', reviewText);
+            store().appendStep(reviewStep);
+            store().updateStep(reviewStep.id, { status: 'completed' });
+
+            // Parse and act on review
+            const review = parseReview(reviewText);
+            if (review) {
+              if (!review.shouldContinue) {
+                // Critical issue — stop execution
+                const p = store().activeTask?.plan;
+                if (p) store().setPlan({ ...p, currentStepIndex: p.steps.length });
+                store().setTaskSummary(`Reviewer stopped task: ${review.findings}`);
+                store().setTaskStatus('failed');
+                showToast('agent.toast.reviewer_stopped', 'warning');
+                return;
+              }
+
+              // Inject review feedback into executor's conversation
+              if (review.assessment !== 'on_track' && review.suggestions.length > 0) {
+                const feedbackMsg = `[Review feedback after round ${round + 1}]: ${review.findings}\nSuggestions: ${review.suggestions.join('; ')}`;
+                messages.push({ role: 'user', content: feedbackMsg });
+              }
+            }
+          }
+        } catch (reviewErr) {
+          // Reviewer failure is non-fatal — log and continue
+          console.warn('[AgentOrchestrator] Reviewer failed:', reviewErr);
+        }
       }
     }
 

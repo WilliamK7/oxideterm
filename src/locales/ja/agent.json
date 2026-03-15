@@ -19,6 +19,12 @@
       "title": "プラン",
       "skip_step": "スキップ"
     },
+    "roles": {
+      "title": "ロール設定",
+      "planner": "プランナー",
+      "reviewer": "レビュアー",
+      "interval": "毎"
+    },
     "step": {
       "plan": "計画",
       "tool_call": "ツール呼び出し",
@@ -28,6 +34,7 @@
       "approval_request": "承認リクエスト",
       "user_input": "ユーザー入力",
       "verify": "検証",
+      "review": "レビュー",
       "summary": "要約",
       "expand": "すべて表示",
       "collapse": "折りたたむ"
@@ -77,7 +84,8 @@
       "approval_needed": "エージェントの承認が必要です",
       "context_overflow": "コンテキスト制限に達しました。タスクを停止しました",
       "max_rounds": "最大ラウンドに達しました。タスクが未完了の可能性があります",
-      "no_progress": "エージェント停止：複数ラウンド進捗なし"
+      "no_progress": "エージェント停止：複数ラウンド進捗なし",
+      "reviewer_stopped": "レビュアーがタスクを停止しました"
     }
   }
 }

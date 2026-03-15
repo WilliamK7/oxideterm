@@ -19,6 +19,12 @@
       "title": "Plan",
       "skip_step": "Skip"
     },
+    "roles": {
+      "title": "Roles",
+      "planner": "Planner",
+      "reviewer": "Reviewer",
+      "interval": "Every"
+    },
     "step": {
       "plan": "Planning",
       "tool_call": "Tool Call",
@@ -28,6 +34,7 @@
       "approval_request": "Approval",
       "user_input": "User Input",
       "verify": "Verify",
+      "review": "Review",
       "summary": "Summary",
       "expand": "Show more",
       "collapse": "Show less"
@@ -77,7 +84,8 @@
       "approval_needed": "Agent needs approval",
       "context_overflow": "Context limit reached, task stopped",
       "max_rounds": "Max rounds reached, task may be incomplete",
-      "no_progress": "Agent stopped: no progress after multiple rounds"
+      "no_progress": "Agent stopped: no progress after multiple rounds",
+      "reviewer_stopped": "Reviewer stopped the task"
     }
   }
 }

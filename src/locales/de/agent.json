@@ -19,6 +19,12 @@
       "title": "Plan",
       "skip_step": "Überspringen"
     },
+    "roles": {
+      "title": "Rollen",
+      "planner": "Planer",
+      "reviewer": "Prüfer",
+      "interval": "Alle"
+    },
     "step": {
       "plan": "Planung",
       "tool_call": "Werkzeugaufruf",
@@ -28,6 +34,7 @@
       "approval_request": "Genehmigungsanfrage",
       "user_input": "Benutzereingabe",
       "verify": "Überprüfen",
+      "review": "Prüfung",
       "summary": "Zusammenfassung",
       "expand": "Mehr anzeigen",
       "collapse": "Weniger anzeigen"
@@ -77,7 +84,8 @@
       "approval_needed": "Agent benötigt Genehmigung",
       "context_overflow": "Kontextlimit erreicht, Aufgabe gestoppt",
       "max_rounds": "Max. Runden erreicht, Aufgabe möglicherweise unvollständig",
-      "no_progress": "Agent gestoppt: Kein Fortschritt nach mehreren Runden"
+      "no_progress": "Agent gestoppt: Kein Fortschritt nach mehreren Runden",
+      "reviewer_stopped": "Prüfer hat die Aufgabe gestoppt"
     }
   }
 }

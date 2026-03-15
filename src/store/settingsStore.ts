@@ -223,6 +223,8 @@ export interface AiSettings {
   };
   /** Configured MCP servers */
   mcpServers?: import('../lib/ai/mcp/mcpTypes').McpServerConfig[];
+  /** Agent role configuration (planner/reviewer can use different provider/model) */
+  agentRoles?: import('../types').AgentRolesConfig;
 }
 
 /** Local terminal settings */

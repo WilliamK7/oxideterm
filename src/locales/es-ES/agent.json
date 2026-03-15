@@ -19,6 +19,12 @@
       "title": "Plan",
       "skip_step": "Omitir"
     },
+    "roles": {
+      "title": "Roles",
+      "planner": "Planificador",
+      "reviewer": "Revisor",
+      "interval": "Cada"
+    },
     "step": {
       "plan": "Planificación",
       "tool_call": "Llamada a herramienta",
@@ -28,6 +34,7 @@
       "approval_request": "Solicitud de aprobación",
       "user_input": "Entrada del usuario",
       "verify": "Verificar",
+      "review": "Revisión",
       "summary": "Resumen",
       "expand": "Ver más",
       "collapse": "Ver menos"
@@ -77,7 +84,8 @@
       "approval_needed": "El agente necesita aprobación",
       "context_overflow": "Límite de contexto alcanzado, tarea detenida",
       "max_rounds": "Máximo de rondas alcanzado, la tarea puede estar incompleta",
-      "no_progress": "Agente detenido: sin progreso tras varias rondas"
+      "no_progress": "Agente detenido: sin progreso tras varias rondas",
+      "reviewer_stopped": "El revisor detuvo la tarea"
     }
   }
 }

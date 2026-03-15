@@ -1470,6 +1470,31 @@ export type AgentSymbolIndexResult = {
 /** Agent autonomy level — controls approval requirements */
 export type AutonomyLevel = 'supervised' | 'balanced' | 'autonomous';
 
+/** Agent role type — planner, executor, reviewer */
+export type AgentRoleType = 'planner' | 'executor' | 'reviewer';
+
+/** Configuration for an agent role (allows separate provider/model per role) */
+export type AgentRoleConfig = {
+  /** Whether this role uses a custom provider/model (false = use task default) */
+  enabled: boolean;
+  /** Provider ID (null = use task default) */
+  providerId: string | null;
+  /** Model ID (null = use task default) */
+  model: string | null;
+};
+
+/** Configuration for the reviewer role */
+export type AgentReviewerConfig = AgentRoleConfig & {
+  /** Interval in rounds between automatic reviews (0 = disabled) */
+  interval: number;
+};
+
+/** Agent roles configuration */
+export type AgentRolesConfig = {
+  planner: AgentRoleConfig;
+  reviewer: AgentReviewerConfig;
+};
+
 /** Agent task execution status */
 export type AgentTaskStatus =
   | 'planning'
@@ -1505,7 +1530,7 @@ export type AgentStep = {
   /** Which round this step belongs to (0-based) */
   roundIndex: number;
   /** Step type */
-  type: 'plan' | 'tool_call' | 'observation' | 'decision' | 'error' | 'user_input' | 'verify';
+  type: 'plan' | 'tool_call' | 'observation' | 'decision' | 'error' | 'user_input' | 'verify' | 'review';
   /** Text content (AI reasoning, plan text, error message, etc.) */
   content: string;
   /** Tool call details (only for type === 'tool_call') */

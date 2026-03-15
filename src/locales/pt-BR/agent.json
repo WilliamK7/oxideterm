@@ -19,6 +19,12 @@
       "title": "Plano",
       "skip_step": "Pular"
     },
+    "roles": {
+      "title": "Funções",
+      "planner": "Planejador",
+      "reviewer": "Revisor",
+      "interval": "A cada"
+    },
     "step": {
       "plan": "Planejamento",
       "tool_call": "Chamada de ferramenta",
@@ -28,6 +34,7 @@
       "approval_request": "Solicitação de aprovação",
       "user_input": "Entrada do usuário",
       "verify": "Verificar",
+      "review": "Revisão",
       "summary": "Resumo",
       "expand": "Ver mais",
       "collapse": "Ver menos"
@@ -77,7 +84,8 @@
       "approval_needed": "Agente precisa de aprovação",
       "context_overflow": "Limite de contexto atingido, tarefa parada",
       "max_rounds": "Máximo de rodadas atingido, tarefa pode estar incompleta",
-      "no_progress": "Agente parado: sem progresso após várias rodadas"
+      "no_progress": "Agente parado: sem progresso após várias rodadas",
+      "reviewer_stopped": "Revisor interrompeu a tarefa"
     }
   }
 }

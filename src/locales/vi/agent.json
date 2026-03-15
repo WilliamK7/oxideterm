@@ -19,6 +19,12 @@
       "title": "Kế hoạch",
       "skip_step": "Bỏ qua"
     },
+    "roles": {
+      "title": "Vai trò",
+      "planner": "Lập kế hoạch",
+      "reviewer": "Đánh giá",
+      "interval": "Mỗi"
+    },
     "step": {
       "plan": "Lập kế hoạch",
       "tool_call": "Gọi công cụ",
@@ -28,6 +34,7 @@
       "approval_request": "Yêu cầu phê duyệt",
       "user_input": "Nhập liệu",
       "verify": "Xác minh",
+      "review": "Đánh giá",
       "summary": "Tóm tắt",
       "expand": "Xem thêm",
       "collapse": "Thu gọn"
@@ -77,7 +84,8 @@
       "approval_needed": "Đại lý cần phê duyệt",
       "context_overflow": "Đạt giới hạn ngữ cảnh, nhiệm vụ đã dừng",
       "max_rounds": "Đạt số vòng tối đa, nhiệm vụ có thể chưa hoàn thiện",
-      "no_progress": "Đại lý đã dừng: không có tiến triển sau nhiều vòng"
+      "no_progress": "Đại lý đã dừng: không có tiến triển sau nhiều vòng",
+      "reviewer_stopped": "Người đánh giá đã dừng tác vụ"
     }
   }
 }

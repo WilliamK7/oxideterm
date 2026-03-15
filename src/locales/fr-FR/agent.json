@@ -19,6 +19,12 @@
       "title": "Plan",
       "skip_step": "Ignorer"
     },
+    "roles": {
+      "title": "Rôles",
+      "planner": "Planificateur",
+      "reviewer": "Réviseur",
+      "interval": "Tous les"
+    },
     "step": {
       "plan": "Planification",
       "tool_call": "Appel d'outil",
@@ -28,6 +34,7 @@
       "approval_request": "Demande d'approbation",
       "user_input": "Entrée utilisateur",
       "verify": "Vérifier",
+      "review": "Révision",
       "summary": "Résumé",
       "expand": "Voir plus",
       "collapse": "Réduire"
@@ -77,7 +84,8 @@
       "approval_needed": "L'agent a besoin d'approbation",
       "context_overflow": "Limite de contexte atteinte, tâche arrêtée",
       "max_rounds": "Nombre max de tours atteint, tâche peut être incomplète",
-      "no_progress": "Agent arrêté : aucun progrès après plusieurs tours"
+      "no_progress": "Agent arrêté : aucun progrès après plusieurs tours",
+      "reviewer_stopped": "Le réviseur a arrêté la tâche"
     }
   }
 }

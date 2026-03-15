@@ -19,6 +19,12 @@
       "title": "Piano",
       "skip_step": "Salta"
     },
+    "roles": {
+      "title": "Ruoli",
+      "planner": "Pianificatore",
+      "reviewer": "Revisore",
+      "interval": "Ogni"
+    },
     "step": {
       "plan": "Pianificazione",
       "tool_call": "Chiamata strumento",
@@ -28,6 +34,7 @@
       "approval_request": "Richiesta di approvazione",
       "user_input": "Input utente",
       "verify": "Verifica",
+      "review": "Revisione",
       "summary": "Riepilogo",
       "expand": "Mostra altro",
       "collapse": "Mostra meno"
@@ -77,7 +84,8 @@
       "approval_needed": "L'agente necessita approvazione",
       "context_overflow": "Limite di contesto raggiunto, compito interrotto",
       "max_rounds": "Numero massimo di turni raggiunto, il compito potrebbe essere incompleto",
-      "no_progress": "Agente fermato: nessun progresso dopo più turni"
+      "no_progress": "Agente fermato: nessun progresso dopo più turni",
+      "reviewer_stopped": "Il revisore ha fermato l'attività"
     }
   }
 }

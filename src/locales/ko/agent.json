@@ -19,6 +19,12 @@
       "title": "계획",
       "skip_step": "건너뛰기"
     },
+    "roles": {
+      "title": "역할 설정",
+      "planner": "플래너",
+      "reviewer": "리뷰어",
+      "interval": "매"
+    },
     "step": {
       "plan": "계획",
       "tool_call": "도구 호출",
@@ -28,6 +34,7 @@
       "approval_request": "승인 요청",
       "user_input": "사용자 입력",
       "verify": "검증",
+      "review": "리뷰",
       "summary": "요약",
       "expand": "더 보기",
       "collapse": "접기"
@@ -77,7 +84,8 @@
       "approval_needed": "에이전트 승인 필요",
       "context_overflow": "컨텍스트 한도 도달, 작업 중지됨",
       "max_rounds": "최대 라운드 도달, 작업이 불완전할 수 있음",
-      "no_progress": "에이전트 중지: 여러 라운드 동안 진행 없음"
+      "no_progress": "에이전트 중지: 여러 라운드 동안 진행 없음",
+      "reviewer_stopped": "리뷰어가 작업을 중지했습니다"
     }
   }
 }
