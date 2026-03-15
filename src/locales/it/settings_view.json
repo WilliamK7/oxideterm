@@ -335,6 +335,7 @@
       "tool_use_group_tui_interaction": "Interazione TUI",
       "tool_use_group_mcp": "Server MCP",
       "tool_use_group_navigation": "Navigazione",
+      "tool_use_group_status": "Stato e osservabilità",
       "experimental": "Sperimentale",
       "tool_use_subgroup_read_only": "Solo lettura",
       "tool_use_subgroup_write": "Scrittura / Esecuzione",

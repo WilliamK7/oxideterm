@@ -335,6 +335,7 @@
       "tool_use_group_tui_interaction": "TUI Interaction",
       "tool_use_group_mcp": "MCP Servers",
       "tool_use_group_navigation": "Navigation",
+      "tool_use_group_status": "Status & Observability",
       "experimental": "Experimental",
       "tool_use_subgroup_read_only": "Read-Only",
       "tool_use_subgroup_write": "Write / Execute",

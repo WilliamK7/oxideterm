@@ -169,7 +169,14 @@
         "list_mcp_resources": "MCP 資源",
         "read_mcp_resource": "讀取 MCP 資源",
         "open_tab": "開啟分頁",
-        "open_session_tab": "開啟工作階段分頁"
+        "open_session_tab": "開啟工作階段分頁",
+        "get_event_log": "事件日誌",
+        "get_transfer_status": "傳輸狀態",
+        "get_recording_status": "錄製狀態",
+        "get_broadcast_status": "廣播狀態",
+        "get_plugin_details": "外掛詳情",
+        "get_ssh_environment": "SSH 環境",
+        "get_topology": "網路拓撲"
       }
     },
     "tool_selector": {

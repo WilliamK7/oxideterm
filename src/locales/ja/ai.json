@@ -169,7 +169,14 @@
         "list_mcp_resources": "MCPリソース",
         "read_mcp_resource": "MCPリソース読取",
         "open_tab": "タブを開く",
-        "open_session_tab": "セッションタブを開く"
+        "open_session_tab": "セッションタブを開く",
+        "get_event_log": "イベントログ",
+        "get_transfer_status": "転送状況",
+        "get_recording_status": "録画状況",
+        "get_broadcast_status": "ブロードキャスト状況",
+        "get_plugin_details": "プラグイン詳細",
+        "get_ssh_environment": "SSH 環境",
+        "get_topology": "トポロジー"
       }
     },
     "tool_selector": {

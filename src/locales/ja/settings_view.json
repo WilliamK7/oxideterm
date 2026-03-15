@@ -335,6 +335,7 @@
       "tool_use_group_tui_interaction": "TUI 操作",
       "tool_use_group_mcp": "MCP サーバー",
       "tool_use_group_navigation": "ナビゲーション",
+      "tool_use_group_status": "ステータスとオブザーバビリティ",
       "experimental": "実験的",
       "tool_use_subgroup_read_only": "読み取り専用",
       "tool_use_subgroup_write": "書き込み / 実行",

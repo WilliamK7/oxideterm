@@ -210,7 +210,7 @@ export const BUILTIN_TOOLS: AiToolDefinition[] = [
           type: 'number',
           minimum: 1,
           maximum: 500,
-          description: 'Maximum number of lines to return. Default: 100. Max: 500.',
+          description: 'Maximum number of lines to return. Default: 200. Max: 500.',
         },
       },
       required: ['session_id'],
@@ -900,6 +900,96 @@ export const MCP_RESOURCE_TOOL_DEFS: AiToolDefinition[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Status & Observability Tools — Always available (CONTEXT_FREE)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const STATUS_TOOL_DEFS: AiToolDefinition[] = [
+  {
+    name: 'get_event_log',
+    description: 'Read the connection lifecycle event log. Shows connection, reconnect, and node events with severity, category, and timestamps. Useful for diagnosing connection issues.',
+    parameters: {
+      type: 'object',
+      properties: {
+        severity: {
+          type: 'string',
+          enum: ['info', 'warn', 'error'],
+          description: 'Filter by severity level. If omitted, returns all severities.',
+        },
+        category: {
+          type: 'string',
+          enum: ['connection', 'reconnect', 'node'],
+          description: 'Filter by event category. If omitted, returns all categories.',
+        },
+        limit: {
+          type: 'number',
+          minimum: 1,
+          maximum: 200,
+          description: 'Maximum number of entries to return. Default: 50.',
+        },
+      },
+    },
+  },
+  {
+    name: 'get_transfer_status',
+    description: 'Get the current SFTP file transfer queue status. Shows pending, active, paused, completed, and failed transfers with progress and speed info.',
+    parameters: {
+      type: 'object',
+      properties: {
+        node_id: {
+          type: 'string',
+          description: 'Filter transfers by node ID. If omitted, returns all transfers.',
+        },
+        state: {
+          type: 'string',
+          enum: ['pending', 'active', 'paused', 'completed', 'cancelled', 'error'],
+          description: 'Filter by transfer state. If omitted, returns all states.',
+        },
+      },
+    },
+  },
+  {
+    name: 'get_recording_status',
+    description: 'Check if any terminal sessions are currently being recorded (asciicast format). Returns recording metadata, elapsed time, and event count for each active recording.',
+    parameters: { type: 'object', properties: {} },
+  },
+  {
+    name: 'get_broadcast_status',
+    description: 'Check broadcast mode status. When enabled, keyboard input is sent simultaneously to multiple terminal panes. Returns whether broadcast is active and which panes are targeted.',
+    parameters: { type: 'object', properties: {} },
+  },
+  {
+    name: 'get_plugin_details',
+    description: 'Get detailed information about installed plugins including runtime state, error messages, and recent log entries. Extends list_plugins with diagnostic data.',
+    parameters: {
+      type: 'object',
+      properties: {
+        plugin_id: {
+          type: 'string',
+          description: 'Specific plugin ID to inspect. If omitted, returns summary of all plugins with error counts.',
+        },
+      },
+    },
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SSH Environment & Topology Tools — Always available (CONTEXT_FREE)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const INFRA_EXTRA_TOOL_DEFS: AiToolDefinition[] = [
+  {
+    name: 'get_ssh_environment',
+    description: 'Get local SSH environment info: configured hosts from ~/.ssh/config, available SSH keys, and whether an SSH agent is running. Useful for connection troubleshooting.',
+    parameters: { type: 'object', properties: {} },
+  },
+  {
+    name: 'get_topology',
+    description: 'Get the network topology graph showing all saved SSH connections as nodes and their relationships (jump chains, direct connections) as edges. Useful for understanding multi-hop SSH paths.',
+    parameters: { type: 'object', properties: {} },
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Safety Classification
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -946,6 +1036,15 @@ export const READ_ONLY_TOOLS = new Set([
   // MCP resources (read-only)
   'list_mcp_resources',
   'read_mcp_resource',
+  // Status & observability (all read-only)
+  'get_event_log',
+  'get_transfer_status',
+  'get_recording_status',
+  'get_broadcast_status',
+  'get_plugin_details',
+  // SSH environment & topology (read-only)
+  'get_ssh_environment',
+  'get_topology',
 ]);
 
 /**
@@ -1019,6 +1118,15 @@ export const CONTEXT_FREE_TOOLS = new Set([
   // MCP resource tools
   'list_mcp_resources',
   'read_mcp_resource',
+  // Status & observability tools
+  'get_event_log',
+  'get_transfer_status',
+  'get_recording_status',
+  'get_broadcast_status',
+  'get_plugin_details',
+  // SSH environment & topology tools
+  'get_ssh_environment',
+  'get_topology',
 ]);
 
 /** Tools that use session_id parameter instead of node_id */
@@ -1176,6 +1284,11 @@ export const TOOL_GROUPS: { groupKey: string; readOnly: string[]; write: string[
     readOnly: ['open_tab'],
     write: ['open_session_tab'],
   },
+  {
+    groupKey: 'status',
+    readOnly: ['get_event_log', 'get_transfer_status', 'get_recording_status', 'get_broadcast_status', 'get_plugin_details', 'get_ssh_environment', 'get_topology'],
+    write: [],
+  },
 ];
 
 /**
@@ -1200,6 +1313,8 @@ export function getToolsForContext(
     ...PLUGIN_TOOL_DEFS,
     ...MCP_RESOURCE_TOOL_DEFS,
     ...NAVIGATION_TOOL_DEFS,
+    ...STATUS_TOOL_DEFS,
+    ...INFRA_EXTRA_TOOL_DEFS,
   ];
   
   return allTools.filter(t => {

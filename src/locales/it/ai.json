@@ -169,7 +169,14 @@
         "list_mcp_resources": "Risorse MCP",
         "read_mcp_resource": "Leggi risorsa MCP",
         "open_tab": "Apri Scheda",
-        "open_session_tab": "Apri Scheda Sessione"
+        "open_session_tab": "Apri Scheda Sessione",
+        "get_event_log": "Registro eventi",
+        "get_transfer_status": "Stato trasferimento",
+        "get_recording_status": "Stato registrazione",
+        "get_broadcast_status": "Stato broadcast",
+        "get_plugin_details": "Dettagli plugin",
+        "get_ssh_environment": "Ambiente SSH",
+        "get_topology": "Topologia"
       }
     },
     "tool_selector": {

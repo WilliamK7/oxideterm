@@ -169,7 +169,14 @@
         "list_mcp_resources": "Tài nguyên MCP",
         "read_mcp_resource": "Đọc tài nguyên MCP",
         "open_tab": "Mở Tab",
-        "open_session_tab": "Mở Tab Phiên"
+        "open_session_tab": "Mở Tab Phiên",
+        "get_event_log": "Nhật ký sự kiện",
+        "get_transfer_status": "Trạng thái truyền",
+        "get_recording_status": "Trạng thái ghi",
+        "get_broadcast_status": "Trạng thái phát",
+        "get_plugin_details": "Chi tiết plugin",
+        "get_ssh_environment": "Môi trường SSH",
+        "get_topology": "Tô pô"
       }
     },
     "tool_selector": {

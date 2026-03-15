@@ -169,7 +169,14 @@
         "list_mcp_resources": "MCP 资源",
         "read_mcp_resource": "读取 MCP 资源",
         "open_tab": "打开标签页",
-        "open_session_tab": "打开会话标签页"
+        "open_session_tab": "打开会话标签页",
+        "get_event_log": "事件日志",
+        "get_transfer_status": "传输状态",
+        "get_recording_status": "录制状态",
+        "get_broadcast_status": "广播状态",
+        "get_plugin_details": "插件详情",
+        "get_ssh_environment": "SSH 环境",
+        "get_topology": "网络拓扑"
       }
     },
     "tool_selector": {

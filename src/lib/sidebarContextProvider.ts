@@ -24,6 +24,10 @@ import { useLocalTerminalStore } from '../store/localTerminalStore';
 import { useIdeStore } from '../store/ideStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { getSftpContext } from './sftpContextRegistry';
+import { useEventLogStore } from '../store/eventLogStore';
+import { useTransferStore } from '../store/transferStore';
+import { useRecordingStore } from '../store/recordingStore';
+import { useBroadcastStore } from '../store/broadcastStore';
 import type { RemoteEnvInfo, TabType } from '../types';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -449,6 +453,51 @@ export function gatherSidebarContext(config = DEFAULT_CONTEXT_CONFIG): SidebarCo
 }
 
 /**
+ * Gather conditional state hints for sidebar context injection.
+ * Only returns content when there are active issues, transfers, recordings or broadcast.
+ * Keeps output minimal to avoid wasting tokens when nothing interesting is happening.
+ */
+function gatherConditionalStateHints(): string | null {
+  const hints: string[] = [];
+
+  // Event log: recent errors/warnings in last 5 minutes
+  const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+  const recentEntries = useEventLogStore.getState().entries.filter(e => e.timestamp >= fiveMinAgo);
+  const errorCount = recentEntries.filter(e => e.severity === 'error').length;
+  const warnCount = recentEntries.filter(e => e.severity === 'warn').length;
+  if (errorCount > 0 || warnCount > 0) {
+    const parts: string[] = [];
+    if (errorCount > 0) parts.push(`${errorCount} error(s)`);
+    if (warnCount > 0) parts.push(`${warnCount} warning(s)`);
+    hints.push(`⚠ Recent issues (5min): ${parts.join(', ')}. Use get_event_log for details.`);
+  }
+
+  // Active file transfers
+  const activeTransfers = useTransferStore.getState().getActiveTransfers();
+  const pendingTransfers = Array.from(useTransferStore.getState().transfers.values()).filter(t => t.state === 'pending');
+  const transferCount = activeTransfers.length + pendingTransfers.length;
+  if (transferCount > 0) {
+    hints.push(`📦 Active transfers: ${transferCount}. Use get_transfer_status for details.`);
+  }
+
+  // Active recordings
+  const { recordings } = useRecordingStore.getState();
+  if (recordings.size > 0) {
+    hints.push(`🔴 Recording active on ${recordings.size} session(s). Use get_recording_status for details.`);
+  }
+
+  // Broadcast mode
+  const { enabled, targets } = useBroadcastStore.getState();
+  if (enabled) {
+    hints.push(`📡 Broadcast mode ON targeting ${targets.size} pane(s).`);
+  }
+
+  if (hints.length === 0) return null;
+
+  return '## Active State\n' + hints.join('\n');
+}
+
+/**
  * Format environment info as a system prompt segment
  */
 function formatSystemPromptSegment(
@@ -502,6 +551,13 @@ function formatSystemPromptSegment(
   if (sessionsSummary) {
     parts.push('');
     parts.push(sessionsSummary);
+  }
+  
+  // Conditional app state hints — only injected when non-trivial state exists
+  const stateHints = gatherConditionalStateHints();
+  if (stateHints) {
+    parts.push('');
+    parts.push(stateHints);
   }
   
   // Selection notice

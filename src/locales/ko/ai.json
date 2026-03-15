@@ -169,7 +169,14 @@
         "list_mcp_resources": "MCP 리소스",
         "read_mcp_resource": "MCP 리소스 읽기",
         "open_tab": "탭 열기",
-        "open_session_tab": "세션 탭 열기"
+        "open_session_tab": "세션 탭 열기",
+        "get_event_log": "이벤트 로그",
+        "get_transfer_status": "전송 상태",
+        "get_recording_status": "녹화 상태",
+        "get_broadcast_status": "브로드캐스트 상태",
+        "get_plugin_details": "플러그인 상세",
+        "get_ssh_environment": "SSH 환경",
+        "get_topology": "토폴로지"
       }
     },
     "tool_selector": {

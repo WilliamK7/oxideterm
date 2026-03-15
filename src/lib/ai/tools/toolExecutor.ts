@@ -29,6 +29,10 @@ import { useLocalTerminalStore } from '../../../store/localTerminalStore';
 import { useIdeStore } from '../../../store/ideStore';
 import { useSettingsStore } from '../../../store/settingsStore';
 import { usePluginStore } from '../../../store/pluginStore';
+import { useEventLogStore } from '../../../store/eventLogStore';
+import { useTransferStore } from '../../../store/transferStore';
+import { useRecordingStore } from '../../../store/recordingStore';
+import { useBroadcastStore } from '../../../store/broadcastStore';
 import { findPaneBySessionId, getTerminalBuffer, writeToTerminal, subscribeTerminalOutput, readScreen } from '../../terminalRegistry';
 
 /** Max output size returned from a tool execution (bytes) */
@@ -161,6 +165,22 @@ export async function executeTool(
         // Plugin manager tools
         case 'list_plugins':
           return execListPlugins(startTime, toolCallId);
+        // Status & observability tools
+        case 'get_event_log':
+          return execGetEventLog(args, startTime, toolCallId);
+        case 'get_transfer_status':
+          return execGetTransferStatus(args, startTime, toolCallId);
+        case 'get_recording_status':
+          return execGetRecordingStatus(startTime, toolCallId);
+        case 'get_broadcast_status':
+          return execGetBroadcastStatus(startTime, toolCallId);
+        case 'get_plugin_details':
+          return execGetPluginDetails(args, startTime, toolCallId);
+        // SSH environment & topology tools
+        case 'get_ssh_environment':
+          return await execGetSshEnvironment(startTime, toolCallId);
+        case 'get_topology':
+          return await execGetTopology(startTime, toolCallId);
         default:
           return { toolCallId, toolName, success: false, output: '', error: `Unknown context-free tool: ${toolName}`, durationMs: Date.now() - startTime };
       }
@@ -765,7 +785,7 @@ async function execGetTerminalBuffer(
   if (!sessionId) {
     return { toolCallId, toolName: 'get_terminal_buffer', success: false, output: '', error: 'Missing required argument: session_id. Use list_sessions to find session IDs.', durationMs: Date.now() - startTime };
   }
-  const maxLines = clamp(Number(args.max_lines) || 100, 1, 500);
+  const maxLines = clamp(Number(args.max_lines) || 200, 1, 500);
 
   // Path 1: Backend buffer (SSH terminals)
   try {
@@ -2231,4 +2251,271 @@ async function executeMcpTool(
     durationMs: Date.now() - startTime,
     truncated: textParts.join('\n').length > MAX_OUTPUT_BYTES,
   };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Status & Observability Tools
+// ═══════════════════════════════════════════════════════════════════════════
+
+function execGetEventLog(
+  args: Record<string, unknown>,
+  startTime: number,
+  toolCallId: string,
+): AiToolResult {
+  const state = useEventLogStore.getState();
+  let entries = [...state.entries];
+
+  // Optional severity filter
+  const severity = typeof args.severity === 'string' ? args.severity : null;
+  if (severity) {
+    if (['info', 'warn', 'error'].includes(severity)) {
+      entries = entries.filter(e => e.severity === severity);
+    } else {
+      return { toolCallId, toolName: 'get_event_log', success: false, output: '', error: `Invalid severity: "${severity}". Must be one of: info, warn, error.`, durationMs: Date.now() - startTime };
+    }
+  }
+
+  // Optional category filter
+  const category = typeof args.category === 'string' ? args.category : null;
+  if (category) {
+    if (['connection', 'reconnect', 'node'].includes(category)) {
+      entries = entries.filter(e => e.category === category);
+    } else {
+      return { toolCallId, toolName: 'get_event_log', success: false, output: '', error: `Invalid category: "${category}". Must be one of: connection, reconnect, node.`, durationMs: Date.now() - startTime };
+    }
+  }
+
+  // Limit (default 50, max 200)
+  const limit = Math.min(Math.max(Number(args.limit) || 50, 1), 200);
+  entries = entries.slice(-limit);
+
+  if (entries.length === 0) {
+    return { toolCallId, toolName: 'get_event_log', success: true, output: 'No events matching the filter criteria.', durationMs: Date.now() - startTime };
+  }
+
+  const formatted = entries.map(e => ({
+    id: e.id,
+    time: new Date(e.timestamp).toISOString(),
+    severity: e.severity,
+    category: e.category,
+    nodeId: e.nodeId ?? null,
+    title: e.title,
+    detail: e.detail ?? null,
+    source: e.source,
+  }));
+
+  const raw = JSON.stringify(formatted, null, 2);
+  const { text: output, truncated } = truncateOutput(raw);
+  return { toolCallId, toolName: 'get_event_log', success: true, output, durationMs: Date.now() - startTime, truncated };
+}
+
+function execGetTransferStatus(
+  args: Record<string, unknown>,
+  startTime: number,
+  toolCallId: string,
+): AiToolResult {
+  const { transfers } = useTransferStore.getState();
+  let items = Array.from(transfers.values());
+
+  // Optional node filter
+  const nodeId = typeof args.node_id === 'string' ? args.node_id.trim() : null;
+  if (nodeId) {
+    items = items.filter(t => t.nodeId === nodeId);
+  }
+
+  // Optional state filter
+  const stateFilter = typeof args.state === 'string' ? args.state : null;
+  if (stateFilter) {
+    if (['pending', 'active', 'paused', 'completed', 'cancelled', 'error'].includes(stateFilter)) {
+      items = items.filter(t => t.state === stateFilter);
+    } else {
+      return { toolCallId, toolName: 'get_transfer_status', success: false, output: '', error: `Invalid state: "${stateFilter}". Must be one of: pending, active, paused, completed, cancelled, error.`, durationMs: Date.now() - startTime };
+    }
+  }
+
+  if (items.length === 0) {
+    return { toolCallId, toolName: 'get_transfer_status', success: true, output: 'No transfers matching the filter criteria.', durationMs: Date.now() - startTime };
+  }
+
+  const now = Date.now();
+  const formatted = items.map(t => {
+    const progress = t.size > 0 ? Math.round((t.transferred / t.size) * 100) : 0;
+    const elapsedMs = (t.endTime ?? now) - t.startTime;
+    const elapsedSecs = Math.round(elapsedMs / 1000);
+    return {
+      id: t.id,
+      name: t.name,
+      direction: t.direction,
+      size: t.size,
+      transferred: t.transferred,
+      progress: `${progress}%`,
+      state: t.state,
+      error: t.error ?? null,
+      elapsedSecs,
+    };
+  });
+
+  const raw = JSON.stringify(formatted, null, 2);
+  const { text: output, truncated } = truncateOutput(raw);
+  return { toolCallId, toolName: 'get_transfer_status', success: true, output, durationMs: Date.now() - startTime, truncated };
+}
+
+function execGetRecordingStatus(startTime: number, toolCallId: string): AiToolResult {
+  const { recordings, recordingTicks } = useRecordingStore.getState();
+
+  if (recordings.size === 0) {
+    return { toolCallId, toolName: 'get_recording_status', success: true, output: 'No active recordings.', durationMs: Date.now() - startTime };
+  }
+
+  const formatted: { sessionId: string; label: string; terminalType: string; state: string; elapsedSecs: number; eventCount: number }[] = [];
+  recordings.forEach((entry, sessionId) => {
+    const tick = recordingTicks.get(sessionId);
+    formatted.push({
+      sessionId,
+      label: entry.meta.label ?? sessionId,
+      terminalType: entry.meta.terminalType ?? 'unknown',
+      state: entry.recorder.getState(),
+      elapsedSecs: tick ? Math.round(tick.elapsed / 1000) : 0,
+      eventCount: tick?.eventCount ?? 0,
+    });
+  });
+
+  return { toolCallId, toolName: 'get_recording_status', success: true, output: truncateOutput(JSON.stringify(formatted, null, 2)).text, durationMs: Date.now() - startTime };
+}
+
+function execGetBroadcastStatus(startTime: number, toolCallId: string): AiToolResult {
+  const { enabled, targets } = useBroadcastStore.getState();
+  const result = {
+    enabled,
+    targetCount: targets.size,
+    targets: Array.from(targets),
+  };
+  return { toolCallId, toolName: 'get_broadcast_status', success: true, output: JSON.stringify(result, null, 2), durationMs: Date.now() - startTime };
+}
+
+function execGetPluginDetails(
+  args: Record<string, unknown>,
+  startTime: number,
+  toolCallId: string,
+): AiToolResult {
+  const { plugins, pluginLogs } = usePluginStore.getState();
+  const pluginId = typeof args.plugin_id === 'string' ? args.plugin_id.trim() : null;
+
+  if (pluginId) {
+    // Single plugin detail mode
+    const info = plugins.get(pluginId);
+    if (!info) {
+      return { toolCallId, toolName: 'get_plugin_details', success: false, output: '', error: `Plugin not found: ${pluginId}`, durationMs: Date.now() - startTime };
+    }
+    const logs = (pluginLogs.get(pluginId) ?? []).slice(-20).map(l => ({
+      time: new Date(l.timestamp).toISOString(),
+      level: l.level,
+      message: l.message,
+    }));
+    const detail = {
+      id: pluginId,
+      name: info.manifest?.name ?? pluginId,
+      version: info.manifest?.version ?? 'unknown',
+      description: info.manifest?.description ?? null,
+      state: info.state,
+      error: info.error ?? null,
+      recentLogs: logs,
+    };
+    const raw = JSON.stringify(detail, null, 2);
+    const { text: output, truncated } = truncateOutput(raw);
+    return { toolCallId, toolName: 'get_plugin_details', success: true, output, durationMs: Date.now() - startTime, truncated };
+  }
+
+  // Summary of all plugins
+  const summary: { id: string; name: string; version: string; state: string; hasError: boolean; errorCount: number }[] = [];
+  plugins.forEach((p, id) => {
+    const logs = pluginLogs.get(id) ?? [];
+    const errorCount = logs.filter(l => l.level === 'error').length;
+    summary.push({
+      id,
+      name: p.manifest?.name ?? id,
+      version: p.manifest?.version ?? 'unknown',
+      state: p.state,
+      hasError: !!p.error,
+      errorCount,
+    });
+  });
+
+  if (summary.length === 0) {
+    return { toolCallId, toolName: 'get_plugin_details', success: true, output: 'No plugins installed.', durationMs: Date.now() - startTime };
+  }
+
+  return { toolCallId, toolName: 'get_plugin_details', success: true, output: truncateOutput(JSON.stringify(summary, null, 2)).text, durationMs: Date.now() - startTime };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SSH Environment & Topology Tools
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function execGetSshEnvironment(startTime: number, toolCallId: string): Promise<AiToolResult> {
+  const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('SSH environment query timed out (10s)')), 10_000));
+  const [configHosts, sshKeys, agentAvailable] = await Promise.race([
+    Promise.all([
+      api.listSshConfigHosts(),
+      api.checkSshKeys(),
+      api.isAgentAvailable(),
+    ]),
+    timeout,
+  ]);
+
+  // Sanitize: only expose basenames of key paths, not full filesystem paths
+  const result = {
+    configHosts: configHosts.map(h => ({
+      alias: h.alias,
+      hostname: h.hostname,
+      user: h.user,
+      port: h.port,
+      identityFile: h.identity_file ? h.identity_file.split('/').pop() ?? h.identity_file : null,
+    })),
+    sshKeys: sshKeys.map(k => ({
+      name: k.name,
+      keyType: k.key_type,
+    })),
+    agentAvailable,
+  };
+
+  const raw = JSON.stringify(result, null, 2);
+  const { text: output, truncated } = truncateOutput(raw);
+  return { toolCallId, toolName: 'get_ssh_environment', success: true, output, durationMs: Date.now() - startTime, truncated };
+}
+
+async function execGetTopology(startTime: number, toolCallId: string): Promise<AiToolResult> {
+  const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Topology query timed out (10s)')), 10_000));
+  const [nodes, edges] = await Promise.race([
+    Promise.all([
+      api.getTopologyNodes(),
+      api.getTopologyEdges(),
+    ]),
+    timeout,
+  ]);
+
+  const result = {
+    nodes: nodes.map(n => ({
+      id: n.id,
+      displayName: n.displayName ?? null,
+      host: n.host,
+      port: n.port,
+      username: n.username,
+      isLocal: n.isLocal,
+      tags: n.tags ?? [],
+    })),
+    edges: edges.map(e => ({
+      from: e.from,
+      to: e.to,
+      cost: e.cost,
+    })),
+  };
+
+  if (result.nodes.length === 0) {
+    return { toolCallId, toolName: 'get_topology', success: true, output: 'No topology nodes. Save some SSH connections first.', durationMs: Date.now() - startTime };
+  }
+
+  const raw = JSON.stringify(result, null, 2);
+  const { text: output, truncated } = truncateOutput(raw);
+  return { toolCallId, toolName: 'get_topology', success: true, output, durationMs: Date.now() - startTime, truncated };
 }
