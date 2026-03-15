@@ -293,8 +293,12 @@ function shouldAutoApprove(
   switch (autonomyLevel) {
     case 'supervised':
       return false; // Everything needs approval
-    case 'balanced':
+    case 'balanced': {
+      // Respect per-tool autoApproveTools setting from user preferences
+      const autoApproveTools = useSettingsStore.getState().settings.ai.toolUse?.autoApproveTools;
+      if (autoApproveTools?.[toolName] === true) return true;
       return READ_ONLY_TOOLS.has(toolName);
+    }
     case 'autonomous':
       return true; // Only deny-list blocks (handled above)
   }
@@ -659,14 +663,16 @@ export async function runAgent(task: AgentTask, signal: AbortSignal): Promise<vo
             toolName: tc.name,
             arguments: tc.arguments,
             status: 'pending',
+            reasoning: responseText ? responseText.slice(0, 200) : undefined,
           };
 
           // Register resolver before exposing approval to the UI to avoid
           // a race where the user clicks approval before the waiter exists.
+          // Resolves with: 'approved' | 'rejected' | 'skipped'
           let approvalAbortHandler: (() => void) | null = null;
-          const approved = await new Promise<boolean>((resolve) => {
+          const resolution = await new Promise<'approved' | 'rejected' | 'skipped'>((resolve) => {
             let settled = false;
-            const settle = (value: boolean) => {
+            const settle = (value: boolean | 'skipped') => {
               if (settled) return;
               settled = true;
               if (approvalAbortHandler) {
@@ -674,7 +680,7 @@ export async function runAgent(task: AgentTask, signal: AbortSignal): Promise<vo
                 approvalAbortHandler = null;
               }
               removeApprovalResolver(approval.id);
-              resolve(value);
+              resolve(value === 'skipped' ? 'skipped' : value ? 'approved' : 'rejected');
             };
             approvalAbortHandler = () => settle(false);
             signal.addEventListener('abort', approvalAbortHandler);
@@ -684,12 +690,24 @@ export async function runAgent(task: AgentTask, signal: AbortSignal): Promise<vo
 
           if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
 
-          if (!approved) {
+          if (resolution === 'rejected') {
             store().updateStep(toolStep.id, { status: 'skipped', content: `${tc.name} (rejected)` });
             store().setTaskStatus('executing');
             toolResults.push({
               role: 'tool',
               content: 'User rejected this tool call.',
+              tool_call_id: tc.id,
+              tool_name: tc.name,
+            });
+            continue;
+          }
+
+          if (resolution === 'skipped') {
+            store().updateStep(toolStep.id, { status: 'skipped', content: `${tc.name} (skipped)` });
+            store().setTaskStatus('executing');
+            toolResults.push({
+              role: 'tool',
+              content: 'User skipped this tool call. Continue with remaining steps.',
               tool_call_id: tc.id,
               tool_name: tc.name,
             });

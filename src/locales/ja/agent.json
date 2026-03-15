@@ -37,7 +37,8 @@
     "approval": {
       "title": "{{count}} 件のアクションが承認待ち",
       "approve_all": "すべて承認",
-      "reject_all": "すべて拒否"
+      "reject_all": "すべて拒否",
+      "skip": "スキップ"
     },
     "status": {
       "idle": "アイドル",

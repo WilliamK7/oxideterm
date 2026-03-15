@@ -37,7 +37,8 @@
     "approval": {
       "title": "{{count}}개의 작업이 승인 대기 중",
       "approve_all": "모두 승인",
-      "reject_all": "모두 거부"
+      "reject_all": "모두 거부",
+      "skip": "건너뛰기"
     },
     "status": {
       "idle": "대기 중",

@@ -37,7 +37,8 @@
     "approval": {
       "title": "{{count}} hành động đang chờ phê duyệt",
       "approve_all": "Phê duyệt tất cả",
-      "reject_all": "Từ chối tất cả"
+      "reject_all": "Từ chối tất cả",
+      "skip": "Bỏ qua"
     },
     "status": {
       "idle": "Rảnh",

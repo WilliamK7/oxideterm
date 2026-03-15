@@ -343,6 +343,7 @@ const ApprovalBar = memo(() => {
   const { t } = useTranslation();
   const pendingApprovals = useAgentStore((s) => s.pendingApprovals);
   const resolveApproval = useAgentStore((s) => s.resolveApproval);
+  const skipApproval = useAgentStore((s) => s.skipApproval);
   const resolveAllApprovals = useAgentStore((s) => s.resolveAllApprovals);
 
   if (pendingApprovals.length === 0) return null;
@@ -356,30 +357,48 @@ const ApprovalBar = memo(() => {
       {pendingApprovals.map((approval) => (
         <div
           key={approval.id}
-          className="flex items-center gap-2 rounded-md bg-theme-bg-hover px-3 py-2"
+          className="rounded-md bg-theme-bg-hover px-3 py-2 space-y-1.5"
         >
-          <Terminal className="w-3.5 h-3.5 text-theme-text-muted flex-shrink-0" />
-          <code className="text-xs font-mono text-theme-text flex-1 truncate">
-            {approval.toolName}({approval.arguments.length > 80
-              ? approval.arguments.slice(0, 80) + '...'
-              : approval.arguments})
-          </code>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => resolveApproval(approval.id, false)}
-            className="h-6 w-6 p-0 text-red-400 hover:text-red-300"
-          >
-            <X className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => resolveApproval(approval.id, true)}
-            className="h-6 w-6 p-0 text-green-400 hover:text-green-300"
-          >
-            <Check className="w-3.5 h-3.5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Terminal className="w-3.5 h-3.5 text-theme-text-muted flex-shrink-0" />
+            <code className="text-xs font-mono text-theme-text flex-1 truncate">
+              {approval.toolName}({approval.arguments.length > 80
+                ? approval.arguments.slice(0, 80) + '...'
+                : approval.arguments})
+            </code>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => skipApproval(approval.id)}
+              className="h-6 px-1.5 text-zinc-400 hover:text-zinc-300"
+              title={t('agent.approval.skip')}
+            >
+              <span className="text-[10px]">{t('agent.approval.skip')}</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => resolveApproval(approval.id, false)}
+              className="h-6 w-6 p-0 text-red-400 hover:text-red-300"
+              aria-label={t('agent.approval.reject_all')}
+            >
+              <X className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => resolveApproval(approval.id, true)}
+              className="h-6 w-6 p-0 text-green-400 hover:text-green-300"
+              aria-label={t('agent.approval.approve_all')}
+            >
+              <Check className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+          {approval.reasoning && (
+            <p className="text-[11px] text-theme-text-muted pl-5 line-clamp-2">
+              {approval.reasoning}
+            </p>
+          )}
         </div>
       ))}
       {pendingApprovals.length > 1 && (

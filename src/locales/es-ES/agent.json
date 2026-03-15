@@ -37,7 +37,8 @@
     "approval": {
       "title": "{{count}} acción(es) esperando aprobación",
       "approve_all": "Aprobar todo",
-      "reject_all": "Rechazar todo"
+      "reject_all": "Rechazar todo",
+      "skip": "Omitir"
     },
     "status": {
       "idle": "Inactivo",

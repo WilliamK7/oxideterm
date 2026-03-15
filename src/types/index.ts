@@ -1561,5 +1561,7 @@ export type AgentApproval = {
   /** Tool arguments (JSON string) */
   arguments: string;
   /** Approval status */
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'skipped';
+  /** LLM reasoning text explaining why this tool call is needed */
+  reasoning?: string;
 };

@@ -76,6 +76,8 @@ interface AgentStore {
   addApproval: (approval: AgentApproval) => void;
   /** Resolve a pending approval */
   resolveApproval: (approvalId: string, approved: boolean) => void;
+  /** Skip a pending approval (tool skipped, task continues) */
+  skipApproval: (approvalId: string) => void;
   /** Resolve all pending approvals */
   resolveAllApprovals: (approved: boolean) => void;
   /** Clear all approvals */
@@ -98,12 +100,12 @@ interface AgentStore {
 // Approval Resolvers (module-level, not in Zustand state)
 // ═══════════════════════════════════════════════════════════════════════════
 
-const approvalResolvers = new Map<string, (approved: boolean) => void>();
+const approvalResolvers = new Map<string, (approved: boolean | 'skipped') => void>();
 
 /** Register a resolver for a pending approval (called by orchestrator) */
 export function registerApprovalResolver(
   approvalId: string,
-  resolver: (approved: boolean) => void,
+  resolver: (approved: boolean | 'skipped') => void,
 ): void {
   approvalResolvers.set(approvalId, resolver);
 }
@@ -380,6 +382,20 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
     }));
   },
 
+  skipApproval: (approvalId) => {
+    const resolver = approvalResolvers.get(approvalId);
+    if (resolver) {
+      resolver('skipped');
+      approvalResolvers.delete(approvalId);
+    } else {
+      console.warn(`[AgentStore] No resolver found for approval ${approvalId} (skip). Task may have been cancelled.`);
+    }
+
+    set((s) => ({
+      pendingApprovals: s.pendingApprovals.filter((a) => a.id !== approvalId),
+    }));
+  },
+
   resolveAllApprovals: (approved) => {
     for (const approval of get().pendingApprovals) {
       const resolver = approvalResolvers.get(approval.id);
@@ -393,6 +409,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
   },
 
   clearApprovals: () => {
+    clearApprovalResolvers();
     set({ pendingApprovals: [] });
   },
 

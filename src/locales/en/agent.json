@@ -37,7 +37,8 @@
     "approval": {
       "title": "{{count}} action(s) awaiting approval",
       "approve_all": "Approve All",
-      "reject_all": "Reject All"
+      "reject_all": "Reject All",
+      "skip": "Skip"
     },
     "status": {
       "idle": "Idle",

@@ -37,7 +37,8 @@
     "approval": {
       "title": "{{count}} 個操作等待批准",
       "approve_all": "全部批准",
-      "reject_all": "全部拒絕"
+      "reject_all": "全部拒絕",
+      "skip": "跳過"
     },
     "status": {
       "idle": "閒置",
