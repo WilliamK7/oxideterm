@@ -29,9 +29,7 @@
 </p>
 
 <p align="center">
-  <video src="docs/media/ai-terminal-demo.mp4" width="800" autoplay loop muted playsinline>
-    Your browser does not support the video tag.
-  </video>
+  <img src="docs/media/ai-terminal-demo.gif" alt="AI Terminal Demo" width="800">
 </p>
 <p align="center"><em>🤖 AI Assistant — "Open a local terminal and run pwd"</em></p>
 
