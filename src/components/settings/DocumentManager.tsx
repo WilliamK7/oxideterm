@@ -43,6 +43,8 @@ import {
   Loader2,
   BookOpen,
   Sparkles,
+  Pencil,
+  FilePlus,
 } from 'lucide-react';
 import type { RagCollection, RagDocument, RagCollectionStats } from '../../types';
 
@@ -73,7 +75,7 @@ function scopeLabel(scope: RagCollection['scope'], t: (key: string) => string): 
 
 export function DocumentManager() {
   const { t } = useTranslation();
-  const { error: toastError } = useToast();
+  const { error: toastError, success: toastSuccess } = useToast();
   const {
     collections,
     selectedCollectionId,
@@ -81,6 +83,7 @@ export function DocumentManager() {
     stats,
     isLoading,
     error,
+    editingDocId,
     loadCollections,
     createCollection,
     deleteCollection,
@@ -90,6 +93,9 @@ export function DocumentManager() {
     reindexCollection,
     getPendingEmbeddings,
     storeEmbeddings,
+    createBlankDocument,
+    openDocumentExternal,
+    syncExternalEdits,
     clearError,
   } = useRagStore();
 
@@ -100,6 +106,9 @@ export function DocumentManager() {
   const [embeddingProgress, setEmbeddingProgress] = useState<{ current: number; total: number } | null>(null);
   const [reindexing, setReindexing] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'collection' | 'document'; id: string; name: string } | null>(null);
+  const [newDocDialogOpen, setNewDocDialogOpen] = useState(false);
+  const [newDocTitle, setNewDocTitle] = useState('');
+  const [newDocFormat, setNewDocFormat] = useState<'markdown' | 'plaintext'>('markdown');
 
   // Load collections on mount
   useEffect(() => {
@@ -113,6 +122,25 @@ export function DocumentManager() {
       return () => clearTimeout(timer);
     }
   }, [error, clearError]);
+
+  // Sync external edits on window focus
+  useEffect(() => {
+    const handleFocus = async () => {
+      const { editingDocId: eid } = useRagStore.getState();
+      if (!eid) return;
+      try {
+        const result = await syncExternalEdits();
+        if (!result) return;
+        if (result.updated) {
+          toastSuccess(t('settings_view.knowledge.doc_updated'));
+        }
+      } catch (e) {
+        toastError(t('settings_view.knowledge.error_sync'), e instanceof Error ? e.message : String(e));
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [syncExternalEdits, toastError, toastSuccess, t]);
 
   // ─── Create Collection ───────────────────────────────────────────────
   const handleCreate = useCallback(async () => {
@@ -256,6 +284,44 @@ export function DocumentManager() {
     setDeleteConfirm({ type: 'document', id: docId, name: title });
   }, []);
 
+  // ─── Create Blank Document ──────────────────────────────────────────
+  const handleCreateBlankDocument = useCallback(async () => {
+    if (!selectedCollectionId || !newDocTitle.trim()) return;
+    try {
+      const doc = await createBlankDocument(selectedCollectionId, newDocTitle.trim(), newDocFormat);
+      setNewDocDialogOpen(false);
+      setNewDocTitle('');
+      // Automatically open in external editor
+      await openDocumentExternal(doc.id);
+    } catch (e) {
+      toastError(t('settings_view.knowledge.error_create_document'), e instanceof Error ? e.message : String(e));
+    }
+  }, [selectedCollectionId, newDocTitle, newDocFormat, createBlankDocument, openDocumentExternal, toastError, t]);
+
+  // ─── Edit Document Externally ───────────────────────────────────────
+  const handleEditExternal = useCallback(async (docId: string) => {
+    try {
+      await openDocumentExternal(docId);
+    } catch (e) {
+      toastError(t('settings_view.knowledge.error_open_external'), e instanceof Error ? e.message : String(e));
+    }
+  }, [openDocumentExternal, toastError, t]);
+
+  // ─── Manual Sync ────────────────────────────────────────────────────
+  const handleSyncEdits = useCallback(async () => {
+    try {
+      const result = await syncExternalEdits();
+      if (!result) return;
+      if (result.updated) {
+        toastSuccess(t('settings_view.knowledge.doc_updated'));
+      } else {
+        toastSuccess(t('settings_view.knowledge.doc_no_changes'));
+      }
+    } catch (e) {
+      toastError(t('settings_view.knowledge.error_sync'), e instanceof Error ? e.message : String(e));
+    }
+  }, [syncExternalEdits, toastError, toastSuccess, t]);
+
   // ─── Confirm Delete ──────────────────────────────────────────────────
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteConfirm) return;
@@ -358,6 +424,14 @@ export function DocumentManager() {
               <Button
                 size="sm"
                 variant="outline"
+                onClick={() => setNewDocDialogOpen(true)}
+              >
+                <FilePlus className="h-3.5 w-3.5 mr-1.5" />
+                {t('settings_view.knowledge.new_document')}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={handleGenerateEmbeddings}
                 disabled={!!embeddingProgress}
               >
@@ -407,6 +481,9 @@ export function DocumentManager() {
                 <DocumentRow
                   key={doc.id}
                   document={doc}
+                  isEditing={editingDocId === doc.id}
+                  onEdit={() => handleEditExternal(doc.id)}
+                  onSync={handleSyncEdits}
                   onDelete={() => handleDeleteDocument(doc.id, doc.title)}
                   t={t}
                 />
@@ -453,6 +530,50 @@ export function DocumentManager() {
               {t('common.cancel')}
             </Button>
             <Button onClick={handleCreate} disabled={!newCollectionName.trim()}>
+              {t('common.create')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── New Document Dialog ── */}
+      <Dialog open={newDocDialogOpen} onOpenChange={setNewDocDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('settings_view.knowledge.new_document')}</DialogTitle>
+            <DialogDescription>
+              {t('settings_view.knowledge.new_document_description')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>{t('settings_view.knowledge.new_document_title')}</Label>
+              <Input
+                value={newDocTitle}
+                onChange={(e) => setNewDocTitle(e.target.value)}
+                placeholder={t('settings_view.knowledge.new_document_title_placeholder')}
+                className="mt-1.5"
+                onKeyDown={(e) => e.key === 'Enter' && handleCreateBlankDocument()}
+              />
+            </div>
+            <div>
+              <Label>{t('settings_view.knowledge.new_document_format')}</Label>
+              <Select value={newDocFormat} onValueChange={(v) => setNewDocFormat(v as 'markdown' | 'plaintext')}>
+                <SelectTrigger className="mt-1.5">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="markdown">Markdown</SelectItem>
+                  <SelectItem value="plaintext">Plain Text</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setNewDocDialogOpen(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button onClick={handleCreateBlankDocument} disabled={!newDocTitle.trim()}>
               {t('common.create')}
             </Button>
           </DialogFooter>
@@ -536,10 +657,16 @@ function CollectionRow({
 
 function DocumentRow({
   document: doc,
+  isEditing,
+  onEdit,
+  onSync,
   onDelete,
   t,
 }: {
   document: RagDocument;
+  isEditing: boolean;
+  onEdit: () => void;
+  onSync: () => void;
   onDelete: () => void;
   t: (key: string) => string;
 }) {
@@ -554,14 +681,37 @@ function DocumentRow({
           </p>
         </div>
       </div>
-      <Button
-        size="sm"
-        variant="ghost"
-        className="h-7 w-7 p-0 text-theme-text-muted hover:text-red-400 shrink-0"
-        onClick={onDelete}
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </Button>
+      <div className="flex items-center gap-1 shrink-0">
+        {isEditing ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 w-7 p-0 text-theme-accent hover:text-theme-accent"
+            onClick={onSync}
+            title={t('settings_view.knowledge.sync_changes')}
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 w-7 p-0 text-theme-text-muted hover:text-theme-text"
+            onClick={onEdit}
+            title={t('settings_view.knowledge.edit_externally')}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 w-7 p-0 text-theme-text-muted hover:text-red-400 shrink-0"
+          onClick={onDelete}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </div>
     </div>
   );
 }

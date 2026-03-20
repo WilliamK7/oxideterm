@@ -551,7 +551,19 @@
       "error_reindex": "Échec de la reconstruction de l'index",
       "error_delete": "Échec de la suppression",
       "error_no_embedding_support": "Le fournisseur sélectionné ne prend pas en charge les embeddings. Configurez un fournisseur d'embedding dans les paramètres IA.",
-      "error_no_embedding_model": "Aucun modèle d'embedding configuré. Définissez un modèle d'embedding dans les paramètres IA."
+      "error_no_embedding_model": "Aucun modèle d'embedding configuré. Définissez un modèle d'embedding dans les paramètres IA.",
+      "new_document": "Nouveau document",
+      "new_document_description": "Créer un document vide que vous pouvez modifier dans un éditeur externe.",
+      "new_document_title": "Titre du document",
+      "new_document_title_placeholder": "ex : Guide de configuration serveur",
+      "new_document_format": "Format",
+      "edit_externally": "Modifier dans un éditeur externe",
+      "sync_changes": "Synchroniser les modifications de l'éditeur externe",
+      "doc_updated": "Document mis à jour et réindexé",
+      "doc_no_changes": "Aucune modification détectée",
+      "error_open_external": "Impossible d'ouvrir l'éditeur externe",
+      "error_sync": "Échec de la synchronisation des modifications",
+      "error_create_document": "Échec de la création du document"
     }
   }
 }

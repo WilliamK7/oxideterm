@@ -3,6 +3,7 @@
 //! Provides commands for managing documentation collections,
 //! indexing documents, storing embeddings, and searching.
 
+use crate::config;
 use crate::rag::bm25;
 use crate::rag::chunker;
 use crate::rag::embedding;
@@ -233,8 +234,8 @@ pub async fn rag_add_document(
         chunk_count: chunks.len(),
     };
 
-    // Store document + chunks
-    store.add_document(&metadata, &chunks).map_err(|e| e.to_string())?;
+    // Store document + chunks + raw content
+    store.add_document(&metadata, &chunks, Some(&request.content)).map_err(|e| e.to_string())?;
 
     // Index chunks for BM25
     for chunk in &chunks {
@@ -388,4 +389,185 @@ pub async fn rag_reindex_collection(
         .map_err(|e| e.to_string())?;
     info!("Re-indexed collection {}: {} chunks", collection_id, count);
     Ok(count)
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Document Content & Editing Commands
+// ═══════════════════════════════════════════════════════════════════════════
+
+#[tauri::command]
+pub async fn rag_get_document_content(
+    store: State<'_, Arc<RagStore>>,
+    doc_id: String,
+) -> Result<String, String> {
+    store
+        .get_raw_content(&doc_id)
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| format!("No raw content stored for document {}", doc_id))
+}
+
+#[tauri::command]
+pub async fn rag_update_document(
+    store: State<'_, Arc<RagStore>>,
+    doc_id: String,
+    content: String,
+) -> Result<DocumentResponse, String> {
+    let meta = store
+        .get_doc_metadata(&doc_id)
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| format!("Document not found: {}", doc_id))?;
+
+    let now = chrono::Utc::now().timestamp_millis();
+    let chunks = chunker::chunk_document(&doc_id, &content, &meta.format);
+    let content_hash = {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        let mut hasher = DefaultHasher::new();
+        content.hash(&mut hasher);
+        format!("{:016x}", hasher.finish())
+    };
+
+    let updated = store
+        .update_document(&doc_id, &content, &chunks, &content_hash, now)
+        .map_err(|e| e.to_string())?;
+
+    // Rebuild BM25 index for the collection to purge stale postings from old chunks
+    bm25::reindex_collection(&store, &meta.collection_id)
+        .map_err(|e| e.to_string())?;
+
+    let format_str = match updated.format {
+        DocFormat::Markdown => "markdown",
+        DocFormat::PlainText => "plaintext",
+    };
+
+    info!(
+        "Updated document '{}' ({} chunks)",
+        updated.title,
+        chunks.len()
+    );
+
+    Ok(DocumentResponse {
+        id: updated.id,
+        collection_id: updated.collection_id,
+        title: updated.title,
+        source_path: updated.source_path,
+        format: format_str.to_string(),
+        chunk_count: chunks.len(),
+        indexed_at: now,
+    })
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateBlankDocumentRequest {
+    pub collection_id: String,
+    pub title: String,
+    pub format: String,
+}
+
+#[tauri::command]
+pub async fn rag_create_blank_document(
+    store: State<'_, Arc<RagStore>>,
+    request: CreateBlankDocumentRequest,
+) -> Result<DocumentResponse, String> {
+    let doc_id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().timestamp_millis();
+
+    let format = match request.format.as_str() {
+        "markdown" => DocFormat::Markdown,
+        "plaintext" | "txt" => DocFormat::PlainText,
+        other => return Err(format!("Unsupported format: {}", other)),
+    };
+
+    let metadata = DocMetadata {
+        id: doc_id.clone(),
+        collection_id: request.collection_id.clone(),
+        title: request.title.clone(),
+        source_path: None,
+        format: format.clone(),
+        content_hash: String::new(),
+        indexed_at: now,
+        chunk_count: 0,
+    };
+
+    // Store with empty content — no chunks needed
+    store
+        .add_document(&metadata, &[], Some(""))
+        .map_err(|e| e.to_string())?;
+
+    let format_str = match format {
+        DocFormat::Markdown => "markdown",
+        DocFormat::PlainText => "plaintext",
+    };
+
+    info!("Created blank document '{}' in {}", request.title, request.collection_id);
+
+    Ok(DocumentResponse {
+        id: doc_id,
+        collection_id: request.collection_id,
+        title: request.title,
+        source_path: None,
+        format: format_str.to_string(),
+        chunk_count: 0,
+        indexed_at: now,
+    })
+}
+
+#[tauri::command]
+pub async fn rag_open_document_external(
+    app: tauri::AppHandle,
+    store: State<'_, Arc<RagStore>>,
+    doc_id: String,
+) -> Result<String, String> {
+    use tauri_plugin_opener::OpenerExt;
+
+    // Validate doc_id is a valid UUID to prevent path traversal
+    uuid::Uuid::parse_str(&doc_id).map_err(|_| "Invalid document ID".to_string())?;
+
+    let meta = store
+        .get_doc_metadata(&doc_id)
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| format!("Document not found: {}", doc_id))?;
+
+    let content = store
+        .get_raw_content(&doc_id)
+        .map_err(|e| e.to_string())?
+        .unwrap_or_default();
+
+    let ext = match meta.format {
+        DocFormat::Markdown => "md",
+        DocFormat::PlainText => "txt",
+    };
+
+    let dir = config::storage::config_dir()
+        .map_err(|e| e.to_string())?
+        .join("rag-edit");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+
+    // Restrict directory permissions on Unix
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o700))
+            .map_err(|e| e.to_string())?;
+    }
+
+    let file_path = dir.join(format!("{}.{}", doc_id, ext));
+    std::fs::write(&file_path, &content).map_err(|e| e.to_string())?;
+
+    // Restrict file permissions on Unix
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&file_path, std::fs::Permissions::from_mode(0o600))
+            .map_err(|e| e.to_string())?;
+    }
+
+    let path_str = file_path.to_string_lossy().to_string();
+    app.opener()
+        .open_path(&path_str, None::<&str>)
+        .map_err(|e| e.to_string())?;
+
+    info!("Opened document '{}' externally at {:?}", meta.title, file_path);
+    Ok(path_str)
 }

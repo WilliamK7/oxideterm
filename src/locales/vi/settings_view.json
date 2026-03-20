@@ -551,7 +551,19 @@
       "error_reindex": "Xây dựng lại chỉ mục thất bại",
       "error_delete": "Xóa thất bại",
       "error_no_embedding_support": "Nhà cung cấp đã chọn không hỗ trợ nhúng. Cấu hình Nhà cung cấp nhúng trong cài đặt AI.",
-      "error_no_embedding_model": "Chưa cấu hình mô hình nhúng. Đặt Mô hình nhúng trong cài đặt AI."
+      "error_no_embedding_model": "Chưa cấu hình mô hình nhúng. Đặt Mô hình nhúng trong cài đặt AI.",
+      "new_document": "Tài liệu mới",
+      "new_document_description": "Tạo tài liệu trống có thể chỉnh sửa trong trình soạn thảo bên ngoài.",
+      "new_document_title": "Tiêu đề tài liệu",
+      "new_document_title_placeholder": "VD: Hướng dẫn cấu hình máy chủ",
+      "new_document_format": "Định dạng",
+      "edit_externally": "Chỉnh sửa trong trình soạn thảo bên ngoài",
+      "sync_changes": "Đồng bộ thay đổi từ trình soạn thảo bên ngoài",
+      "doc_updated": "Tài liệu đã được cập nhật và đánh chỉ mục lại",
+      "doc_no_changes": "Không phát hiện thay đổi",
+      "error_open_external": "Không thể mở trình soạn thảo bên ngoài",
+      "error_sync": "Đồng bộ thay đổi tài liệu thất bại",
+      "error_create_document": "Tạo tài liệu thất bại"
     }
   }
 }

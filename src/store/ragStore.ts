@@ -11,6 +11,10 @@ import {
   ragStoreEmbeddings,
   ragSearch,
   ragReindexCollection,
+  ragGetDocumentContent,
+  ragUpdateDocument,
+  ragCreateBlankDocument,
+  ragOpenDocumentExternal,
 } from '@/lib/api';
 import type {
   RagCollection,
@@ -32,6 +36,8 @@ type RagStoreState = {
   searchResults: RagSearchResult[];
   isLoading: boolean;
   error: string | null;
+  editingDocId: string | null;
+  editFilePath: string | null;
 
   // Actions
   loadCollections: (scopeFilter?: string) => Promise<void>;
@@ -44,6 +50,10 @@ type RagStoreState = {
   getPendingEmbeddings: (collectionId: string, limit?: number) => Promise<RagPendingEmbedding[]>;
   storeEmbeddings: (embeddings: Array<{ chunkId: string; vector: number[] }>, modelName: string) => Promise<number>;
   reindexCollection: (collectionId: string) => Promise<number>;
+  createBlankDocument: (collectionId: string, title: string, format: string) => Promise<RagDocument>;
+  openDocumentExternal: (docId: string) => Promise<string>;
+  syncExternalEdits: () => Promise<{ updated: boolean; docId: string } | null>;
+  clearEditing: () => void;
   clearError: () => void;
 };
 
@@ -59,6 +69,8 @@ export const useRagStore = create<RagStoreState>()((set, get) => ({
   searchResults: [],
   isLoading: false,
   error: null,
+  editingDocId: null,
+  editFilePath: null,
 
   loadCollections: async (scopeFilter?: string) => {
     set({ isLoading: true, error: null });
@@ -144,6 +156,55 @@ export const useRagStore = create<RagStoreState>()((set, get) => ({
 
   reindexCollection: (collectionId) =>
     ragReindexCollection(collectionId),
+
+  createBlankDocument: async (collectionId, title, format) => {
+    const doc = await ragCreateBlankDocument({ collectionId, title, format });
+    set((s) => ({ documents: [...s.documents, doc] }));
+    try {
+      const stats = await ragGetCollectionStats(collectionId);
+      set({ stats });
+    } catch { /* non-critical */ }
+    return doc;
+  },
+
+  openDocumentExternal: async (docId) => {
+    const filePath = await ragOpenDocumentExternal(docId);
+    set({ editingDocId: docId, editFilePath: filePath });
+    return filePath;
+  },
+
+  syncExternalEdits: async () => {
+    const { editingDocId, editFilePath, selectedCollectionId } = get();
+    if (!editingDocId || !editFilePath) return null;
+
+    const { readTextFile } = await import('@tauri-apps/plugin-fs');
+    const fileContent = await readTextFile(editFilePath);
+    const storedContent = await ragGetDocumentContent(editingDocId);
+
+    if (fileContent === storedContent) {
+      set({ editingDocId: null, editFilePath: null });
+      return { updated: false, docId: editingDocId };
+    }
+
+    const updatedDoc = await ragUpdateDocument(editingDocId, fileContent);
+    set((s) => ({
+      documents: s.documents.map((d) => d.id === updatedDoc.id ? updatedDoc : d),
+      editingDocId: null,
+      editFilePath: null,
+    }));
+
+    // Refresh stats
+    if (selectedCollectionId) {
+      try {
+        const stats = await ragGetCollectionStats(selectedCollectionId);
+        set({ stats });
+      } catch { /* non-critical */ }
+    }
+
+    return { updated: true, docId: editingDocId };
+  },
+
+  clearEditing: () => set({ editingDocId: null, editFilePath: null }),
 
   clearError: () => set({ error: null }),
 }));

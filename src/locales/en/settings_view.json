@@ -551,7 +551,19 @@
       "error_reindex": "Failed to rebuild index",
       "error_delete": "Failed to delete",
       "error_no_embedding_support": "Selected provider does not support embeddings. Configure an Embedding Provider in AI settings.",
-      "error_no_embedding_model": "No embedding model configured. Set an Embedding Model in AI settings."
+      "error_no_embedding_model": "No embedding model configured. Set an Embedding Model in AI settings.",
+      "new_document": "New Document",
+      "new_document_description": "Create a blank document that you can edit externally.",
+      "new_document_title": "Document Title",
+      "new_document_title_placeholder": "e.g. Server Setup Guide",
+      "new_document_format": "Format",
+      "edit_externally": "Edit in external editor",
+      "sync_changes": "Sync changes from external editor",
+      "doc_updated": "Document updated and re-indexed",
+      "doc_no_changes": "No changes detected",
+      "error_open_external": "Failed to open external editor",
+      "error_sync": "Failed to sync document changes",
+      "error_create_document": "Failed to create document"
     }
   }
 }

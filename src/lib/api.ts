@@ -1680,6 +1680,20 @@ export const ragSearch = (request: {
 export const ragReindexCollection = (collectionId: string): Promise<number> =>
   invoke('rag_reindex_collection', { collectionId });
 
+export const ragGetDocumentContent = (docId: string): Promise<string> =>
+  invoke('rag_get_document_content', { docId });
+
+export const ragUpdateDocument = (docId: string, content: string): Promise<RagDocument> =>
+  invoke('rag_update_document', { docId, content });
+
+export const ragCreateBlankDocument = (
+  request: { collectionId: string; title: string; format: string }
+): Promise<RagDocument> =>
+  invoke('rag_create_blank_document', { request });
+
+export const ragOpenDocumentExternal = (docId: string): Promise<string> =>
+  invoke('rag_open_document_external', { docId });
+
 
 // --- Mock Data Helpers ---
 

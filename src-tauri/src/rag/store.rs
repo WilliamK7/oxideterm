@@ -25,6 +25,8 @@ const BM25_META_TABLE: TableDefinition<&str, &[u8]> =
     TableDefinition::new("bm25_meta");
 const EMBEDDINGS_TABLE: TableDefinition<&str, &[u8]> =
     TableDefinition::new("embeddings");
+const DOC_RAW_CONTENT_TABLE: TableDefinition<&str, &[u8]> =
+    TableDefinition::new("doc_raw_content");
 
 /// Compression threshold: compress chunks larger than 4 KB.
 const COMPRESSION_THRESHOLD: usize = 4096;
@@ -66,6 +68,7 @@ impl RagStore {
             let _ = txn.open_table(BM25_POSTINGS_TABLE)?;
             let _ = txn.open_table(BM25_META_TABLE)?;
             let _ = txn.open_table(EMBEDDINGS_TABLE)?;
+            let _ = txn.open_table(DOC_RAW_CONTENT_TABLE)?;
         }
         txn.commit()?;
 
@@ -143,6 +146,7 @@ impl RagStore {
             let mut idx_t = txn.open_table(DOC_CHUNK_INDEX_TABLE)?;
             let mut emb_t = txn.open_table(EMBEDDINGS_TABLE)?;
             let mut meta_t = txn.open_table(DOC_METADATA_TABLE)?;
+            let mut raw_t = txn.open_table(DOC_RAW_CONTENT_TABLE)?;
 
             for doc_id in &doc_ids {
                 // Get chunk ids for this doc
@@ -157,6 +161,7 @@ impl RagStore {
                 }
                 let _ = idx_t.remove(doc_id.as_str())?;
                 let _ = meta_t.remove(doc_id.as_str())?;
+                let _ = raw_t.remove(doc_id.as_str())?;
             }
 
             // Remove collection and its doc list
@@ -214,6 +219,7 @@ impl RagStore {
         &self,
         metadata: &DocMetadata,
         chunks: &[DocChunk],
+        raw_content: Option<&str>,
     ) -> Result<(), RagError> {
         let meta_bytes = rmp_serde::to_vec(metadata)?;
         let chunk_ids: Vec<String> = chunks.iter().map(|c| c.id.clone()).collect();
@@ -245,6 +251,13 @@ impl RagStore {
                     uncompressed
                 };
                 chunks_t.insert(chunk.id.as_str(), stored.as_slice())?;
+            }
+
+            // Store raw document content (for editing)
+            if let Some(content) = raw_content {
+                let mut raw_t = txn.open_table(DOC_RAW_CONTENT_TABLE)?;
+                let stored = Self::compress_bytes(content.as_bytes());
+                raw_t.insert(metadata.id.as_str(), stored.as_slice())?;
             }
 
             // Append doc_id to collection's doc list
@@ -306,6 +319,9 @@ impl RagStore {
 
             let mut meta_t = txn.open_table(DOC_METADATA_TABLE)?;
             let _ = meta_t.remove(doc_id)?;
+
+            let mut raw_t = txn.open_table(DOC_RAW_CONTENT_TABLE)?;
+            let _ = raw_t.remove(doc_id)?;
 
             // Remove from collection doc list
             let mut cd_t = txn.open_table(COLLECTION_DOCS_TABLE)?;
@@ -596,5 +612,127 @@ impl RagStore {
             raw[1..].to_vec()
         };
         Ok(rmp_serde::from_slice(&bytes)?)
+    }
+
+    /// Compress bytes with prefix: 0 = raw, 1 = zstd.
+    fn compress_bytes(data: &[u8]) -> Vec<u8> {
+        if data.len() > COMPRESSION_THRESHOLD {
+            if let Ok(body) = zstd::encode_all(data, 3) {
+                let mut out = vec![1u8];
+                out.extend_from_slice(&body);
+                return out;
+            }
+        }
+        let mut out = vec![0u8];
+        out.extend_from_slice(data);
+        out
+    }
+
+    /// Decompress bytes with prefix: 0 = raw, 1 = zstd.
+    fn decompress_bytes(stored: &[u8]) -> Result<Vec<u8>, RagError> {
+        if stored.is_empty() {
+            return Err(RagError::Serialization("Empty stored data".to_string()));
+        }
+        if stored[0] == 1 {
+            zstd::decode_all(&stored[1..]).map_err(|e| RagError::Compression(e.to_string()))
+        } else {
+            Ok(stored[1..].to_vec())
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Raw Document Content
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// Retrieve the original raw content of a document.
+    pub fn get_raw_content(&self, doc_id: &str) -> Result<Option<String>, RagError> {
+        let txn = self.db.begin_read()?;
+        let t = txn.open_table(DOC_RAW_CONTENT_TABLE)?;
+        match t.get(doc_id)? {
+            Some(guard) => {
+                let bytes = Self::decompress_bytes(guard.value())?;
+                Ok(Some(String::from_utf8(bytes).map_err(|e| {
+                    RagError::Serialization(e.to_string())
+                })?))
+            }
+            None => Ok(None),
+        }
+    }
+
+    /// Update a document's content: replace raw content, re-chunk, and update metadata.
+    /// Returns the updated metadata. Caller is responsible for BM25 re-indexing.
+    pub fn update_document(
+        &self,
+        doc_id: &str,
+        new_content: &str,
+        new_chunks: &[DocChunk],
+        content_hash: &str,
+        now: i64,
+    ) -> Result<DocMetadata, RagError> {
+        let meta = self.get_doc_metadata(doc_id)?
+            .ok_or_else(|| RagError::DocumentNotFound(doc_id.to_string()))?;
+        let old_chunk_ids = self.get_chunk_ids_for_doc(doc_id)?;
+        let new_chunk_ids: Vec<String> = new_chunks.iter().map(|c| c.id.clone()).collect();
+
+        let updated_meta = DocMetadata {
+            content_hash: content_hash.to_string(),
+            indexed_at: now,
+            chunk_count: new_chunks.len(),
+            ..meta
+        };
+        let meta_bytes = rmp_serde::to_vec(&updated_meta)?;
+        let chunk_idx_bytes = rmp_serde::to_vec(&new_chunk_ids)?;
+
+        let txn = self.db.begin_write()?;
+        {
+            // Remove old chunks + embeddings
+            let mut chunks_t = txn.open_table(DOC_CHUNKS_TABLE)?;
+            let mut emb_t = txn.open_table(EMBEDDINGS_TABLE)?;
+            for cid in &old_chunk_ids {
+                let _ = chunks_t.remove(cid.as_str())?;
+                let _ = emb_t.remove(cid.as_str())?;
+            }
+
+            // Store new chunks
+            for chunk in new_chunks {
+                let raw = rmp_serde::to_vec(chunk)?;
+                let stored = Self::compress_bytes(&raw);
+                chunks_t.insert(chunk.id.as_str(), stored.as_slice())?;
+            }
+
+            // Update chunk index
+            let mut idx_t = txn.open_table(DOC_CHUNK_INDEX_TABLE)?;
+            idx_t.insert(doc_id, chunk_idx_bytes.as_slice())?;
+
+            // Update metadata
+            let mut meta_t = txn.open_table(DOC_METADATA_TABLE)?;
+            meta_t.insert(doc_id, meta_bytes.as_slice())?;
+
+            // Update raw content
+            let mut raw_t = txn.open_table(DOC_RAW_CONTENT_TABLE)?;
+            let stored = Self::compress_bytes(new_content.as_bytes());
+            raw_t.insert(doc_id, stored.as_slice())?;
+
+            // Update collection timestamp
+            let mut col_t = txn.open_table(COLLECTIONS_TABLE)?;
+            let col_data = col_t.get(updated_meta.collection_id.as_str())?
+                .map(|g| g.value().to_vec());
+            if let Some(bytes) = col_data {
+                let mut col: DocCollection = rmp_serde::from_slice(&bytes)?;
+                col.updated_at = now;
+                col_t.insert(
+                    updated_meta.collection_id.as_str(),
+                    rmp_serde::to_vec(&col)?.as_slice(),
+                )?;
+            }
+        }
+        txn.commit()?;
+        debug!(
+            "Updated document {} ({} → {} chunks)",
+            doc_id,
+            old_chunk_ids.len(),
+            new_chunks.len()
+        );
+        Ok(updated_meta)
     }
 }

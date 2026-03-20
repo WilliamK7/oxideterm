@@ -551,7 +551,19 @@
       "error_reindex": "Error al reconstruir el índice",
       "error_delete": "Error al eliminar",
       "error_no_embedding_support": "El proveedor seleccionado no admite embeddings. Configure un proveedor de embedding en los ajustes de IA.",
-      "error_no_embedding_model": "No se ha configurado un modelo de embedding. Establezca un modelo de embedding en los ajustes de IA."
+      "error_no_embedding_model": "No se ha configurado un modelo de embedding. Establezca un modelo de embedding en los ajustes de IA.",
+      "new_document": "Nuevo documento",
+      "new_document_description": "Crear un documento en blanco que puede editar en un editor externo.",
+      "new_document_title": "Título del documento",
+      "new_document_title_placeholder": "ej: Guía de configuración del servidor",
+      "new_document_format": "Formato",
+      "edit_externally": "Editar en editor externo",
+      "sync_changes": "Sincronizar cambios del editor externo",
+      "doc_updated": "Documento actualizado y reindexado",
+      "doc_no_changes": "No se detectaron cambios",
+      "error_open_external": "No se pudo abrir el editor externo",
+      "error_sync": "Error al sincronizar los cambios del documento",
+      "error_create_document": "Error al crear el documento"
     }
   }
 }

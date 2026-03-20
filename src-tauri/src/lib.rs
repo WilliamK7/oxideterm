@@ -686,6 +686,10 @@ pub fn run() {
         commands::rag_store_embeddings,
         commands::rag_search,
         commands::rag_reindex_collection,
+        commands::rag_get_document_content,
+        commands::rag_update_document,
+        commands::rag_create_blank_document,
+        commands::rag_open_document_external,
         // AI HTTP proxy commands (CORS bypass)
         commands::ai_fetch,
         commands::ai_fetch_stream,
@@ -978,6 +982,10 @@ pub fn run() {
         commands::rag_store_embeddings,
         commands::rag_search,
         commands::rag_reindex_collection,
+        commands::rag_get_document_content,
+        commands::rag_update_document,
+        commands::rag_create_blank_document,
+        commands::rag_open_document_external,
         // AI HTTP proxy commands (CORS bypass)
         commands::ai_fetch,
         commands::ai_fetch_stream,

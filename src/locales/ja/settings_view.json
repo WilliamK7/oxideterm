@@ -551,7 +551,19 @@
       "error_reindex": "インデックスの再構築に失敗しました",
       "error_delete": "削除に失敗しました",
       "error_no_embedding_support": "選択したプロバイダーはエンベディングをサポートしていません。AI 設定でエンベディングプロバイダーを設定してください。",
-      "error_no_embedding_model": "エンベディングモデルが設定されていません。AI 設定でエンベディングモデルを設定してください。"
+      "error_no_embedding_model": "エンベディングモデルが設定されていません。AI 設定でエンベディングモデルを設定してください。",
+      "new_document": "新規ドキュメント",
+      "new_document_description": "空白のドキュメントを作成し、外部エディタで編集できます。",
+      "new_document_title": "ドキュメントタイトル",
+      "new_document_title_placeholder": "例：サーバー設定ガイド",
+      "new_document_format": "フォーマット",
+      "edit_externally": "外部エディタで編集",
+      "sync_changes": "外部エディタの変更を同期",
+      "doc_updated": "ドキュメントが更新され再インデックスされました",
+      "doc_no_changes": "変更は検出されませんでした",
+      "error_open_external": "外部エディタを開けませんでした",
+      "error_sync": "ドキュメントの変更を同期できませんでした",
+      "error_create_document": "ドキュメントの作成に失敗しました"
     }
   }
 }
