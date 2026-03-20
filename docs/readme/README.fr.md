@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="../../README.md">English</a> | <a href="README.zh-Hans.md">简体中文</a> | <a href="README.zh-Hant.md">繁體中文</a> | <a href="README.ja.md">日本語</a> | <a href="README.ko.md">한국어</a> | <a href="README.fr.md">Français</a> | <a href="README.vi.md">Tiếng Việt</a>
+  <a href="../../README.md">English</a> | <a href="README.zh-Hans.md">简体中文</a> | <a href="README.zh-Hant.md">繁體中文</a> | <a href="README.ja.md">日本語</a> | <a href="README.ko.md">한국어</a> | <a href="README.fr.md">Français</a> | <a href="README.de.md">Deutsch</a> | <a href="README.es.md">Español</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português</a> | <a href="README.vi.md">Tiếng Việt</a>
 </p>
 
 ---
@@ -476,37 +476,6 @@ OxideTerm/
 ---
 
 ## Feuille de route
-
-### ✅ Livré (v0.14.0)
-
-- [x] Terminal local (PTY) avec feature gating
-- [x] Pool de connexions SSH & multiplexage
-- [x] Authentification SSH Agent (AgentSigner)
-- [x] Architecture Node-first (NodeRouter + événements)
-- [x] Orchestrateur auto-reconnexion (pipeline 8 phases avec Grace Period)
-- [x] Chaîne ProxyJump bastion illimitée
-- [x] Redirection de ports — locale / distante / SOCKS5 dynamique
-- [x] Gestionnaire de fichiers SFTP double panneau avec aperçu
-- [x] Mode IDE (CodeMirror 6 + statut Git)
-- [x] Export chiffré .oxide avec intégration de clés
-- [x] Assistant terminal IA (inline + latéral)
-- [x] Utilisation d'outils IA — 40+ outils intégrés avec contrôles d'approbation automatique
-- [x] Injection de contexte multi-sources IA (IDE / SFTP / Git)
-- [x] MCP (Model Context Protocol) — transports stdio & SSE, interface de configuration, découverte d'outils par serveur
-- [x] Système de plugins runtime (PluginContext + UI Kit)
-- [x] Panneaux terminaux divisés avec raccourcis clavier
-- [x] Profileur de ressources (CPU / mémoire / réseau)
-- [x] i18n — 11 langues × 21 espaces de noms
-- [x] Auth Keyboard-Interactive (2FA/MFA)
-- [x] Recherche historique profonde (30K lignes, Rust regex)
-- [x] WSL Graphics — mode bureau + mode application VNC (⚠️ Expérimental)
-- [x] Galerie d'images d'arrière-plan — téléversement multi-images, contrôle par onglet, interrupteur principal
-- [x] Aperçu multimédia amélioré — lecture audio/vidéo dans le navigateur SFTP
-- [x] Enregistrement & lecture de sessions
-- [x] Moteur de thèmes personnalisés — 30+ thèmes intégrés, éditeur visuel avec saisie hex, 22 terminal + 19 champs couleur UI
-- [x] Palette de commandes (`⌘K`) — recherche floue connexions, actions et paramètres
-- [x] Mode zen (`⌘⇧Z`) — terminal plein écran sans distraction, masque barre latérale et onglets
-- [x] Raccourcis taille de police terminal (`⌘+` / `⌘-` / `⌘0`) avec réétalonnage PTY en temps réel
 
 ### 🚧 En cours
 

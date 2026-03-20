@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="../../README.md">English</a> | <a href="README.zh-Hans.md">简体中文</a> | <a href="README.zh-Hant.md">繁體中文</a> | <a href="README.ja.md">日本語</a> | <a href="README.ko.md">한국어</a> | <a href="README.fr.md">Français</a> | <a href="README.vi.md">Tiếng Việt</a>
+  <a href="../../README.md">English</a> | <a href="README.zh-Hans.md">简体中文</a> | <a href="README.zh-Hant.md">繁體中文</a> | <a href="README.ja.md">日本語</a> | <a href="README.ko.md">한국어</a> | <a href="README.fr.md">Français</a> | <a href="README.de.md">Deutsch</a> | <a href="README.es.md">Español</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português</a> | <a href="README.vi.md">Tiếng Việt</a>
 </p>
 
 ---
@@ -485,37 +485,6 @@ OxideTerm/
 ---
 
 ## ロードマップ
-
-### ✅ リリース済み（v0.14.0）
-
-- [x] ローカルターミナル（PTY）フィーチャーゲート付き
-- [x] SSH接続プール & 多重化
-- [x] SSH Agent認証（AgentSigner）
-- [x] Node-firstアーキテクチャ（NodeRouter + イベント）
-- [x] 自動再接続オーケストレータ（Grace Period付き8フェーズパイプライン）
-- [x] ProxyJump無制限踏み台チェーン
-- [x] ポートフォワーディング — ローカル / リモート / ダイナミックSOCKS5
-- [x] SFTPデュアルペインファイルマネージャ（プレビュー付き）
-- [x] IDEモード（CodeMirror 6 + Gitステータス）
-- [x] .oxide暗号化エクスポート（鍵埋め込み対応）
-- [x] AIターミナルアシスタント（インライン + サイドバー）
-- [x] AIツール利用 — 40以上の組み込みツール（自動承認制御付き）
-- [x] AIマルチソースコンテキスト注入（IDE / SFTP / Git）
-- [x] MCP（Model Context Protocol）— stdioおよびSSEトランスポート、設定UI、サーバーごとのツール検出
-- [x] ランタイムプラグインシステム（PluginContext + UIキット）
-- [x] ターミナル分割ペイン（キーボードショートカット付き）
-- [x] リソースプロファイラ（CPU / メモリ / ネットワーク）
-- [x] i18n — 11言語 × 21ネームスペース
-- [x] Keyboard-Interactive認証（2FA/MFA）
-- [x] ディープ履歴検索（30K行、Rust正規表現）
-- [x] WSL Graphics — デスクトップモード + アプリモードVNCビューア（⚠️ 実験的）
-- [x] 背景画像ギャラリー — マルチ画像アップロード、タブごとの制御、マスタートグル
-- [x] 拡張メディアプレビュー — SFTPブラウザでの音声/動画再生
-- [x] セッション録画 & 再生
-- [x] カスタムテーマエンジン — 30以上の組み込みテーマ、Hex入力付きビジュアルエディタ、22ターミナル + 19 UIカラーフィールド
-- [x] コマンドパレット（`⌘K`）— 接続、アクション、設定のファジー検索
-- [x] 禅モード（`⌘⇧Z`）— サイドバーとタブバーを非表示にしたフルスクリーンターミナル
-- [x] ターミナルフォントサイズショートカット（`⌘+` / `⌘-` / `⌘0`）ライブPTYリフィット付き
 
 ### 🚧 進行中
 

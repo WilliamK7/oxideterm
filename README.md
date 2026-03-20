@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> | <a href="docs/readme/README.zh-Hans.md">简体中文</a> | <a href="docs/readme/README.zh-Hant.md">繁體中文</a> | <a href="docs/readme/README.ja.md">日本語</a> | <a href="docs/readme/README.ko.md">한국어</a> | <a href="docs/readme/README.fr.md">Français</a> | <a href="docs/readme/README.vi.md">Tiếng Việt</a>
+  <a href="README.md">English</a> | <a href="docs/readme/README.zh-Hans.md">简体中文</a> | <a href="docs/readme/README.zh-Hant.md">繁體中文</a> | <a href="docs/readme/README.ja.md">日本語</a> | <a href="docs/readme/README.ko.md">한국어</a> | <a href="docs/readme/README.fr.md">Français</a> | <a href="docs/readme/README.de.md">Deutsch</a> | <a href="docs/readme/README.es.md">Español</a> | <a href="docs/readme/README.it.md">Italiano</a> | <a href="docs/readme/README.pt-BR.md">Português</a> | <a href="docs/readme/README.vi.md">Tiếng Việt</a>
 </p>
 
 ---
@@ -485,37 +485,6 @@ OxideTerm/
 ---
 
 ## Roadmap
-
-### ✅ Shipped (v0.14.0)
-
-- [x] Local terminal (PTY) with feature gating
-- [x] SSH connection pool & multiplexing
-- [x] SSH Agent authentication (AgentSigner)
-- [x] Node-first architecture (NodeRouter + events)
-- [x] Auto-reconnect orchestrator (8-phase pipeline with Grace Period)
-- [x] ProxyJump unlimited bastion chain
-- [x] Port forwarding — local / remote / dynamic SOCKS5
-- [x] SFTP dual-pane file manager with preview
-- [x] IDE mode (CodeMirror 6 + Git status)
-- [x] .oxide encrypted export with key embedding
-- [x] AI terminal assistant (inline + sidebar)
-- [x] AI tool use — 40+ built-in tools with auto-approval controls
-- [x] AI multi-source context injection (IDE / SFTP / Git)
-- [x] MCP (Model Context Protocol) — stdio & SSE transports, settings UI, per-server tool discovery
-- [x] Runtime plugin system (PluginContext + UI Kit)
-- [x] Terminal split panes with keyboard shortcuts
-- [x] Resource profiler (CPU / memory / network)
-- [x] i18n — 11 languages × 21 namespaces
-- [x] Keyboard-Interactive auth (2FA/MFA)
-- [x] Deep history search (30K lines, Rust regex)
-- [x] WSL Graphics — desktop mode + app mode VNC viewer (⚠️ Experimental)
-- [x] Background image gallery — multi-image upload, per-tab control, master toggle
-- [x] Enhanced media preview — audio/video playback in SFTP browser
-- [x] Session recording & playback
-- [x] Custom theme engine — 30+ built-in themes, visual editor with hex input, 22 terminal + 19 UI color fields
-- [x] Command palette (`⌘K`) — fuzzy search across connections, actions, and settings
-- [x] Zen mode (`⌘⇧Z`) — distraction-free full-screen terminal, hides sidebar and tab bar
-- [x] Terminal font size shortcuts (`⌘+` / `⌘-` / `⌘0`) with live PTY refit
 
 ### 🚧 In Progress
 

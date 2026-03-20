@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="../../README.md">English</a> | <a href="README.zh-Hans.md">简体中文</a> | <a href="README.zh-Hant.md">繁體中文</a> | <a href="README.ja.md">日本語</a> | <a href="README.ko.md">한국어</a> | <a href="README.fr.md">Français</a> | <a href="README.vi.md">Tiếng Việt</a>
+  <a href="../../README.md">English</a> | <a href="README.zh-Hans.md">简体中文</a> | <a href="README.zh-Hant.md">繁體中文</a> | <a href="README.ja.md">日本語</a> | <a href="README.ko.md">한국어</a> | <a href="README.fr.md">Français</a> | <a href="README.de.md">Deutsch</a> | <a href="README.es.md">Español</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português</a> | <a href="README.vi.md">Tiếng Việt</a>
 </p>
 
 ---
@@ -483,37 +483,6 @@ OxideTerm/
 ---
 
 ## 路線圖
-
-### ✅ 已發佈 (v0.14.0)
-
-- [x] 本地終端 (PTY) + Feature Gating
-- [x] SSH 連線池 & 多路複用
-- [x] SSH Agent 認證 (AgentSigner)
-- [x] Node-first 架構 (NodeRouter + 事件)
-- [x] 自動重連編排器 (8 階段管線，含寬限期)
-- [x] ProxyJump 無限跳板機鏈
-- [x] 連接埠轉發 — 本地 / 遠端 / 動態 SOCKS5
-- [x] SFTP 雙面板檔案管理 + 預覽
-- [x] IDE 模式 (CodeMirror 6 + Git 狀態)
-- [x] .oxide 加密匯出 + 金鑰內嵌
-- [x] AI 終端助手 (內嵌 + 側邊欄)
-- [x] AI 工具呼叫 — 40+ 內建工具，支援自動審批控制
-- [x] AI 多源上下文注入（IDE / SFTP / Git）
-- [x] MCP（Model Context Protocol）— stdio & SSE 傳輸、設定介面、按伺服器工具發現
-- [x] 執行時期插件系統 (PluginContext + UI Kit)
-- [x] 終端分割畫面 + 快速鍵
-- [x] 資源監控器 (CPU / 記憶體 / 網路)
-- [x] 國際化 — 11 種語言 × 21 命名空間
-- [x] Keyboard-Interactive 認證 (2FA/MFA)
-- [x] 深度歷史搜尋 (30K 行，Rust Regex)
-- [x] WSL 圖形 — 桌面模式 + 應用模式 VNC 檢視器（⚠️ 實驗性）
-- [x] 背景圖片畫廊 — 多圖上傳、按分頁控制、總開關
-- [x] 增強媒體預覽 — SFTP 瀏覽器內音訊/影片播放
-- [x] 工作階段錄製 & 回放
-- [x] 自訂主題引擎 — 30+ 內建主題、視覺化編輯器支援十六進位輸入、22 終端 + 19 UI 顏色欄位
-- [x] 命令面板 (`⌘K`) — 模糊搜尋連線、操作與設定
-- [x] 禪模式 (`⌘⇧Z`) — 無干擾全螢幕終端，隱藏側邊欄與分頁列
-- [x] 終端字體大小快速鍵（`⌘+` / `⌘-` / `⌘0`），即時 PTY 自適應
 
 ### 🚧 進行中
 

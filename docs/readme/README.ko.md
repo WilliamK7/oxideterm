@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="../../README.md">English</a> | <a href="README.zh-Hans.md">简体中文</a> | <a href="README.zh-Hant.md">繁體中文</a> | <a href="README.ja.md">日本語</a> | <a href="README.ko.md">한국어</a> | <a href="README.fr.md">Français</a> | <a href="README.vi.md">Tiếng Việt</a>
+  <a href="../../README.md">English</a> | <a href="README.zh-Hans.md">简体中文</a> | <a href="README.zh-Hant.md">繁體中文</a> | <a href="README.ja.md">日本語</a> | <a href="README.ko.md">한국어</a> | <a href="README.fr.md">Français</a> | <a href="README.de.md">Deutsch</a> | <a href="README.es.md">Español</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português</a> | <a href="README.vi.md">Tiếng Việt</a>
 </p>
 
 ---
@@ -485,37 +485,6 @@ OxideTerm/
 ---
 
 ## 로드맵
-
-### ✅ 출시 완료 (v0.14.0)
-
-- [x] 피처 게이팅을 통한 로컬 터미널 (PTY)
-- [x] SSH 연결 풀 & 다중화
-- [x] SSH Agent 인증 (AgentSigner)
-- [x] 노드 우선 아키텍처 (NodeRouter + 이벤트)
-- [x] 자동 재연결 오케스트레이터 (Grace Period 포함 8단계 파이프라인)
-- [x] ProxyJump 무제한 배스천 체인
-- [x] 포트 포워딩 — 로컬 / 원격 / 동적 SOCKS5
-- [x] SFTP 이중 창 파일 관리자 및 미리보기
-- [x] IDE 모드 (CodeMirror 6 + Git 상태)
-- [x] .oxide 암호화 내보내기 및 키 임베딩
-- [x] AI 터미널 어시스턴트 (인라인 + 사이드바)
-- [x] AI 도구 사용 — 자동 승인 제어가 포함된 40+ 내장 도구
-- [x] AI 멀티 소스 컨텍스트 주입 (IDE / SFTP / Git)
-- [x] MCP (Model Context Protocol) — stdio & SSE 전송, 설정 UI, 서버별 도구 탐색
-- [x] 런타임 플러그인 시스템 (PluginContext + UI Kit)
-- [x] 키보드 단축키를 통한 터미널 분할 창
-- [x] 리소스 프로파일러 (CPU / 메모리 / 네트워크)
-- [x] i18n — 11개 언어 × 21개 네임스페이스
-- [x] Keyboard-Interactive 인증 (2FA/MFA)
-- [x] 딥 히스토리 검색 (30K줄, Rust 정규식)
-- [x] WSL Graphics — 데스크톱 모드 + 앱 모드 VNC 뷰어 (⚠️ 실험적)
-- [x] 배경 이미지 갤러리 — 다중 이미지 업로드, 탭별 제어, 마스터 토글
-- [x] 향상된 미디어 미리보기 — SFTP 브라우저에서 오디오/비디오 재생
-- [x] 세션 녹화 & 재생
-- [x] 커스텀 테마 엔진 — 30+ 내장 테마, 16진수 입력 시각적 에디터, 22 터미널 + 19 UI 색상 필드
-- [x] 커맨드 팔레트 (`⌘K`) — 연결, 동작, 설정에 대한 퍼지 검색
-- [x] 젠 모드 (`⌘⇧Z`) — 방해 없는 전체 화면 터미널, 사이드바 및 탭 바 숨김
-- [x] 터미널 글꼴 크기 단축키 (`⌘+` / `⌘-` / `⌘0`) 실시간 PTY 리핏
 
 ### 🚧 진행 중
 

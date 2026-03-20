@@ -29,6 +29,10 @@ const FILES = {
   readmeJa: path.join(ROOT_DIR, 'docs', 'readme', 'README.ja.md'),
   readmeKo: path.join(ROOT_DIR, 'docs', 'readme', 'README.ko.md'),
   readmeFr: path.join(ROOT_DIR, 'docs', 'readme', 'README.fr.md'),
+  readmeDe: path.join(ROOT_DIR, 'docs', 'readme', 'README.de.md'),
+  readmeEs: path.join(ROOT_DIR, 'docs', 'readme', 'README.es.md'),
+  readmeIt: path.join(ROOT_DIR, 'docs', 'readme', 'README.it.md'),
+  readmePtBr: path.join(ROOT_DIR, 'docs', 'readme', 'README.pt-BR.md'),
   readmeVi: path.join(ROOT_DIR, 'docs', 'readme', 'README.vi.md'),
 };
 
@@ -158,6 +162,10 @@ Options:
     { path: FILES.readmeJa, name: 'docs/readme/README.ja.md' },
     { path: FILES.readmeKo, name: 'docs/readme/README.ko.md' },
     { path: FILES.readmeFr, name: 'docs/readme/README.fr.md' },
+    { path: FILES.readmeDe, name: 'docs/readme/README.de.md' },
+    { path: FILES.readmeEs, name: 'docs/readme/README.es.md' },
+    { path: FILES.readmeIt, name: 'docs/readme/README.it.md' },
+    { path: FILES.readmePtBr, name: 'docs/readme/README.pt-BR.md' },
     { path: FILES.readmeVi, name: 'docs/readme/README.vi.md' },
   ];
 

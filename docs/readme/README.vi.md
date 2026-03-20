@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="../../README.md">English</a> | <a href="README.zh-Hans.md">简体中文</a> | <a href="README.zh-Hant.md">繁體中文</a> | <a href="README.ja.md">日本語</a> | <a href="README.ko.md">한국어</a> | <a href="README.fr.md">Français</a> | <a href="README.vi.md">Tiếng Việt</a>
+  <a href="../../README.md">English</a> | <a href="README.zh-Hans.md">简体中文</a> | <a href="README.zh-Hant.md">繁體中文</a> | <a href="README.ja.md">日本語</a> | <a href="README.ko.md">한국어</a> | <a href="README.fr.md">Français</a> | <a href="README.de.md">Deutsch</a> | <a href="README.es.md">Español</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português</a> | <a href="README.vi.md">Tiếng Việt</a>
 </p>
 
 ---
@@ -485,37 +485,6 @@ OxideTerm/
 ---
 
 ## Lộ trình
-
-### ✅ Đã phát hành (v0.14.0)
-
-- [x] Terminal cục bộ (PTY) với feature gating
-- [x] SSH connection pool & multiplexing
-- [x] Xác thực SSH Agent (AgentSigner)
-- [x] Kiến trúc Node-first (NodeRouter + events)
-- [x] Trình điều phối kết nối lại tự động (pipeline 8 giai đoạn với Grace Period)
-- [x] ProxyJump chuỗi bastion không giới hạn
-- [x] Chuyển tiếp cổng — local / remote / dynamic SOCKS5
-- [x] Trình quản lý tệp SFTP hai panel với xem trước
-- [x] Chế độ IDE (CodeMirror 6 + trạng thái Git)
-- [x] Xuất mã hóa .oxide với nhúng khóa
-- [x] Trợ lý AI terminal (nội tuyến + bên lề)
-- [x] AI sử dụng công cụ — 40+ công cụ tích hợp với điều khiển tự động phê duyệt
-- [x] AI inject ngữ cảnh đa nguồn (IDE / SFTP / Git)
-- [x] MCP (Model Context Protocol) — truyền tải stdio & SSE, UI cài đặt, khám phá công cụ theo server
-- [x] Hệ thống plugin runtime (PluginContext + UI Kit)
-- [x] Chia panel terminal với phím tắt
-- [x] Profiler tài nguyên (CPU / bộ nhớ / mạng)
-- [x] i18n — 11 ngôn ngữ × 21 namespaces
-- [x] Xác thực Keyboard-Interactive (2FA/MFA)
-- [x] Tìm kiếm lịch sử sâu (30K dòng, Rust regex)
-- [x] WSL Graphics — chế độ desktop + chế độ app VNC viewer (⚠️ Thử nghiệm)
-- [x] Bộ sưu tập ảnh nền — tải lên đa ảnh, điều khiển theo tab, công tắc chính
-- [x] Xem trước media nâng cao — phát audio/video trong trình duyệt SFTP
-- [x] Ghi & phát lại phiên
-- [x] Công cụ tùy chỉnh giao diện — 30+ giao diện tích hợp, trình chỉnh sửa trực quan với nhập hex, 22 trường màu terminal + 19 trường UI
-- [x] Command palette (`⌘K`) — tìm kiếm mờ qua kết nối, hành động, và cài đặt
-- [x] Zen mode (`⌘⇧Z`) — terminal toàn màn hình không lo phân tâm, ẩn sidebar và thanh tab
-- [x] Phím tắt cỡ chữ terminal (`⌘+` / `⌘-` / `⌘0`) với refit PTY trực tiếp
 
 ### 🚧 Đang phát triển
 
