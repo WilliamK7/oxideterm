@@ -94,12 +94,12 @@ pub fn index_chunk(
     Ok(())
 }
 
-/// Re-index an entire collection from scratch.
+/// Re-index BM25 from scratch. The `_collection_id` parameter is retained
+/// for API compatibility but the index is always rebuilt globally.
 pub fn reindex_collection(
     store: &RagStore,
     _collection_id: &str,
 ) -> Result<usize, RagError> {
-    // Rebuild BM25 index across ALL collections to maintain global consistency.
     reindex_all(store)
 }
 
@@ -174,6 +174,10 @@ pub fn search_bm25(
         .collect::<std::collections::HashSet<_>>()
         .into_iter()
         .collect();
+
+    if query_terms.is_empty() {
+        return Ok(Vec::new());
+    }
 
     let stats = store.get_bm25_stats()?;
     let (doc_count, avg_dl) = match stats {

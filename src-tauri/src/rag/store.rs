@@ -1,6 +1,7 @@
 use crate::rag::error::RagError;
 use crate::rag::types::*;
 use redb::{Database, ReadableTable, TableDefinition};
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 use tracing::{debug, info, warn};
@@ -358,6 +359,40 @@ impl RagStore {
             }
             None => Ok(None),
         }
+    }
+
+    /// Batch-load multiple chunks in a single read transaction.
+    pub fn get_chunks_batch(
+        &self,
+        chunk_ids: &[String],
+    ) -> Result<HashMap<String, DocChunk>, RagError> {
+        let txn = self.db.begin_read()?;
+        let t = txn.open_table(DOC_CHUNKS_TABLE)?;
+        let mut result = HashMap::with_capacity(chunk_ids.len());
+        for cid in chunk_ids {
+            if let Some(guard) = t.get(cid.as_str())? {
+                let chunk = self.decode_chunk(guard.value())?;
+                result.insert(cid.clone(), chunk);
+            }
+        }
+        Ok(result)
+    }
+
+    /// Batch-load multiple document metadata in a single read transaction.
+    pub fn get_doc_metadata_batch(
+        &self,
+        doc_ids: &[String],
+    ) -> Result<HashMap<String, DocMetadata>, RagError> {
+        let txn = self.db.begin_read()?;
+        let t = txn.open_table(DOC_METADATA_TABLE)?;
+        let mut result = HashMap::with_capacity(doc_ids.len());
+        for did in doc_ids {
+            if let Some(guard) = t.get(did.as_str())? {
+                let meta: DocMetadata = rmp_serde::from_slice(guard.value())?;
+                result.insert(did.clone(), meta);
+            }
+        }
+        Ok(result)
     }
 
     pub fn get_chunks_for_doc(&self, doc_id: &str) -> Result<Vec<DocChunk>, RagError> {

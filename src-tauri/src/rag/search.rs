@@ -54,21 +54,33 @@ pub fn search(
     // Phase 3: Fuse results
     let fused = rrf_fuse(&bm25_hits, &vector_hits);
 
-    // Phase 4: Enrich and return top-K
+    // Phase 4: Batch-load chunks and metadata, then assemble top-K
+    let top_chunk_ids: Vec<String> = fused.iter().take(top_k).map(|(id, _, _)| id.clone()).collect();
+    let chunks_map = store.get_chunks_batch(&top_chunk_ids)?;
+
+    // Collect unique doc_ids for metadata batch load
+    let doc_ids: Vec<String> = chunks_map
+        .values()
+        .map(|c| c.doc_id.clone())
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect();
+    let meta_map = store.get_doc_metadata_batch(&doc_ids)?;
+
     let mut results = Vec::with_capacity(top_k.min(fused.len()));
     for (chunk_id, score, source) in fused.into_iter().take(top_k) {
-        if let Some(chunk) = store.get_chunk(&chunk_id)? {
-            let doc_title = store
-                .get_doc_metadata(&chunk.doc_id)?
-                .map(|m| m.title)
+        if let Some(chunk) = chunks_map.get(&chunk_id) {
+            let doc_title = meta_map
+                .get(&chunk.doc_id)
+                .map(|m| m.title.clone())
                 .unwrap_or_default();
 
             results.push(SearchResult {
                 chunk_id: chunk_id.clone(),
-                doc_id: chunk.doc_id,
+                doc_id: chunk.doc_id.clone(),
                 doc_title,
-                section_path: chunk.section_path,
-                content: chunk.content,
+                section_path: chunk.section_path.clone(),
+                content: chunk.content.clone(),
                 score,
                 source,
             });

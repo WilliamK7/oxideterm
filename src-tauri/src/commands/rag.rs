@@ -16,16 +16,21 @@ use std::sync::Arc;
 use tauri::State;
 use tracing::info;
 
-/// Compute a stable, deterministic content hash using SHA-256 (truncated to 16 hex chars).
+/// Compute a stable, deterministic content hash using SHA-256 (128-bit / 32 hex chars).
 fn content_hash(text: &str) -> String {
     let hash = Sha256::digest(text.as_bytes());
-    format!("{:016x}", u64::from_be_bytes(hash[..8].try_into().unwrap()))
+    format!(
+        "{:032x}",
+        u128::from_be_bytes(hash[..16].try_into().unwrap())
+    )
 }
 
 /// Max allowed length for titles, names, and similar short text fields.
 const MAX_NAME_LENGTH: usize = 1000;
 /// Max allowed document content size (10 MB).
 const MAX_CONTENT_SIZE: usize = 10 * 1024 * 1024;
+/// Max allowed search query length (10 000 characters).
+const MAX_QUERY_LENGTH: usize = 10_000;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Request / Response Types
@@ -359,6 +364,20 @@ pub async fn rag_store_embeddings(
         })
         .collect();
 
+    // Validate: all vectors in batch must have the same dimensions
+    if let Some(first) = records.first() {
+        let expected_dim = first.dimensions;
+        if expected_dim == 0 {
+            return Err("Embedding vectors must not be empty".to_string());
+        }
+        if let Some(bad) = records.iter().find(|r| r.dimensions != expected_dim) {
+            return Err(format!(
+                "Dimension mismatch: expected {} but chunk {} has {}",
+                expected_dim, bad.chunk_id, bad.dimensions
+            ));
+        }
+    }
+
     let count = embedding::store_embeddings(&store, records).map_err(|e| e.to_string())?;
     Ok(count)
 }
@@ -368,6 +387,14 @@ pub async fn rag_search(
     store: State<'_, Arc<RagStore>>,
     request: SearchRequest,
 ) -> Result<Vec<SearchResultResponse>, String> {
+    if request.query.len() > MAX_QUERY_LENGTH {
+        return Err("Search query too long".to_string());
+    }
+    if let Some(ref vec) = request.query_vector {
+        if vec.is_empty() {
+            return Err("Query vector must not be empty".to_string());
+        }
+    }
     let top_k = request.top_k.unwrap_or(5);
 
     let mode = match request.query_vector {
