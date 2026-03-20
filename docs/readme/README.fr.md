@@ -491,9 +491,10 @@ OxideTerm/
 
 ## Feuille de route
 
-### 🚧 En cours (v0.20)
+### 🚧 En cours (v0.21)
 
-- [ ] Base de connaissances RAG — collections de documents locales avec recherche hybride BM25 + vectorielle, récupération intégrée à l'IA
+- [x] Base de connaissances RAG — collections de documents locales avec recherche hybride BM25 + vectorielle, récupération intégrée à l'IA
+- [x] Client MCP (Model Context Protocol) — connecter OxideSens à des serveurs d'outils externes
 - [ ] Recherche & changement rapide de sessions
 
 ### 📋 Planifié

@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PaneLeaf } from '../../types';
 import { TerminalView } from './TerminalView';
 import { LocalTerminalView } from './LocalTerminalView';
@@ -30,6 +31,7 @@ export const TerminalPane = React.memo<TerminalPaneProps>(({
   onFocus,
   onClose,
 }) => {
+  const { t } = useTranslation('terminal');
   const handleFocus = useCallback(() => {
     onFocus(pane.id);
   }, [onFocus, pane.id]);
@@ -101,7 +103,7 @@ export const TerminalPane = React.memo<TerminalPaneProps>(({
             // Always visible when active for discoverability
             isActive && 'opacity-70'
           )}
-          title="Close pane"
+          title={t('terminal.pane.close_pane')}
         >
           <svg
             className="h-3 w-3"

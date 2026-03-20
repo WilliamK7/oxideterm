@@ -500,9 +500,10 @@ OxideTerm/
 
 ## Roadmap
 
-### 🚧 In Corso (v0.20)
+### 🚧 In Corso (v0.21)
 
-- [ ] Base di conoscenza RAG — collezioni di documenti locali con ricerca ibrida BM25 + vettoriale, recupero integrato con IA
+- [x] Base di conoscenza RAG — collezioni di documenti locali con ricerca ibrida BM25 + vettoriale, recupero integrato con IA
+- [x] Client MCP (Model Context Protocol) — connettere OxideSens a server di strumenti esterni
 - [ ] Ricerca sessioni e cambio rapido
 
 ### 📋 Pianificato

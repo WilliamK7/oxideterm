@@ -565,7 +565,8 @@
       "error_sync": "同步文件變更失敗",
       "error_create_document": "建立文件失敗",
       "embedding_partial_failure": "{{total}} 個片段中有 {{failed}} 個嵌入失敗",
-      "stats_stale": "統計資訊可能不是最新的"
+      "stats_stale": "統計資訊可能不是最新的",
+      "file_filter_documents": "文件"
     }
   }
 }

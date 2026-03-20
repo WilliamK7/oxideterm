@@ -180,7 +180,7 @@ export function DocumentManager() {
       const selected = await open({
         multiple: true,
         filters: [
-          { name: 'Documents', extensions: ['md', 'txt', 'markdown'] },
+          { name: t('settings_view.knowledge.file_filter_documents'), extensions: ['md', 'txt', 'markdown'] },
         ],
       });
       if (!selected) return;

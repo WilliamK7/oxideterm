@@ -121,6 +121,14 @@ function App() {
   // Load agent task history from backend persistence
   useEffect(() => {
     (async () => {
+      // Auto-connect enabled MCP servers
+      try {
+        const { useMcpRegistry } = await import('./lib/ai/mcp');
+        await useMcpRegistry.getState().connectAll();
+      } catch (e) {
+        console.warn('Failed to auto-connect MCP servers:', e);
+      }
+
       try {
         const { useAgentStore } = await import('./store/agentStore');
         await useAgentStore.getState().initHistory();

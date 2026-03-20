@@ -500,9 +500,10 @@ OxideTerm/
 
 ## Roadmap
 
-### 🚧 In Progress (v0.20)
+### 🚧 In Progress (v0.21)
 
-- [ ] RAG operations knowledge base — local document collections with hybrid BM25 + vector search, AI-integrated retrieval
+- [x] RAG operations knowledge base — local document collections with hybrid BM25 + vector search, AI-integrated retrieval
+- [x] MCP (Model Context Protocol) client — connect OxideSens to external tool servers
 - [ ] Session search & quick-switch
 
 ### 📋 Planned

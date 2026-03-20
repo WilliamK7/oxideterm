@@ -500,9 +500,10 @@ OxideTerm/
 
 ## Fahrplan
 
-### 🚧 In Arbeit (v0.20)
+### 🚧 In Arbeit (v0.21)
 
-- [ ] RAG-Betriebswissensdatenbank — lokale Dokumentensammlungen mit BM25 + Vektor-Hybridsuche, KI-integrierte Suche
+- [x] RAG-Betriebswissensdatenbank — lokale Dokumentensammlungen mit BM25 + Vektor-Hybridsuche, KI-integrierte Suche
+- [x] MCP-Client (Model Context Protocol) — OxideSens mit externen Tool-Servern verbinden
 - [ ] Sitzungssuche & Schnellwechsel
 
 ### 📋 Geplant

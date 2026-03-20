@@ -565,7 +565,8 @@
       "error_sync": "Đồng bộ thay đổi tài liệu thất bại",
       "error_create_document": "Tạo tài liệu thất bại",
       "embedding_partial_failure": "{{failed}} trong {{total}} đoạn không thể nhúng",
-      "stats_stale": "Thống kê có thể chưa được cập nhật"
+      "stats_stale": "Thống kê có thể chưa được cập nhật",
+      "file_filter_documents": "Tài liệu"
     }
   }
 }

@@ -565,7 +565,8 @@
       "error_sync": "Sincronizzazione delle modifiche non riuscita",
       "error_create_document": "Impossibile creare il documento",
       "embedding_partial_failure": "{{failed}} di {{total}} frammenti non sono stati incorporati",
-      "stats_stale": "Le statistiche potrebbero non essere aggiornate"
+      "stats_stale": "Le statistiche potrebbero non essere aggiornate",
+      "file_filter_documents": "Documenti"
     }
   }
 }

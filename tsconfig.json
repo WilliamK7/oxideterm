@@ -26,6 +26,8 @@
       "@/styles/*": ["src/styles/*"]
     },
 
+    "types": ["vitest/globals", "node"],
+
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,

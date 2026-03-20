@@ -500,9 +500,10 @@ OxideTerm/
 
 ## Lộ trình
 
-### 🚧 Đang phát triển (v0.20)
+### 🚧 Đang phát triển (v0.21)
 
-- [ ] Cơ sở kiến thức RAG — bộ sưu tập tài liệu cục bộ với tìm kiếm lai BM25 + vector, truy xuất tích hợp AI
+- [x] Cơ sở kiến thức RAG — bộ sưu tập tài liệu cục bộ với tìm kiếm lai BM25 + vector, truy xuất tích hợp AI
+- [x] Máy khách MCP (Model Context Protocol) — kết nối OxideSens với các máy chủ công cụ bên ngoài
 - [ ] Tìm kiếm phiên & chuyển đổi nhanh
 
 ### 📋 Kế hoạch
