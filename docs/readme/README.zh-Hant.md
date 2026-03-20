@@ -25,7 +25,7 @@
 ---
 
 <p align="center">
-  <img src="../media/ai-terminal-demo.gif" alt="OxideTerm AI 演示">
+  <video src="../media/ai-terminal-demo.mp4" autoplay loop muted playsinline width="100%"></video>
 </p>
 <p align="center"><em>🤖 OxideSens —「開啟一個本機終端並執行 echo hello, world!」</em></p>
 

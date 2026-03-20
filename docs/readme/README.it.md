@@ -25,7 +25,7 @@
 ---
 
 <p align="center">
-  <img src="../media/ai-terminal-demo.gif" alt="Demo IA di OxideTerm">
+  <video src="../media/ai-terminal-demo.mp4" autoplay loop muted playsinline width="100%"></video>
 </p>
 <p align="center"><em>🤖 OxideSens — «Apri un terminale locale ed esegui echo hello, world!»</em></p>
 
