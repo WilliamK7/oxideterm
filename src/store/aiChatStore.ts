@@ -755,6 +755,10 @@ export const useAiChatStore = create<AiChatStore>()((set, get) => ({
     const customSystemPrompt = useSettingsStore.getState().settings.ai.customSystemPrompt;
     let systemPrompt = customSystemPrompt?.trim() || DEFAULT_SYSTEM_PROMPT;
 
+    // Inject current model identity so the LLM knows which model it is
+    const providerLabel = activeProvider?.name || providerType;
+    systemPrompt += `\nYou are currently the model "${providerModel}", provided by ${providerLabel}.`;
+
     if (sidebarContext?.systemPromptSegment) {
       systemPrompt += `\n\n${sidebarContext.systemPromptSegment}`;
     }
