@@ -163,15 +163,6 @@ function loadPersistedUIState(): { tabs: Tab[]; activeTabId: string | null } {
   };
 }
 
-// Save UI state to localStorage
-// NOTE: This is now a NO-OP as sidebar state is managed by settingsStore
-// Keeping the function signature for backwards compatibility
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function saveUIState(): void {
-  // NO-OP: Sidebar state is now automatically persisted by settingsStore
-  // This function is kept for backwards compatibility but does nothing
-}
-
 const persistedState = loadPersistedUIState();
 
 export const useAppStore = create<AppStore>((set, get) => ({

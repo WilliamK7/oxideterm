@@ -1409,6 +1409,52 @@ export const api = {
     if (USE_MOCK) return;
     return invoke('agent_history_clear');
   },
+
+  // ── Launcher ────────────────────────────────────────────────────────
+
+  /** Clear launcher icon cache */
+  launcherClearCache: async (): Promise<void> => {
+    if (USE_MOCK) return;
+    return invoke('launcher_clear_cache');
+  },
+
+  /** List installed applications (macOS) */
+  launcherListApps: async <T>(): Promise<T> => {
+    if (USE_MOCK) return { apps: [], iconDir: null } as T;
+    return invoke<T>('launcher_list_apps');
+  },
+
+  /** Launch an application by path */
+  launcherLaunchApp: async (path: string): Promise<void> => {
+    if (USE_MOCK) return;
+    return invoke('launcher_launch_app', { path });
+  },
+
+  /** Launch a WSL distro (Windows) */
+  launcherWslLaunch: async (distro: string): Promise<void> => {
+    if (USE_MOCK) return;
+    return invoke('launcher_wsl_launch', { distro });
+  },
+
+  /** List WSL distros (Windows) */
+  wslGraphicsListDistros: async <T>(): Promise<T[]> => {
+    if (USE_MOCK) return [] as T[];
+    return invoke<T[]>('wsl_graphics_list_distros');
+  },
+
+  // ── Update (Resumable Install) ──────────────────────────────────────
+
+  /** Start a resumable update install */
+  updateStartResumableInstall: async (expectedVersion: string): Promise<string> => {
+    if (USE_MOCK) return 'mock-task-id';
+    return invoke<string>('update_start_resumable_install', { expectedVersion });
+  },
+
+  /** Cancel a resumable update install */
+  updateCancelResumableInstall: async (taskId: string): Promise<void> => {
+    if (USE_MOCK) return;
+    return invoke('update_cancel_resumable_install', { taskId });
+  },
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

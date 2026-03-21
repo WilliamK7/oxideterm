@@ -20,7 +20,7 @@ import { terminalLinkHandler } from '../../lib/safeUrl';
 import { listen } from '@tauri-apps/api/event';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
-import type { BackgroundFit } from '../../store/settingsStore';
+import { hexToRgba, getBackgroundFitStyles, isLowEndGPU, forceViewportTransparent, clearViewportTransparent } from '../../lib/terminalHelpers';
 import { 
   registerTerminalBuffer, 
   unregisterTerminalBuffer,
@@ -50,70 +50,6 @@ interface LocalTerminalViewProps {
 }
 
 const PREFILL_REPLAY_LINE_COUNT = 50; // Keep aligned with backend replay count
-
-// ── Background Image Helpers (shared with TerminalView) ─────────────────────────
-
-/**
- * Convert 6-digit hex (#RRGGBB) to rgba() string.
- * xterm.js only parses #hex and rgba() — 'transparent' is NOT recognised.
- */
-function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-/** Map BackgroundFit to CSS properties */
-function getBackgroundFitStyles(fit: BackgroundFit): React.CSSProperties {
-  switch (fit) {
-    case 'cover':
-      return { objectFit: 'cover', width: '100%', height: '100%' };
-    case 'contain':
-      return { objectFit: 'contain', width: '100%', height: '100%' };
-    case 'fill':
-      return { objectFit: 'fill', width: '100%', height: '100%' };
-    case 'tile':
-      return {};
-  }
-}
-
-let _localGpuDetectionResult: boolean | null = null;
-function isLowEndGPU(): boolean {
-  if (_localGpuDetectionResult !== null) return _localGpuDetectionResult;
-  try {
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    if (gl && gl instanceof WebGLRenderingContext) {
-      const ext = gl.getExtension('WEBGL_debug_renderer_info');
-      if (ext) {
-        const renderer = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) as string;
-        _localGpuDetectionResult = /Intel|Mesa|SwiftShader|llvmpipe|Apple GPU/i.test(renderer);
-        return _localGpuDetectionResult;
-      }
-    }
-  } catch { /* noop */ }
-  _localGpuDetectionResult = false;
-  return false;
-}
-
-/** Force xterm DOM elements transparent (must be called after each viewport reset) */
-function forceViewportTransparent(container: HTMLElement | null): void {
-  if (!container) return;
-  const viewport = container.querySelector('.xterm-viewport') as HTMLElement | null;
-  if (viewport) viewport.style.backgroundColor = 'transparent';
-  const xtermEl = container.querySelector('.xterm') as HTMLElement | null;
-  if (xtermEl) xtermEl.style.backgroundColor = 'transparent';
-}
-
-/** Clear DOM-level transparency overrides so xterm reverts to theme-driven background. */
-function clearViewportTransparent(container: HTMLElement | null): void {
-  if (!container) return;
-  const viewport = container.querySelector('.xterm-viewport') as HTMLElement | null;
-  if (viewport) viewport.style.backgroundColor = '';
-  const xtermEl = container.querySelector('.xterm') as HTMLElement | null;
-  if (xtermEl) xtermEl.style.backgroundColor = '';
-}
 
 export const LocalTerminalView: React.FC<LocalTerminalViewProps> = ({ 
   sessionId, 

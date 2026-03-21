@@ -7,7 +7,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { invoke } from '@tauri-apps/api/core';
+import { api } from '@/lib/api';
 import { check, type Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
@@ -198,9 +198,7 @@ export const useUpdateStore = create<UpdateState>()(
         });
 
         try {
-          const taskId = await invoke<string>('update_start_resumable_install', {
-            expectedVersion: newVersion,
-          });
+          const taskId = await api.updateStartResumableInstall(newVersion);
           set({ resumableTaskId: taskId });
           // Progress will be tracked via event listener
         } catch (err) {
@@ -216,7 +214,7 @@ export const useUpdateStore = create<UpdateState>()(
         const { resumableTaskId } = get();
         try {
           if (resumableTaskId) {
-            await invoke('update_cancel_resumable_install', { taskId: resumableTaskId });
+            await api.updateCancelResumableInstall(resumableTaskId);
           }
         } catch {
           // Ignore cancel errors

@@ -305,14 +305,22 @@ export const TabBarTerminalActions: React.FC<TabBarTerminalActionsProps> = ({
     }
   }, [canSplit, isLocalTerminal, createTerminal, splitPane, activeTab.id]);
 
-  // No session ID (e.g. split pane with cleared sessionId) — hide actions
-  if (!sessionId) return null;
-
   // ── Broadcast state ─────────────────────────────────────────────────
   const broadcastEnabled = useBroadcastStore(s => s.enabled);
   const broadcastTargets = useBroadcastStore(s => s.targets);
   const toggleTarget = useBroadcastStore(s => s.toggleTarget);
   const disableBroadcast = useBroadcastStore(s => s.disable);
+
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const terminalEntries = useMemo(() => {
+    void broadcastTargets;
+    void refreshKey;
+    return getAllEntries();
+  }, [broadcastTargets, refreshKey]);
+
+  // No session ID (e.g. split pane with cleared sessionId) — hide actions
+  if (!sessionId) return null;
 
   // Build target list from terminal registry
   // For split-pane tabs: use activePaneId from tab state
@@ -320,17 +328,6 @@ export const TabBarTerminalActions: React.FC<TabBarTerminalActionsProps> = ({
   const activePaneId = activeTab.activePaneId
     ?? (activeTab.rootPane?.type === 'leaf' ? activeTab.rootPane.id : undefined)
     ?? sessionId;
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const terminalEntries = useMemo(() => {
-    // Re-evaluate whenever broadcast targets change or dropdown is manually refreshed
-    void broadcastTargets;
-    void refreshKey;
-    return getAllEntries();
-  }, [broadcastTargets, refreshKey]);
 
   // ── Build action groups ────────────────────────────────────────────────
   return (

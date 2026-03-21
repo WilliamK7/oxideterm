@@ -7,7 +7,7 @@
  */
 
 import { create } from 'zustand';
-import { invoke } from '@tauri-apps/api/core';
+import { api } from '../lib/api';
 import { platform } from '../lib/platform';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
     set({ enabled: false, apps: [], iconDir: null, searchQuery: '', error: null, loading: false });
     // Clear icon cache on backend (best-effort, after state is already clean)
     try {
-      await invoke('launcher_clear_cache');
+      await api.launcherClearCache();
     } catch { /* best-effort */ }
   },
 
@@ -108,12 +108,12 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
     set({ loading: true, error: null });
     try {
       if (platform.isMac) {
-        const resp = await invoke<LauncherListResponse>('launcher_list_apps');
+        const resp = await api.launcherListApps<LauncherListResponse>();
         // Guard: discard results if launcher was disabled while scan was in flight
         if (!get().enabled) { set({ loading: false }); return; }
         set({ apps: resp.apps, iconDir: resp.iconDir, loading: false });
       } else if (platform.isWindows) {
-        const distros = await invoke<WslDistro[]>('wsl_graphics_list_distros');
+        const distros = await api.wslGraphicsListDistros<WslDistro>();
         set({ wslDistros: distros, loading: false });
       } else {
         set({ loading: false });
@@ -127,7 +127,7 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
 
   launchApp: async (path: string) => {
     try {
-      await invoke('launcher_launch_app', { path });
+      await api.launcherLaunchApp(path);
     } catch (err) {
       set({ error: String(err) });
     }
@@ -135,7 +135,7 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
 
   launchWsl: async (distro: string) => {
     try {
-      await invoke('launcher_wsl_launch', { distro });
+      await api.launcherWslLaunch(distro);
     } catch (err) {
       set({ error: String(err) });
     }

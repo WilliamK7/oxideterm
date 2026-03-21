@@ -1192,16 +1192,25 @@ useIdeStore.subscribe(
 );
 
 // Window blur → auto-save all dirty tabs (if ide.autoSave is on)
-if (typeof window !== 'undefined') {
-  window.addEventListener('blur', () => {
-    import('./settingsStore').then(({ useSettingsStore }) => {
-      const ideSettings = useSettingsStore.getState().getIde();
-      if (!ideSettings.autoSave) return;
-      
-      const store = useIdeStore.getState();
-      store.saveAllFiles().catch((err) => {
-        console.warn('[IDE AutoSave] saveAllFiles on blur failed:', err);
-      });
+function _ideBlurHandler() {
+  import('./settingsStore').then(({ useSettingsStore }) => {
+    const ideSettings = useSettingsStore.getState().getIde();
+    if (!ideSettings.autoSave) return;
+
+    const store = useIdeStore.getState();
+    store.saveAllFiles().catch((err) => {
+      console.warn('[IDE AutoSave] saveAllFiles on blur failed:', err);
     });
+  });
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('blur', _ideBlurHandler);
+}
+
+// Clean up on HMR to prevent listener accumulation
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    window.removeEventListener('blur', _ideBlurHandler);
   });
 }

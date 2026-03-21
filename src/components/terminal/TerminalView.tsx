@@ -35,7 +35,11 @@ import { onMapleRegularLoaded, ensureCJKFallback } from '../../lib/fontLoader';
 import { runInputPipeline, runOutputPipeline } from '../../lib/plugin/pluginTerminalHooks';
 import { useSessionTreeStore } from '../../store/sessionTreeStore';
 import { useReconnectOrchestratorStore } from '../../store/reconnectOrchestratorStore';
-import type { BackgroundFit } from '../../store/settingsStore';
+import { hexToRgba, getBackgroundFitStyles, isLowEndGPU, forceViewportTransparent, clearViewportTransparent } from '../../lib/terminalHelpers';
+import {
+  MSG_TYPE_DATA, MSG_TYPE_HEARTBEAT, MSG_TYPE_ERROR,
+  HEADER_SIZE, encodeHeartbeatFrame, encodeDataFrame, encodeResizeFrame,
+} from '../../lib/wireProtocol';
 import { installTerminalClipboardSupport } from '../../lib/clipboardSupport';
 import { useTerminalRecording } from '../../hooks/useTerminalRecording';
 import { useAdaptiveRenderer } from '../../hooks/useAdaptiveRenderer';
@@ -45,82 +49,6 @@ import { useBroadcastStore } from '../../store/broadcastStore';
 import { broadcastToTargets } from '../../lib/terminalRegistry';
 
 const PREFILL_REPLAY_LINE_COUNT = 50; // Keep aligned with backend replay count
-
-// ── Background Image Helpers ─────────────────────────────────────────────
-
-/**
- * Convert 6-digit hex (#RRGGBB) to rgba() string.
- * xterm.js only parses #hex and rgba() formats — CSS keywords like
- * 'transparent' are NOT recognised and silently fall back to opaque black.
- */
-function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-/** Map BackgroundFit to CSS properties */
-function getBackgroundFitStyles(fit: BackgroundFit): React.CSSProperties {
-  switch (fit) {
-    case 'cover':
-      return { objectFit: 'cover', width: '100%', height: '100%' };
-    case 'contain':
-      return { objectFit: 'contain', width: '100%', height: '100%' };
-    case 'fill':
-      return { objectFit: 'fill', width: '100%', height: '100%' };
-    case 'tile':
-      return {}; // tile uses background-image CSS instead of <img>
-  }
-}
-
-/**
- * Detect if the GPU is low-end (integrated graphics).
- * Returns true if we should cap blur to ≤5px for performance.
- * Uses WEBGL_debug_renderer_info when available.
- */
-let _gpuDetectionResult: boolean | null = null;
-function isLowEndGPU(): boolean {
-  if (_gpuDetectionResult !== null) return _gpuDetectionResult;
-  try {
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    if (gl && gl instanceof WebGLRenderingContext) {
-      const ext = gl.getExtension('WEBGL_debug_renderer_info');
-      if (ext) {
-        const renderer = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) as string;
-        const low = /Intel|Mesa|SwiftShader|llvmpipe|Apple GPU/i.test(renderer);
-        _gpuDetectionResult = low;
-        return low;
-      }
-    }
-  } catch { /* noop */ }
-  _gpuDetectionResult = false;
-  return false;
-}
-
-/**
- * Force xterm's internal DOM elements to transparent background.
- * Must be called after `term.open()`, after renderer restore, and after
- * any `term.options.theme = ...` assignment — xterm re-renders the
- * viewport from the parsed theme color on all of these occasions.
- */
-function forceViewportTransparent(container: HTMLElement | null): void {
-  if (!container) return;
-  const viewport = container.querySelector('.xterm-viewport') as HTMLElement | null;
-  if (viewport) viewport.style.backgroundColor = 'transparent';
-  const xtermEl = container.querySelector('.xterm') as HTMLElement | null;
-  if (xtermEl) xtermEl.style.backgroundColor = 'transparent';
-}
-
-/** Clear DOM-level transparency overrides so xterm reverts to theme-driven background. */
-function clearViewportTransparent(container: HTMLElement | null): void {
-  if (!container) return;
-  const viewport = container.querySelector('.xterm-viewport') as HTMLElement | null;
-  if (viewport) viewport.style.backgroundColor = '';
-  const xtermEl = container.querySelector('.xterm') as HTMLElement | null;
-  if (xtermEl) xtermEl.style.backgroundColor = '';
-}
 
 interface TerminalViewProps {
   sessionId: string;
@@ -132,45 +60,6 @@ interface TerminalViewProps {
   /** Callback when this pane receives focus */
   onFocus?: (paneId: string) => void;
 }
-
-// Protocol Constants - Wire Protocol v1
-// Frame Format: [Type: 1 byte][Length: 4 bytes big-endian][Payload: n bytes]
-const MSG_TYPE_DATA = 0x00;
-const MSG_TYPE_RESIZE = 0x01;
-const MSG_TYPE_HEARTBEAT = 0x02;
-const MSG_TYPE_ERROR = 0x03;
-const HEADER_SIZE = 5; // 1 byte type + 4 bytes length
-
-// Helper function to encode a heartbeat response frame
-const encodeHeartbeatFrame = (seq: number): Uint8Array => {
-  const frame = new Uint8Array(HEADER_SIZE + 4); // 4 bytes for sequence number
-  const view = new DataView(frame.buffer);
-  view.setUint8(0, MSG_TYPE_HEARTBEAT);  // Type
-  view.setUint32(1, 4, false);           // Length (4 bytes payload)
-  view.setUint32(5, seq, false);         // Sequence number (big-endian)
-  return frame;
-};
-
-// Helper function to encode a data frame
-const encodeDataFrame = (payload: Uint8Array): Uint8Array => {
-  const frame = new Uint8Array(HEADER_SIZE + payload.length);
-  const view = new DataView(frame.buffer);
-  view.setUint8(0, MSG_TYPE_DATA);           // Type
-  view.setUint32(1, payload.length, false);  // Length (big-endian)
-  frame.set(payload, HEADER_SIZE);           // Payload
-  return frame;
-};
-
-// Helper function to encode a resize frame
-const encodeResizeFrame = (cols: number, rows: number): Uint8Array => {
-  const frame = new Uint8Array(HEADER_SIZE + 4); // 4 bytes for cols + rows
-  const view = new DataView(frame.buffer);
-  view.setUint8(0, MSG_TYPE_RESIZE);  // Type
-  view.setUint32(1, 4, false);        // Length (4 bytes payload)
-  view.setUint16(5, cols, false);     // Cols (big-endian)
-  view.setUint16(7, rows, false);     // Rows (big-endian)
-  return frame;
-};
 
 export const TerminalView: React.FC<TerminalViewProps> = ({ 
   sessionId, 
