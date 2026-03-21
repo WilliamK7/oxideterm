@@ -389,7 +389,8 @@ pub fn run() {
         .manage(node_event_emitter.clone())
         .manage(Arc::new(PluginFileServer::new()))
         .manage(update_manager::UpdateManagerState::default())
-        .manage(Arc::new(commands::McpProcessRegistry::new()));
+        .manage(Arc::new(commands::McpProcessRegistry::new()))
+        .manage(commands::AiStreamCancelRegistry::default());
 
     // Conditionally add AI chat store (may be None if initialization failed)
     let builder = if let Some(ai_store) = ai_chat_store {
@@ -694,6 +695,7 @@ pub fn run() {
         // AI HTTP proxy commands (CORS bypass)
         commands::ai_fetch,
         commands::ai_fetch_stream,
+        commands::ai_fetch_stream_cancel,
         // Plugin system commands
         commands::list_plugins,
         commands::read_plugin_file,
@@ -991,6 +993,7 @@ pub fn run() {
         // AI HTTP proxy commands (CORS bypass)
         commands::ai_fetch,
         commands::ai_fetch_stream,
+        commands::ai_fetch_stream_cancel,
         // Plugin system commands
         commands::list_plugins,
         commands::read_plugin_file,

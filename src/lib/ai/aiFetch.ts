@@ -97,11 +97,15 @@ export function aiFetchStreaming(
     },
   });
 
+  // Unique ID for this request — used to cancel the Rust HTTP stream
+  const requestId = crypto.randomUUID();
+
   // When the abort signal fires, close the stream so the reader stops
-  // and the Rust backend detects the closed channel.
+  // and tell the Rust backend to cancel the HTTP request.
   if (init.signal) {
     const onAbort = () => {
       try { controller.close(); } catch { /* already closed */ }
+      invoke('ai_fetch_stream_cancel', { requestId }).catch(() => {});
     };
     if (init.signal.aborted) {
       // Already aborted before we started
@@ -136,6 +140,7 @@ export function aiFetchStreaming(
 
   // Start the streaming request (runs in background, resolves when stream ends)
   invoke('ai_fetch_stream', {
+    requestId,
     url,
     method: init.method,
     headers: init.headers,

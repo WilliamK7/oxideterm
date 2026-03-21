@@ -9,9 +9,13 @@
 //! - Non-streaming response body capped at 10 MB
 //! - Streaming channel auto-closes on frontend disconnect
 
+use dashmap::DashMap;
 use serde::Serialize;
 use std::collections::HashMap;
+use std::sync::Arc;
 use tauri::ipc::Channel;
+use tauri::State;
+use tokio_util::sync::CancellationToken;
 
 /// Maximum response body size for non-streaming requests (10 MB)
 const MAX_RESPONSE_SIZE: usize = 10 * 1024 * 1024;
@@ -39,6 +43,9 @@ pub enum AiStreamEvent {
     /// An error occurred during streaming
     Error { message: String },
 }
+
+/// Registry of in-flight streaming requests that can be cancelled.
+pub type AiStreamCancelRegistry = Arc<DashMap<String, CancellationToken>>;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Validation
@@ -142,21 +149,47 @@ pub async fn ai_fetch(
 /// followed by `Data` chunks, and the command returns when the stream ends.
 #[tauri::command]
 pub async fn ai_fetch_stream(
+    request_id: String,
     url: String,
     method: String,
     headers: HashMap<String, String>,
     body: Option<String>,
     on_chunk: Channel<AiStreamEvent>,
+    cancel_registry: State<'_, AiStreamCancelRegistry>,
 ) -> Result<(), String> {
     validate_url(&url)?;
 
-    let client = reqwest::Client::new();
-    let builder = build_request(&client, &url, &method, &headers, body)?;
+    // Register a cancellation token for this request
+    let token = CancellationToken::new();
+    cancel_registry.insert(request_id.clone(), token.clone());
 
-    let response = builder
-        .send()
-        .await
-        .map_err(|e| format!("HTTP streaming request failed: {}", e))?;
+    let result = ai_fetch_stream_inner(&url, &method, &headers, body, &on_chunk, &token).await;
+
+    // Always clean up the token entry
+    cancel_registry.remove(&request_id);
+
+    result
+}
+
+/// Inner streaming logic, separated so the cancel registry cleanup is always reached.
+async fn ai_fetch_stream_inner(
+    url: &str,
+    method: &str,
+    headers: &HashMap<String, String>,
+    body: Option<String>,
+    on_chunk: &Channel<AiStreamEvent>,
+    token: &CancellationToken,
+) -> Result<(), String> {
+    let client = reqwest::Client::new();
+    let builder = build_request(&client, url, method, headers, body)?;
+
+    let response = tokio::select! {
+        biased;
+        _ = token.cancelled() => return Ok(()),
+        result = builder.send() => {
+            result.map_err(|e| format!("HTTP streaming request failed: {}", e))?
+        }
+    };
 
     let status = response.status().as_u16();
 
@@ -170,7 +203,11 @@ pub async fn ai_fetch_stream(
 
     if !response.status().is_success() {
         // For error responses, read the full body and send as a single Data chunk
-        let error_body = response.text().await.unwrap_or_default();
+        let error_body = tokio::select! {
+            biased;
+            _ = token.cancelled() => return Ok(()),
+            text = response.text() => text.unwrap_or_default(),
+        };
         let data = if error_body.len() > 2000 {
             format!(
                 "{}... [truncated]",
@@ -187,23 +224,42 @@ pub async fn ai_fetch_stream(
     use futures_util::StreamExt;
     let mut stream = response.bytes_stream();
 
-    while let Some(chunk) = stream.next().await {
-        match chunk {
-            Ok(bytes) => {
-                let text = String::from_utf8_lossy(&bytes).to_string();
-                if on_chunk.send(AiStreamEvent::Data { data: text }).is_err() {
-                    // Channel closed (frontend disconnected) — stop streaming
-                    break;
+    loop {
+        tokio::select! {
+            biased;
+            _ = token.cancelled() => break,
+            chunk = stream.next() => {
+                match chunk {
+                    Some(Ok(bytes)) => {
+                        let text = String::from_utf8_lossy(&bytes).to_string();
+                        if on_chunk.send(AiStreamEvent::Data { data: text }).is_err() {
+                            // Channel closed (frontend disconnected) — stop streaming
+                            break;
+                        }
+                    }
+                    Some(Err(e)) => {
+                        let _ = on_chunk.send(AiStreamEvent::Error {
+                            message: format!("Stream read error: {}", e),
+                        });
+                        break;
+                    }
+                    None => break, // Stream ended
                 }
-            }
-            Err(e) => {
-                let _ = on_chunk.send(AiStreamEvent::Error {
-                    message: format!("Stream read error: {}", e),
-                });
-                break;
             }
         }
     }
 
+    Ok(())
+}
+
+/// Cancel an in-flight AI streaming request.
+#[tauri::command]
+pub async fn ai_fetch_stream_cancel(
+    request_id: String,
+    cancel_registry: State<'_, AiStreamCancelRegistry>,
+) -> Result<(), String> {
+    if let Some((_, token)) = cancel_registry.remove(&request_id) {
+        token.cancel();
+    }
     Ok(())
 }
