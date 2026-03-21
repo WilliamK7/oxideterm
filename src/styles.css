@@ -779,6 +779,21 @@ html {
   contain: layout style;
 }
 
+/* xterm.js 6.0 uses a custom SmoothScrollableElement (not native scrollbar).
+ * Style the slider via .xterm-scrollable-element classes. */
+.xterm .xterm-scrollable-element > .scrollbar {
+  border-radius: 4px;
+}
+
+.xterm .xterm-scrollable-element > .scrollbar > .slider {
+  border-radius: 4px;
+}
+
+/* Hide the overview ruler canvas — we only use overviewRuler.width for scrollbar sizing */
+.xterm .xterm-decoration-overview-ruler {
+  display: none !important;
+}
+
 .xterm-screen {
   /* Let xterm.js handle canvas sizing */
 }

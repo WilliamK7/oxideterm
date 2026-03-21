@@ -247,8 +247,8 @@ export const LocalTerminalView: React.FC<LocalTerminalViewProps> = ({
         const hasBg = terminal.backgroundEnabled !== false && !!terminal.backgroundImage && enabledTabs.includes('local_terminal');
         const themeConfig = themes[terminal.theme] || themes.default;
         term.options.theme = hasBg
-          ? { ...themeConfig, background: hexToRgba(themeConfig.background || '#09090b', 0.01) }
-          : themeConfig;
+          ? { ...themeConfig, background: hexToRgba(themeConfig.background || '#09090b', 0.01), overviewRulerBorder: 'transparent', scrollbarSliderBackground: 'rgba(255,255,255,0.15)', scrollbarSliderHoverBackground: 'rgba(255,255,255,0.3)', scrollbarSliderActiveBackground: 'rgba(255,255,255,0.4)' }
+          : { ...themeConfig, overviewRulerBorder: 'transparent', scrollbarSliderBackground: 'rgba(255,255,255,0.15)', scrollbarSliderHoverBackground: 'rgba(255,255,255,0.3)', scrollbarSliderActiveBackground: 'rgba(255,255,255,0.4)' };
 
         if (hasBg) {
           forceViewportTransparent(containerRef.current);
@@ -457,8 +457,8 @@ export const LocalTerminalView: React.FC<LocalTerminalViewProps> = ({
       && (terminalSettings.backgroundEnabledTabs ?? ['terminal', 'local_terminal']).includes('local_terminal');
     const baseTheme = themes[terminalSettings.theme] || themes.default;
     const xtermTheme = hasBgImage
-      ? { ...baseTheme, background: hexToRgba(baseTheme.background || '#09090b', 0.01) }
-      : baseTheme;
+      ? { ...baseTheme, background: hexToRgba(baseTheme.background || '#09090b', 0.01), overviewRulerBorder: 'transparent', scrollbarSliderBackground: 'rgba(255,255,255,0.15)', scrollbarSliderHoverBackground: 'rgba(255,255,255,0.3)', scrollbarSliderActiveBackground: 'rgba(255,255,255,0.4)' }
+      : { ...baseTheme, overviewRulerBorder: 'transparent', scrollbarSliderBackground: 'rgba(255,255,255,0.15)', scrollbarSliderHoverBackground: 'rgba(255,255,255,0.3)', scrollbarSliderActiveBackground: 'rgba(255,255,255,0.4)' };
 
     const term = new Terminal({
       cursorBlink: terminalSettings.cursorBlink,
@@ -471,6 +471,8 @@ export const LocalTerminalView: React.FC<LocalTerminalViewProps> = ({
       allowProposedApi: true,
       fastScrollSensitivity: 5,
       drawBoldTextInBrightColors: true,
+      // Controls the custom SmoothScrollableElement scrollbar width in xterm 6.0.
+      overviewRuler: { width: 10 },
       // Always enable so bg image can be toggled without remounting
       allowTransparency: true,
     });

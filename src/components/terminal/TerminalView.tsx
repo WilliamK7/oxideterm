@@ -579,8 +579,8 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
         const hasBg = terminal.backgroundEnabled !== false && !!terminal.backgroundImage && enabledTabs.includes('terminal');
         const themeConfig = themes[terminal.theme] || themes.default;
         term.options.theme = hasBg
-          ? { ...themeConfig, background: hexToRgba(themeConfig.background || '#09090b', 0.01) }
-          : themeConfig;
+          ? { ...themeConfig, background: hexToRgba(themeConfig.background || '#09090b', 0.01), overviewRulerBorder: 'transparent', scrollbarSliderBackground: 'rgba(255,255,255,0.15)', scrollbarSliderHoverBackground: 'rgba(255,255,255,0.3)', scrollbarSliderActiveBackground: 'rgba(255,255,255,0.4)' }
+          : { ...themeConfig, overviewRulerBorder: 'transparent', scrollbarSliderBackground: 'rgba(255,255,255,0.15)', scrollbarSliderHoverBackground: 'rgba(255,255,255,0.3)', scrollbarSliderActiveBackground: 'rgba(255,255,255,0.4)' };
 
         // Sync DOM-level transparency with background image state
         if (hasBg) {
@@ -913,8 +913,8 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
       && (terminalSettings.backgroundEnabledTabs ?? ['terminal', 'local_terminal']).includes('terminal');
     const baseTheme = themes[terminalSettings.theme] || themes.default;
     const xtermTheme = hasBgImage
-      ? { ...baseTheme, background: hexToRgba(baseTheme.background || '#09090b', 0.01) }
-      : baseTheme;
+      ? { ...baseTheme, background: hexToRgba(baseTheme.background || '#09090b', 0.01), overviewRulerBorder: 'transparent', scrollbarSliderBackground: 'rgba(255,255,255,0.15)', scrollbarSliderHoverBackground: 'rgba(255,255,255,0.3)', scrollbarSliderActiveBackground: 'rgba(255,255,255,0.4)' }
+      : { ...baseTheme, overviewRulerBorder: 'transparent', scrollbarSliderBackground: 'rgba(255,255,255,0.15)', scrollbarSliderHoverBackground: 'rgba(255,255,255,0.3)', scrollbarSliderActiveBackground: 'rgba(255,255,255,0.4)' };
 
     const term = new Terminal({
       cursorBlink: terminalSettings.cursorBlink,
@@ -927,6 +927,8 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
       allowProposedApi: true,
       fastScrollSensitivity: 5,
       drawBoldTextInBrightColors: true,
+      // Controls the custom SmoothScrollableElement scrollbar width in xterm 6.0.
+      overviewRuler: { width: 10 },
       // Always enable transparency so we can toggle background images at
       // runtime without remounting (and destroying) the terminal instance.
       // The performance cost of allowTransparency is negligible on modern GPUs.
@@ -2102,7 +2104,6 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
     <div 
       className="terminal-container h-full w-full overflow-hidden relative" 
       style={{ 
-        padding: '4px',
         backgroundColor: currentTheme.background 
       }}
       onClick={handleContainerClick}
