@@ -172,7 +172,7 @@ Dual-mode AI with privacy-first design:
 - **Compatible**: OpenAI, Ollama, DeepSeek, OneAPI, any `/v1/chat/completions` endpoint
 - **Secure**: API keys in OS keychain (macOS Keychain / Windows Credential Manager); on macOS, reads are gated behind **Touch ID** via `LAContext` — no entitlements or code-signing required
 
-### � RAG Operations Knowledge Base (v0.20)
+### 📚 RAG Operations Knowledge Base (v0.20)
 
 Local-first retrieval-augmented generation for operations documentation:
 
@@ -186,7 +186,7 @@ Local-first retrieval-augmented generation for operations documentation:
 - **Embedding pipeline**: frontend generates vectors via AI provider, stored in backend for hybrid retrieval
 - **Storage**: redb embedded database, 9 tables, MessagePack serialization with automatic compression for large chunks
 
-### �💻 IDE Mode — Remote Editing
+### 💻 IDE Mode — Remote Editing
 
 CodeMirror 6 editor over SFTP — no server-side installation required by default; Linux supports an optional lightweight remote agent for enhanced capabilities:
 
@@ -234,7 +234,7 @@ Multi-image background system with per-tab transparency control:
 - **Platform-aware**: macOS transparency support; Windows WSLg path excluded (opaque VNC canvas)
 - **Security**: path-canonicalized delete prevents directory traversal; full error propagation from Rust backend
 
-### �️ Adaptive Rendering — Dynamic Refresh Rate
+### ⚡ Adaptive Rendering — Dynamic Refresh Rate
 
 A three-tier render scheduler replaces fixed RAF batching, improving responsiveness during heavy output and reducing GPU/battery load during idle:
 
@@ -249,7 +249,7 @@ A three-tier render scheduler replaces fixed RAF batching, improving responsiven
 - **Settings**: three modes (Auto / Always 60 Hz / Off) in Settings → Terminal → Renderer
 - **Live diagnostics**: enable **Show FPS Overlay** to see a real-time tier badge (`B`=boost · `N`=normal · `I`=idle), frame rate, and write-per-second counter floating in the terminal corner
 
-### �🎨 Custom Theme Engine
+### 🎨 Custom Theme Engine
 
 Full-depth theme customization beyond preset palettes:
 
