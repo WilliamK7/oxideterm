@@ -800,7 +800,7 @@ export const useAiChatStore = create<AiChatStore>()((set, get) => ({
         }
 
         const ragResults = await Promise.race([
-          ragSearch({ query: cleanContent.slice(0, 500), collectionIds: [], queryVector, topK: 3 }),
+          ragSearch({ query: cleanContent.slice(0, 500), collectionIds: [], queryVector, topK: 5 }),
           makeTimeout(),
         ]);
         if (ragResults.length > 0) {

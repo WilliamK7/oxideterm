@@ -2,8 +2,9 @@ use crate::rag::chunker::estimate_tokens;
 use crate::rag::error::RagError;
 use crate::rag::store::RagStore;
 use crate::rag::types::{is_cjk, Bm25Stats, PostingEntry};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::LazyLock;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // BM25 Parameters
@@ -11,6 +12,28 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 const K1: f64 = 1.2;
 const B: f64 = 0.75;
+
+/// Common English stop words filtered from BM25 tokens to reduce noise.
+/// CJK tokens are not affected (bigram tokenizer has no equivalent concept).
+static ENGLISH_STOP_WORDS: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
+    HashSet::from([
+        "a", "about", "above", "after", "again", "against", "all", "also", "am",
+        "an", "and", "any", "are", "as", "at", "be", "because", "been", "before",
+        "being", "below", "between", "both", "but", "by", "can", "cannot", "could",
+        "did", "do", "does", "doing", "down", "during", "each", "few", "for", "from",
+        "further", "get", "got", "had", "has", "have", "having", "he", "her", "here",
+        "hers", "herself", "him", "himself", "his", "how", "if", "in", "into", "is",
+        "it", "its", "itself", "just", "let", "ll", "me", "might", "more", "most",
+        "must", "my", "myself", "no", "nor", "not", "now", "of", "off", "on", "once",
+        "only", "or", "other", "our", "ours", "ourselves", "out", "over", "own", "re",
+        "same", "shall", "she", "should", "so", "some", "such", "than", "that", "the",
+        "their", "theirs", "them", "themselves", "then", "there", "these", "they",
+        "this", "those", "through", "to", "too", "under", "until", "up", "upon", "ve",
+        "very", "was", "we", "were", "what", "when", "where", "which", "while", "who",
+        "whom", "why", "will", "with", "won", "would", "you", "your", "yours",
+        "yourself", "yourselves",
+    ])
+});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Tokenizer — character bigram for CJK, whitespace split for ASCII
@@ -68,8 +91,9 @@ pub fn term_frequencies(tokens: &[String]) -> HashMap<String, f32> {
 
 fn flush_ascii(buf: &mut String, tokens: &mut Vec<String>) {
     if !buf.is_empty() {
-        // Filter out very short tokens (single char) that are noise
-        if buf.len() >= 2 {
+        // Filter out English stop words; allow all other tokens (including single-char
+        // technical terms like "c", "r", "w" that are common in terminal/ops context)
+        if !ENGLISH_STOP_WORDS.contains(buf.as_str()) {
             tokens.push(buf.clone());
         }
         buf.clear();
@@ -81,14 +105,24 @@ fn flush_ascii(buf: &mut String, tokens: &mut Vec<String>) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Index a single chunk's content into BM25 postings.
-/// Call this after adding a document to the store.
+/// When `context_prefix` is provided, it is prepended to the content before
+/// tokenization to improve keyword retrieval (Contextual Retrieval).
 pub fn index_chunk(
     store: &RagStore,
     chunk_id: &str,
     content: &str,
+    context_prefix: Option<&str>,
 ) -> Result<(), RagError> {
-    let tokens = tokenize(content);
-    let doc_length = estimate_tokens(content);
+    let owned;
+    let full_text = match context_prefix {
+        Some(prefix) if !prefix.is_empty() => {
+            owned = format!("{} {}", prefix, content);
+            owned.as_str()
+        }
+        _ => content,
+    };
+    let tokens = tokenize(full_text);
+    let doc_length = estimate_tokens(full_text);
     let tf_map = term_frequencies(&tokens);
 
     store.add_to_bm25_index(&tf_map, chunk_id, doc_length)?;
@@ -131,8 +165,13 @@ pub fn reindex_all(
         }
 
         if let Some(chunk) = store.get_chunk(cid)? {
-            let tokens = tokenize(&chunk.content);
-            let doc_length = estimate_tokens(&chunk.content);
+            // Prepend context_prefix for context-aware indexing
+            let full_text = match &chunk.context_prefix {
+                Some(prefix) if !prefix.is_empty() => format!("{} {}", prefix, chunk.content),
+                _ => chunk.content.clone(),
+            };
+            let tokens = tokenize(&full_text);
+            let doc_length = estimate_tokens(&full_text);
             let tf_map = term_frequencies(&tokens);
 
             for (term, tf) in &tf_map {
@@ -277,10 +316,27 @@ mod tests {
         let tokens = tokenize("Hello world, this is a test!");
         assert!(tokens.contains(&"hello".to_string()));
         assert!(tokens.contains(&"world".to_string()));
-        assert!(tokens.contains(&"this".to_string()));
         assert!(tokens.contains(&"test".to_string()));
+        // "this" and "is" are stop words — should be filtered
+        assert!(!tokens.contains(&"this".to_string()));
+        assert!(!tokens.contains(&"is".to_string()));
         // Single chars like "a" should be filtered
         assert!(!tokens.contains(&"a".to_string()));
+    }
+
+    #[test]
+    fn test_tokenize_stop_words() {
+        let tokens = tokenize("the quick brown fox jumps over the lazy dog");
+        // Stop words filtered
+        assert!(!tokens.contains(&"the".to_string()));
+        assert!(!tokens.contains(&"over".to_string()));
+        // Content words preserved
+        assert!(tokens.contains(&"quick".to_string()));
+        assert!(tokens.contains(&"brown".to_string()));
+        assert!(tokens.contains(&"fox".to_string()));
+        assert!(tokens.contains(&"jumps".to_string()));
+        assert!(tokens.contains(&"lazy".to_string()));
+        assert!(tokens.contains(&"dog".to_string()));
     }
 
     #[test]

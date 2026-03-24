@@ -43,6 +43,9 @@ pub enum RagError {
 
     #[error("HNSW index error: {0}")]
     HnswIndex(String),
+
+    #[error("Duplicate document: content hash {0} already exists in this collection")]
+    DuplicateDocument(String),
 }
 
 impl From<rmp_serde::encode::Error> for RagError {

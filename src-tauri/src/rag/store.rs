@@ -230,6 +230,28 @@ impl RagStore {
     // Documents
     // ═══════════════════════════════════════════════════════════════════════
 
+    /// Check whether a document with the given content hash already exists
+    /// in the specified collection. Used for content deduplication.
+    pub fn check_content_hash_exists(
+        &self,
+        collection_id: &str,
+        content_hash: &str,
+    ) -> Result<bool, RagError> {
+        let doc_ids = self.get_collection_doc_ids(collection_id)?;
+        let txn = self.db.begin_read()?;
+        let meta_t = txn.open_table(DOC_METADATA_TABLE)?;
+
+        for doc_id in &doc_ids {
+            if let Some(guard) = meta_t.get(doc_id.as_str())? {
+                let meta: DocMetadata = rmp_serde::from_slice(guard.value())?;
+                if meta.content_hash == content_hash {
+                    return Ok(true);
+                }
+            }
+        }
+        Ok(false)
+    }
+
     /// Add a document (metadata + chunks) and update the collection's doc list.
     pub fn add_document(
         &self,
@@ -523,10 +545,16 @@ impl RagStore {
                 let cids: Vec<String> = rmp_serde::from_slice(guard.value())?;
                 for cid in cids {
                     if emb_t.get(cid.as_str())?.is_none() {
-                        // Get the content
+                        // Get the content, prepending context_prefix for richer embeddings
                         if let Some(chunk_guard) = chunks_t.get(cid.as_str())? {
                             let chunk = self.decode_chunk(chunk_guard.value())?;
-                            result.push((cid, chunk.content));
+                            let text = match &chunk.context_prefix {
+                                Some(prefix) if !prefix.is_empty() => {
+                                    format!("{} {}", prefix, chunk.content)
+                                }
+                                _ => chunk.content,
+                            };
+                            result.push((cid, text));
                             if result.len() >= limit {
                                 break 'outer;
                             }

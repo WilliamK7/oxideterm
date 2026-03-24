@@ -207,6 +207,7 @@ fn make_chunk(
         offset,
         length: content.len(),
         content: content.to_string(),
+        context_prefix: None,
     }
 }
 

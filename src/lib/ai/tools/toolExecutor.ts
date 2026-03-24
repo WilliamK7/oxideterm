@@ -29,6 +29,7 @@ import { useAppStore } from '../../../store/appStore';
 import { useLocalTerminalStore } from '../../../store/localTerminalStore';
 import { useIdeStore } from '../../../store/ideStore';
 import { useSettingsStore } from '../../../store/settingsStore';
+import { getProvider } from '../providerRegistry';
 import { usePluginStore } from '../../../store/pluginStore';
 import { useEventLogStore } from '../../../store/eventLogStore';
 import { useTransferStore } from '../../../store/transferStore';
@@ -2590,7 +2591,31 @@ async function execSearchDocs(args: Record<string, unknown>, startTime: number, 
 
   const topK = typeof args.top_k === 'number' ? Math.min(Math.max(1, Math.round(args.top_k)), 10) : 5;
 
-  const results = await ragSearch({ query, collectionIds: [], topK });
+  // Attempt hybrid search with embedding vector (same pattern as auto-inject RAG)
+  let queryVector: number[] | undefined;
+  try {
+    const aiSettings = useSettingsStore.getState().settings.ai;
+    const embCfg = aiSettings.embeddingConfig;
+    const embProviderId = embCfg?.providerId || aiSettings.activeProviderId;
+    const embProviderConfig = aiSettings.providers.find((p: { id: string }) => p.id === embProviderId);
+    const embModel = embCfg?.model || embProviderConfig?.defaultModel;
+    if (embProviderConfig && embModel) {
+      const embProvider = getProvider(embProviderConfig.type);
+      if (embProvider?.embedTexts) {
+        let embApiKey = '';
+        try { embApiKey = (await api.getAiProviderApiKey(embProviderConfig.id)) ?? ''; } catch { /* Ollama */ }
+        const vectors = await Promise.race([
+          embProvider.embedTexts({ baseUrl: embProviderConfig.baseUrl, apiKey: embApiKey, model: embModel }, [query]),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('embed timeout')), 3000)),
+        ]);
+        if (vectors.length > 0) queryVector = vectors[0];
+      }
+    }
+  } catch {
+    // Embedding failed — fall back to BM25 only
+  }
+
+  const results = await ragSearch({ query, collectionIds: [], queryVector, topK });
   if (results.length === 0) {
     return { toolCallId, toolName: 'search_docs', success: true, output: 'No matching documents found. The user may not have imported any operations documentation yet.', durationMs: Date.now() - startTime };
   }

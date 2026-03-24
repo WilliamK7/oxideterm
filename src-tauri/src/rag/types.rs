@@ -59,6 +59,11 @@ pub struct DocChunk {
     pub offset: usize,
     /// Content length in characters.
     pub length: usize,
+    /// Contextual header derived from document title + section_path.
+    /// Prepended to content for BM25 indexing and embedding to improve
+    /// retrieval quality (inspired by Anthropic Contextual Retrieval).
+    #[serde(default)]
+    pub context_prefix: Option<String>,
 }
 
 /// Stored vector embedding for a chunk.
