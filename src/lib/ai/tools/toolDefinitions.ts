@@ -16,7 +16,10 @@ export const BUILTIN_TOOLS: AiToolDefinition[] = [
   {
     name: 'terminal_exec',
     description:
-      'Execute a shell command on a remote node or send a command into an existing terminal session. Use node_id for direct remote execution with captured stdout/stderr. Use session_id to send a command to an open terminal session — output is captured automatically (no need for await_terminal_output). If both node_id and session_id are provided, node_id takes priority.',
+      'Execute a shell command on a remote node or send a command into an existing terminal session. Two modes:\n' +
+      '• node_id (preferred for non-interactive commands): Direct remote execution with reliable stdout/stderr capture. Faster and more accurate output.\n' +
+      '• session_id: Send command to an open terminal session. Output is auto-captured from the terminal screen. Use this when you need to interact with an existing shell session or TUI application.\n' +
+      'If both node_id and session_id are provided, node_id takes priority. If output is empty or incomplete, use get_terminal_buffer to read the full terminal content.',
     parameters: {
       type: 'object',
       properties: {
@@ -26,25 +29,25 @@ export const BUILTIN_TOOLS: AiToolDefinition[] = [
         },
         cwd: {
           type: 'string',
-          description: 'Working directory for the command. Optional.',
+          description: 'Working directory for the command. Only used with node_id.',
         },
         timeout_secs: {
           type: 'number',
           minimum: 1,
           maximum: 60,
-          description: 'Timeout in seconds. Default: 30. Max: 60.',
+          description: 'Timeout in seconds (node_id mode). Default: 30. Max: 60. For session_id mode, auto-await timeout is 30s.',
         },
         node_id: {
           type: 'string',
-          description: 'Target node ID for direct remote execution. If omitted, uses the active remote terminal when available. Use list_sessions to discover nodes.',
+          description: 'Target node ID for direct remote execution (preferred for reliability). If omitted, uses the active remote terminal when available. Use list_sessions to discover nodes.',
         },
         session_id: {
           type: 'string',
-          description: 'Target open terminal session ID. Use this to send a command into an existing SSH or local terminal session discovered via list_sessions.',
+          description: 'Target open terminal session ID. Sends command to the session and captures output from terminal screen. Use for interacting with existing shells or TUI apps.',
         },
         await_output: {
           type: 'boolean',
-          description: 'When using session_id, automatically wait for command output. Default: true. Set false for interactive/long-running commands.',
+          description: 'When using session_id, automatically wait for command output. Default: true. Set false for interactive/long-running commands, then use get_terminal_buffer or await_terminal_output later.',
         },
       },
       required: ['command'],
@@ -601,6 +604,33 @@ export const SFTP_TOOL_DEFS: AiToolDefinition[] = [
       },
     },
   },
+  {
+    name: 'sftp_write_file',
+    description:
+      'Write content to a file on the remote server via SFTP. Creates the file if it does not exist, overwrites if it does. Use for creating or updating remote files when no IDE tab is needed.',
+    parameters: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Absolute path to the file to write.',
+        },
+        content: {
+          type: 'string',
+          description: 'The content to write to the file.',
+        },
+        encoding: {
+          type: 'string',
+          description: 'Text encoding. Default: utf-8.',
+        },
+        node_id: {
+          type: 'string',
+          description: 'Target node ID. If omitted, uses the active SFTP tab\'s node.',
+        },
+      },
+      required: ['path', 'content'],
+    },
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -642,26 +672,91 @@ export const IDE_TOOL_DEFS: AiToolDefinition[] = [
     },
   },
   {
-    name: 'ide_apply_edit',
+    name: 'ide_replace_string',
     description:
-      'Apply a text edit to a file currently open in the IDE editor. Updates the content and optionally saves it.',
+      'Replace the first occurrence of an exact string in a file open in the IDE editor. Include at least 3 lines of surrounding context in old_string to ensure a unique match. Only replaces the first match.',
     parameters: {
       type: 'object',
       properties: {
         tab_id: {
           type: 'string',
-          description: 'The IDE tab ID to edit.',
+          description: 'The IDE tab ID (from ide_get_open_files).',
         },
-        content: {
+        old_string: {
           type: 'string',
-          description: 'The new full content for the file.',
+          description: 'The exact string to find and replace. Must match precisely including whitespace and indentation.',
+        },
+        new_string: {
+          type: 'string',
+          description: 'The replacement string.',
         },
         save: {
           type: 'boolean',
           description: 'Whether to save the file after editing. Default: false.',
         },
       },
-      required: ['tab_id', 'content'],
+      required: ['tab_id', 'old_string', 'new_string'],
+    },
+  },
+  {
+    name: 'ide_insert_text',
+    description:
+      'Insert text at a specific line number in a file open in the IDE editor. The text is inserted before the specified line.',
+    parameters: {
+      type: 'object',
+      properties: {
+        tab_id: {
+          type: 'string',
+          description: 'The IDE tab ID (from ide_get_open_files).',
+        },
+        line: {
+          type: 'number',
+          description: 'Line number to insert before (1-based). Use 1 to insert at the beginning of the file.',
+        },
+        text: {
+          type: 'string',
+          description: 'The text to insert. Can be multi-line.',
+        },
+        save: {
+          type: 'boolean',
+          description: 'Whether to save the file after editing. Default: false.',
+        },
+      },
+      required: ['tab_id', 'line', 'text'],
+    },
+  },
+  {
+    name: 'ide_open_file',
+    description:
+      'Open a remote file in the IDE editor. Returns the tab ID for subsequent editing operations. If the file is already open, activates its tab.',
+    parameters: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Absolute path to the remote file to open.',
+        },
+      },
+      required: ['path'],
+    },
+  },
+  {
+    name: 'ide_create_file',
+    description:
+      'Create a new file on the remote server and open it in the IDE editor. The parent directory must exist.',
+    parameters: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Absolute path for the new file (e.g. /home/user/project/newfile.ts).',
+        },
+        content: {
+          type: 'string',
+          description: 'Initial file content. Default: empty file.',
+        },
+      },
+      required: ['path'],
     },
   },
 ];
@@ -854,6 +949,20 @@ export const SESSION_MGR_TOOL_DEFS: AiToolDefinition[] = [
     name: 'get_session_tree',
     description: 'Get the current session tree structure showing all open sessions, their hierarchy, connection state, and tab types.',
     parameters: { type: 'object', properties: {} },
+  },
+  {
+    name: 'connect_saved_session',
+    description: 'Connect to a saved SSH connection and open a terminal tab. Use `list_saved_connections` or `search_saved_connections` first to find the connection ID. Handles proxy chains, authentication (from OS keychain), and host key verification automatically. Returns the session ID and node ID for the new terminal.',
+    parameters: {
+      type: 'object',
+      properties: {
+        connection_id: {
+          type: 'string',
+          description: 'The saved connection ID (from list_saved_connections or search_saved_connections).',
+        },
+      },
+      required: ['connection_id'],
+    },
   },
 ];
 
@@ -1090,7 +1199,10 @@ export const WRITE_TOOLS = new Set([
   'write_file',
   'create_port_forward',
   'stop_port_forward',
-  'ide_apply_edit',
+  // IDE (write)
+  'ide_replace_string',
+  'ide_insert_text',
+  'ide_create_file',
   // Local terminal (write)
   'local_exec',
   // Settings (write)
@@ -1102,6 +1214,10 @@ export const WRITE_TOOLS = new Set([
   'batch_exec',
   // Navigation tools (write — open session-dependent tabs)
   'open_session_tab',
+  // Session manager (write — connect)
+  'connect_saved_session',
+  // SFTP (write)
+  'sftp_write_file',
   // TUI interaction (experimental, write)
   'send_keys',
   'send_mouse',
@@ -1117,7 +1233,12 @@ export const CONTEXT_FREE_TOOLS = new Set([
   'ide_get_open_files',
   'ide_get_file_content',
   'ide_get_project_info',
-  'ide_apply_edit',
+  'ide_replace_string',
+  'ide_insert_text',
+  // ide_open_file / ide_create_file: self-resolve node via ideStore.nodeId (not pure local,
+  // but don't need the executor's resolveNodeForTool — they gate on ideStore.nodeId internally)
+  'ide_open_file',
+  'ide_create_file',
   // Local terminal tools
   'local_list_shells',
   'local_get_terminal_info',
@@ -1140,6 +1261,7 @@ export const CONTEXT_FREE_TOOLS = new Set([
   'list_saved_connections',
   'search_saved_connections',
   'get_session_tree',
+  'connect_saved_session',
   // Plugin manager tools
   'list_plugins',
   // MCP resource tools
@@ -1266,12 +1388,12 @@ export const TOOL_GROUPS: { groupKey: string; readOnly: string[]; write: string[
   {
     groupKey: 'sftp',
     readOnly: ['sftp_list_dir', 'sftp_read_file', 'sftp_stat', 'sftp_get_cwd'],
-    write: [],
+    write: ['sftp_write_file'],
   },
   {
     groupKey: 'ide',
     readOnly: ['ide_get_open_files', 'ide_get_file_content', 'ide_get_project_info'],
-    write: ['ide_apply_edit'],
+    write: ['ide_replace_string', 'ide_insert_text', 'ide_open_file', 'ide_create_file'],
   },
   {
     groupKey: 'local_terminal',
@@ -1296,7 +1418,7 @@ export const TOOL_GROUPS: { groupKey: string; readOnly: string[]; write: string[
   {
     groupKey: 'session_manager',
     readOnly: ['list_saved_connections', 'search_saved_connections', 'get_session_tree'],
-    write: [],
+    write: ['connect_saved_session'],
   },
   {
     groupKey: 'plugin_manager',

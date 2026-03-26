@@ -431,7 +431,13 @@ const defaultAiSettings: AiSettings = {
       write_file: false,
       create_port_forward: false,
       stop_port_forward: false,
-      ide_apply_edit: false,
+      // IDE (write)
+      ide_replace_string: false,
+      ide_insert_text: false,
+      ide_open_file: false,
+      ide_create_file: false,
+      // SFTP (write)
+      sftp_write_file: false,
       // Local terminal (write)
       local_exec: false,
       // Settings (write)
@@ -441,6 +447,8 @@ const defaultAiSettings: AiSettings = {
       // Meta tools
       send_control_sequence: false,
       batch_exec: false,
+      // Session manager (write)
+      connect_saved_session: false,
       // TUI interaction (experimental — disabled by default)
       read_screen: false,
       send_keys: false,

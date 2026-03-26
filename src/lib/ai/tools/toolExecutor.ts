@@ -19,7 +19,7 @@ import {
   nodeAgentGrep,
   nodeAgentGitStatus,
 } from '../../api';
-import { nodeSftpListDir, nodeSftpPreview, nodeSftpStat } from '../../api';
+import { nodeSftpListDir, nodeSftpPreview, nodeSftpStat, nodeSftpWrite } from '../../api';
 import { api } from '../../api';
 import { ragSearch } from '../../api';
 import type { AiToolResult, AgentFileEntry, TabType } from '../../../types';
@@ -44,8 +44,21 @@ const MAX_COMMAND_TIMEOUT_SECS = 60;
 const MAX_LIST_DEPTH = 8;
 const MAX_GREP_RESULTS = 200;
 const MAX_PATTERN_LENGTH = 200;
-const AUTO_AWAIT_TIMEOUT_SECS = 15;
-const AUTO_AWAIT_STABLE_SECS = 2;
+const AUTO_AWAIT_TIMEOUT_SECS = 30;
+const AUTO_AWAIT_STABLE_SECS = 3;
+
+/**
+ * Shell prompt patterns for detecting command completion.
+ * Matches common bash/zsh/fish/sh prompts at end of line.
+ * Only fires when the prompt-like text is at the very end of output (trailing whitespace allowed).
+ */
+const COMPLETION_PROMPT_RE = /(?:^|\n)[\w@.\-~:\/\[\]\(\) ]*[\$#>%]\s*$/;
+/** Short grace period after prompt detection to catch trailing output */
+const PROMPT_GRACE_MS = 200;
+/** Maximum stability window when output keeps growing */
+const MAX_ADAPTIVE_STABLE_SECS = 5;
+/** Number of buffer tail lines to include when output is empty */
+const EMPTY_OUTPUT_TAIL_LINES = 20;
 
 /** Context needed to execute tools — activeNodeId may be null when no terminal is focused */
 export type ToolExecutionContext = {
@@ -125,8 +138,14 @@ export async function executeTool(
           return execIdeGetFileContent(args, startTime, toolCallId);
         case 'ide_get_project_info':
           return execIdeGetProjectInfo(startTime, toolCallId);
-        case 'ide_apply_edit':
-          return await execIdeApplyEdit(args, startTime, toolCallId);
+        case 'ide_replace_string':
+          return await execIdeReplaceString(args, startTime, toolCallId);
+        case 'ide_insert_text':
+          return await execIdeInsertText(args, startTime, toolCallId);
+        case 'ide_open_file':
+          return await execIdeOpenFile(args, startTime, toolCallId);
+        case 'ide_create_file':
+          return await execIdeCreateFile(args, startTime, toolCallId);
         // Local terminal tools
         case 'local_list_shells':
           return await execLocalListShells(startTime, toolCallId);
@@ -165,6 +184,8 @@ export async function executeTool(
           return await execSearchSavedConnections(args, startTime, toolCallId);
         case 'get_session_tree':
           return await execGetSessionTree(startTime, toolCallId);
+        case 'connect_saved_session':
+          return await execConnectSavedSession(args, startTime, toolCallId);
         // Plugin manager tools
         case 'list_plugins':
           return execListPlugins(startTime, toolCallId);
@@ -268,6 +289,8 @@ export async function executeTool(
         return await execSftpStat(args, resolved, startTime, toolCallId);
       case 'sftp_get_cwd':
         return await execSftpGetCwd(resolved, startTime, toolCallId);
+      case 'sftp_write_file':
+        return await execSftpWriteFile(args, resolved, startTime, toolCallId);
       case 'list_mcp_resources':
         return await execListMcpResources(startTime, toolCallId);
       case 'read_mcp_resource':
@@ -373,6 +396,14 @@ async function execTerminalCommandToSession(
     };
   }
 
+  // Pre-command snapshot: take BEFORE writing command to avoid race condition
+  // where backend buffer updates before our snapshot read completes.
+  const preSnapshot = await readBufferLines(sessionId);
+  const preSnapshotLineCount = preSnapshot?.length ?? null;
+  if (preSnapshotLineCount !== null) {
+    console.debug(`[AI:ToolExec] pre-command snapshot: ${preSnapshotLineCount} lines`);
+  }
+
   const sent = writeToTerminal(paneId, `${command}\r`);
   if (!sent) {
     return {
@@ -403,6 +434,7 @@ async function execTerminalCommandToSession(
     AUTO_AWAIT_STABLE_SECS,
     null,
     startTime,
+    preSnapshotLineCount,
   );
   return {
     toolCallId,
@@ -909,32 +941,46 @@ async function waitForTerminalOutput(
   stableSecs: number,
   patternRe: RegExp | null,
   startTime: number,
+  preSnapshotLineCount?: number | null,
 ): Promise<WaitResult> {
-  // Snapshot current buffer line count
-  const initialLines = await readBufferLines(sessionId);
-  if (initialLines === null) {
-    return { success: false, output: '', error: 'Session not found or buffer unavailable.' };
+  // Use pre-command snapshot if provided (avoids race condition),
+  // otherwise take a fresh snapshot now.
+  let initialLineCount: number;
+  if (preSnapshotLineCount != null) {
+    initialLineCount = preSnapshotLineCount;
+  } else {
+    const initialLines = await readBufferLines(sessionId);
+    if (initialLines === null) {
+      return { success: false, output: '', error: 'Session not found or buffer unavailable.' };
+    }
+    initialLineCount = initialLines.length;
   }
-  const initialLineCount = initialLines.length;
 
   const timeoutMs = timeoutSecs * 1000;
-  const stableMs = stableSecs * 1000;
+  const baseStableMs = stableSecs * 1000;
+  const maxStableMs = MAX_ADAPTIVE_STABLE_SECS * 1000;
   const POLL_INTERVAL_MS = 200;
 
-  const result = await new Promise<'pattern' | 'stable' | 'timeout' | 'lost'>((resolve) => {
+  console.debug(`[AI:ToolExec] waitForTerminalOutput: initial=${initialLineCount}, timeout=${timeoutSecs}s, stable=${stableSecs}s`);
+
+  const result = await new Promise<'pattern' | 'prompt' | 'stable' | 'timeout' | 'lost'>((resolve) => {
     let stableTimer: ReturnType<typeof setTimeout> | null = null;
+    let promptGraceTimer: ReturnType<typeof setTimeout> | null = null;
     let settled = false;
     let outputCounter = 0;       // Bumped synchronously by notification listener
     let lastCheckedCounter = 0;  // Tracks which notifications have been processed
     let checking = false;        // Prevents overlapping async checks
+    let outputBursts = 0;        // Count of new-output detections for adaptive stability
 
-    const done = (reason: 'pattern' | 'stable' | 'timeout' | 'lost') => {
+    const done = (reason: 'pattern' | 'prompt' | 'stable' | 'timeout' | 'lost') => {
       if (settled) return;
       settled = true;
       clearTimeout(timeoutTimer);
       if (stableTimer) clearTimeout(stableTimer);
+      if (promptGraceTimer) clearTimeout(promptGraceTimer);
       clearInterval(pollTimer);
       unsubscribe();
+      console.debug(`[AI:ToolExec] done: reason=${reason}`);
       resolve(reason);
     };
 
@@ -973,8 +1019,10 @@ async function waitForTerminalOutput(
         return;
       }
 
-      // Check pattern match on new lines
-      if (patternRe && currentLines.length > initialLineCount) {
+      const delta = currentLines.length - initialLineCount;
+
+      // Check explicit pattern match on new lines
+      if (patternRe && delta > 0) {
         const newLines = currentLines.slice(initialLineCount);
         if (newLines.some(line => patternRe!.test(line))) {
           done('pattern');
@@ -983,10 +1031,27 @@ async function waitForTerminalOutput(
         }
       }
 
-      // Reset stability timer on each new output
-      if (currentLines.length > initialLineCount) {
+      // Reset stability timer on each new output (adaptive: grows with output bursts)
+      if (delta > 0) {
+        outputBursts++;
         if (stableTimer) clearTimeout(stableTimer);
-        stableTimer = setTimeout(() => done('stable'), stableMs);
+        // Cancel prompt grace from a PREVIOUS iteration if new output arrived
+        if (promptGraceTimer) {
+          clearTimeout(promptGraceTimer);
+          promptGraceTimer = null;
+        }
+        const adaptiveMs = Math.min(baseStableMs + outputBursts * 200, maxStableMs);
+        stableTimer = setTimeout(() => done('stable'), adaptiveMs);
+
+        // Check shell prompt pattern AFTER stability reset — grace timer survives until next poll
+        if (!promptGraceTimer) {
+          const tail = currentLines.slice(-3).join('\n');
+          if (COMPLETION_PROMPT_RE.test(tail)) {
+            promptGraceTimer = setTimeout(() => {
+              if (!settled) done('prompt');
+            }, PROMPT_GRACE_MS);
+          }
+        }
       }
 
       checking = false;
@@ -1005,14 +1070,32 @@ async function waitForTerminalOutput(
     return { success: true, output: `⚠ Buffer was cleared or reset during command execution. Showing current buffer content:\n${text}`, truncated };
   }
 
-  const newLines = finalLines.slice(initialLineCount);
+  let newLines = finalLines.slice(initialLineCount);
+
+  // Strip trailing prompt line when completion was via prompt detection
+  if (result === 'prompt' && newLines.length > 0) {
+    const lastLine = newLines[newLines.length - 1];
+    if (COMPLETION_PROMPT_RE.test(lastLine)) {
+      newLines = newLines.slice(0, -1);
+    }
+  }
+
   if (newLines.length === 0) {
+    // Fallback: provide buffer tail so the AI always gets useful context
+    if (result !== 'timeout') {
+      const tail = finalLines.slice(-EMPTY_OUTPUT_TAIL_LINES);
+      if (tail.length > 0) {
+        const { text, truncated } = truncateOutput(tail.join('\n'));
+        return { success: true, output: `No new terminal output detected. Here are the last ${tail.length} lines of the terminal:\n${text}`, truncated };
+      }
+    }
     const msg = result === 'timeout'
       ? `No new output after ${timeoutSecs}s. The command may be waiting for input or still running.`
       : 'No new output detected.';
     return { success: true, output: msg };
   }
 
+  console.debug(`[AI:ToolExec] captured ${newLines.length} new lines (reason=${result})`);
   const { text, truncated } = truncateOutput(newLines.join('\n'));
   return { success: true, output: text, truncated };
 }
@@ -1187,6 +1270,10 @@ async function execBatchExec(
       continue;
     }
 
+    // Pre-command snapshot: capture buffer line count BEFORE sending the command
+    const preSnapshot = await readBufferLines(sessionId);
+    const preSnapshotLineCount = preSnapshot?.length ?? null;
+
     const sent = writeToTerminal(paneId, `${cmd}\r`);
     if (!sent) {
       results.push(`[${i + 1}] $ ${cmd}\n❌ Terminal is not writable.`);
@@ -1199,6 +1286,7 @@ async function execBatchExec(
       AUTO_AWAIT_STABLE_SECS,
       null,
       Date.now(),
+      preSnapshotLineCount,
     );
 
     if (!waitResult.success) {
@@ -1748,6 +1836,28 @@ async function execSftpGetCwd(
   }
 }
 
+async function execSftpWriteFile(
+  args: Record<string, unknown>,
+  resolved: ResolvedNode,
+  startTime: number,
+  toolCallId: string,
+): Promise<AiToolResult> {
+  const toolName = 'sftp_write_file';
+  const path = typeof args.path === 'string' ? args.path.trim() : '';
+  const content = typeof args.content === 'string' ? args.content : undefined;
+  const encoding = typeof args.encoding === 'string' ? args.encoding : undefined;
+
+  if (!path) return { toolCallId, toolName, success: false, output: '', error: 'Missing required argument: path', durationMs: Date.now() - startTime };
+  if (content === undefined) return { toolCallId, toolName, success: false, output: '', error: 'Missing required argument: content', durationMs: Date.now() - startTime };
+
+  try {
+    const result = await nodeSftpWrite(resolved.nodeId, path, content, encoding);
+    return { toolCallId, toolName, success: true, output: JSON.stringify({ path, size: result.size, mtime: result.mtime, encoding_used: result.encodingUsed, atomic_write: result.atomicWrite }, null, 2), durationMs: Date.now() - startTime };
+  } catch (e) {
+    return { toolCallId, toolName, success: false, output: '', error: e instanceof Error ? e.message : String(e), durationMs: Date.now() - startTime };
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // IDE Tool Executors
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1818,36 +1928,141 @@ function execIdeGetProjectInfo(
   return { toolCallId, toolName: 'ide_get_project_info', success: true, output, durationMs: Date.now() - startTime };
 }
 
-async function execIdeApplyEdit(
+async function execIdeReplaceString(
   args: Record<string, unknown>,
   startTime: number,
   toolCallId: string,
 ): Promise<AiToolResult> {
+  const toolName = 'ide_replace_string';
   const tabId = typeof args.tab_id === 'string' ? args.tab_id : '';
-  const content = typeof args.content === 'string' ? args.content : undefined;
+  const oldStr = typeof args.old_string === 'string' ? args.old_string : '';
+  const newStr = typeof args.new_string === 'string' ? args.new_string : '';
   const shouldSave = args.save === true;
 
-  if (!tabId) {
-    return { toolCallId, toolName: 'ide_apply_edit', success: false, output: '', error: 'Missing required argument: tab_id', durationMs: Date.now() - startTime };
-  }
-  if (content === undefined) {
-    return { toolCallId, toolName: 'ide_apply_edit', success: false, output: '', error: 'Missing required argument: content', durationMs: Date.now() - startTime };
-  }
+  if (!tabId) return { toolCallId, toolName, success: false, output: '', error: 'Missing required argument: tab_id', durationMs: Date.now() - startTime };
+  if (!oldStr) return { toolCallId, toolName, success: false, output: '', error: 'Missing required argument: old_string', durationMs: Date.now() - startTime };
 
   const ideStore = useIdeStore.getState();
-  const tab = ideStore.tabs.find(t => t.id === tabId);
-  if (!tab) {
-    return { toolCallId, toolName: 'ide_apply_edit', success: false, output: '', error: `Tab not found: ${tabId}`, durationMs: Date.now() - startTime };
+  const result = ideStore.replaceStringInTab(tabId, oldStr, newStr);
+  if (!result.success) {
+    return { toolCallId, toolName, success: false, output: '', error: result.error ?? 'Replace failed', durationMs: Date.now() - startTime };
   }
 
   try {
-    ideStore.updateTabContent(tabId, content);
-    if (shouldSave) {
-      await ideStore.saveFile(tabId);
-    }
-    return { toolCallId, toolName: 'ide_apply_edit', success: true, output: `File ${tab.name} updated${shouldSave ? ' and saved' : ' (unsaved)'}. ${content.split('\n').length} lines.`, durationMs: Date.now() - startTime };
+    if (shouldSave) await ideStore.saveFile(tabId);
   } catch (e) {
-    return { toolCallId, toolName: 'ide_apply_edit', success: false, output: '', error: e instanceof Error ? e.message : 'Failed to apply edit', durationMs: Date.now() - startTime };
+    return { toolCallId, toolName, success: true, output: `String replaced successfully but save failed: ${e instanceof Error ? e.message : String(e)}`, durationMs: Date.now() - startTime };
+  }
+
+  const tab = useIdeStore.getState().tabs.find(t => t.id === tabId);
+  return { toolCallId, toolName, success: true, output: `Replaced in ${tab?.name ?? tabId}${shouldSave ? ' (saved)' : ' (unsaved)'}`, durationMs: Date.now() - startTime };
+}
+
+async function execIdeInsertText(
+  args: Record<string, unknown>,
+  startTime: number,
+  toolCallId: string,
+): Promise<AiToolResult> {
+  const toolName = 'ide_insert_text';
+  const tabId = typeof args.tab_id === 'string' ? args.tab_id : '';
+  const line = typeof args.line === 'number' ? args.line : 0;
+  const text = typeof args.text === 'string' ? args.text : '';
+  const shouldSave = args.save === true;
+
+  if (!tabId) return { toolCallId, toolName, success: false, output: '', error: 'Missing required argument: tab_id', durationMs: Date.now() - startTime };
+  if (!line) return { toolCallId, toolName, success: false, output: '', error: 'Missing required argument: line', durationMs: Date.now() - startTime };
+  if (!text) return { toolCallId, toolName, success: false, output: '', error: 'Missing required argument: text', durationMs: Date.now() - startTime };
+
+  const ideStore = useIdeStore.getState();
+  const result = ideStore.insertTextInTab(tabId, line, text);
+  if (!result.success) {
+    return { toolCallId, toolName, success: false, output: '', error: result.error ?? 'Insert failed', durationMs: Date.now() - startTime };
+  }
+
+  try {
+    if (shouldSave) await ideStore.saveFile(tabId);
+  } catch (e) {
+    return { toolCallId, toolName, success: true, output: `Text inserted at line ${result.insertedAtLine} but save failed: ${e instanceof Error ? e.message : String(e)}`, durationMs: Date.now() - startTime };
+  }
+
+  const tab = useIdeStore.getState().tabs.find(t => t.id === tabId);
+  return { toolCallId, toolName, success: true, output: `Inserted ${text.split('\n').length} line(s) at line ${result.insertedAtLine} in ${tab?.name ?? tabId}${shouldSave ? ' (saved)' : ' (unsaved)'}`, durationMs: Date.now() - startTime };
+}
+
+async function execIdeOpenFile(
+  args: Record<string, unknown>,
+  startTime: number,
+  toolCallId: string,
+): Promise<AiToolResult> {
+  const toolName = 'ide_open_file';
+  const path = typeof args.path === 'string' ? args.path.trim() : '';
+
+  if (!path) return { toolCallId, toolName, success: false, output: '', error: 'Missing required argument: path', durationMs: Date.now() - startTime };
+
+  const ideStore = useIdeStore.getState();
+  if (!ideStore.nodeId) {
+    return { toolCallId, toolName, success: false, output: '', error: 'No IDE project is open. Open an IDE tab first.', durationMs: Date.now() - startTime };
+  }
+
+  try {
+    await ideStore.openFile(path);
+    const tab = useIdeStore.getState().tabs.find(t => t.path === path);
+    if (!tab) {
+      return { toolCallId, toolName, success: false, output: '', error: 'File opened but tab not found (may be binary or too large)', durationMs: Date.now() - startTime };
+    }
+    const lineCount = tab.content?.split('\n').length ?? 0;
+    return { toolCallId, toolName, success: true, output: JSON.stringify({ tab_id: tab.id, path: tab.path, name: tab.name, language: tab.language, lines: lineCount }, null, 2), durationMs: Date.now() - startTime };
+  } catch (e) {
+    return { toolCallId, toolName, success: false, output: '', error: e instanceof Error ? e.message : String(e), durationMs: Date.now() - startTime };
+  }
+}
+
+async function execIdeCreateFile(
+  args: Record<string, unknown>,
+  startTime: number,
+  toolCallId: string,
+): Promise<AiToolResult> {
+  const toolName = 'ide_create_file';
+  const fullPath = typeof args.path === 'string' ? args.path.trim() : '';
+  const content = typeof args.content === 'string' ? args.content : '';
+
+  if (!fullPath) return { toolCallId, toolName, success: false, output: '', error: 'Missing required argument: path', durationMs: Date.now() - startTime };
+
+  const ideStore = useIdeStore.getState();
+  if (!ideStore.nodeId) {
+    return { toolCallId, toolName, success: false, output: '', error: 'No IDE project is open. Open an IDE tab first.', durationMs: Date.now() - startTime };
+  }
+
+  try {
+    // Split path into parent + name
+    const lastSlash = fullPath.lastIndexOf('/');
+    const parentPath = lastSlash > 0 ? fullPath.substring(0, lastSlash) : '/';
+    const name = fullPath.substring(lastSlash + 1);
+
+    if (!name) return { toolCallId, toolName, success: false, output: '', error: 'Invalid path: no filename', durationMs: Date.now() - startTime };
+
+    await ideStore.createFile(parentPath, name);
+
+    // If content was provided, write it into the new tab
+    if (content) {
+      await ideStore.openFile(fullPath);
+      const tab = useIdeStore.getState().tabs.find(t => t.path === fullPath);
+      if (tab) {
+        useIdeStore.setState(state => ({
+          tabs: state.tabs.map(t =>
+            t.id === tab.id
+              ? { ...t, content, isDirty: true, contentVersion: t.contentVersion + 1 }
+              : t
+          ),
+        }));
+        await useIdeStore.getState().saveFile(tab.id);
+      }
+    }
+
+    const tab = useIdeStore.getState().tabs.find(t => t.path === fullPath);
+    return { toolCallId, toolName, success: true, output: JSON.stringify({ tab_id: tab?.id ?? null, path: fullPath, name }, null, 2), durationMs: Date.now() - startTime };
+  } catch (e) {
+    return { toolCallId, toolName, success: false, output: '', error: e instanceof Error ? e.message : String(e), durationMs: Date.now() - startTime };
   }
 }
 
@@ -2190,6 +2405,90 @@ async function execGetSessionTree(startTime: number, toolCallId: string): Promis
     return { toolCallId, toolName: 'get_session_tree', success: true, output: JSON.stringify(tree, null, 2), durationMs: Date.now() - startTime };
   } catch (e) {
     return { toolCallId, toolName: 'get_session_tree', success: false, output: '', error: e instanceof Error ? e.message : String(e), durationMs: Date.now() - startTime };
+  }
+}
+
+async function execConnectSavedSession(args: Record<string, unknown>, startTime: number, toolCallId: string): Promise<AiToolResult> {
+  const toolName = 'connect_saved_session';
+  const connectionId = typeof args.connection_id === 'string' ? args.connection_id.trim() : '';
+  if (!connectionId) {
+    return { toolCallId, toolName, success: false, output: '', error: 'Missing required argument: connection_id. Use list_saved_connections to find available IDs.', durationMs: Date.now() - startTime };
+  }
+
+  try {
+    const { connectToSaved } = await import('@/lib/connectToSaved');
+
+    // Track what was opened and any errors
+    let openedSessionId: string | null = null;
+    let connectError: string | null = null;
+    const createTab = (_type: 'terminal', sessionId: string) => {
+      openedSessionId = sessionId;
+      useAppStore.getState().createTab('terminal', sessionId);
+    };
+
+    const connectPromise = connectToSaved(connectionId, {
+      createTab,
+      toast: () => {}, // No-op: AI context doesn't need toasts
+      t: (key: string) => key, // Pass-through: not displayed to user
+      onError: (connId) => { connectError = `Connection failed for ${connId}`; },
+    });
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Connection timed out after 90 seconds')), 90_000)
+    );
+    await Promise.race([connectPromise, timeout]);
+
+    if (connectError) {
+      return { toolCallId, toolName, success: false, output: '', error: connectError, durationMs: Date.now() - startTime };
+    }
+
+    // Gather result info — find the node via the terminal we just opened,
+    // or fall back to searching by connection state (reused existing tab path)
+    let connectedNode = openedSessionId
+      ? useSessionTreeStore.getState().getNodeByTerminalId(openedSessionId)
+      : undefined;
+
+    if (!connectedNode && !openedSessionId) {
+      // connectToSaved may have reused an existing tab without calling createTab
+      const nodes = useSessionTreeStore.getState().nodes;
+      connectedNode = nodes.find(n =>
+        n.depth === 0 &&
+        (n.runtime?.status === 'active' || n.runtime?.status === 'connected') &&
+        (n.runtime?.terminalIds?.length ?? 0) > 0
+      );
+      if (connectedNode) {
+        openedSessionId = connectedNode.runtime.terminalIds[0] ?? null;
+      }
+    }
+
+    const info: Record<string, unknown> = {
+      connection_id: connectionId,
+    };
+    if (openedSessionId) info.session_id = openedSessionId;
+    if (connectedNode) {
+      info.node_id = connectedNode.id;
+      info.host = connectedNode.host;
+      info.port = connectedNode.port;
+      info.username = connectedNode.username;
+      info.status = connectedNode.runtime?.status;
+    }
+
+    return {
+      toolCallId,
+      toolName,
+      success: true,
+      output: `SSH connection established and terminal opened.\n${JSON.stringify(info, null, 2)}`,
+      durationMs: Date.now() - startTime,
+    };
+  } catch (e) {
+    const errorMsg = e instanceof Error ? e.message : String(e);
+    // Provide actionable error messages
+    if (errorMsg.includes('not found') || errorMsg.includes('No connection')) {
+      return { toolCallId, toolName, success: false, output: '', error: `Saved connection not found: ${connectionId}. Use list_saved_connections to see available connections.`, durationMs: Date.now() - startTime };
+    }
+    if (errorMsg.includes('authentication') || errorMsg.includes('Auth')) {
+      return { toolCallId, toolName, success: false, output: '', error: `Authentication failed for connection ${connectionId}. The user may need to update credentials in the connection settings.`, durationMs: Date.now() - startTime };
+    }
+    return { toolCallId, toolName, success: false, output: '', error: errorMsg, durationMs: Date.now() - startTime };
   }
 }
 

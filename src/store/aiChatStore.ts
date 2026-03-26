@@ -5,6 +5,7 @@ import { ragSearch } from '../lib/api';
 import { nodeAgentStatus, nodeGetState } from '../lib/api';
 import { useSettingsStore } from './settingsStore';
 import { useSessionTreeStore } from './sessionTreeStore';
+import { useAppStore } from './appStore';
 import { gatherSidebarContext, buildContextReminder, type SidebarContext } from '../lib/sidebarContextProvider';
 import { getProvider } from '../lib/ai/providerRegistry';
 import { estimateTokens, estimateToolDefinitionsTokens, trimHistoryToTokenBudget, getModelContextWindow, responseReserve } from '../lib/ai/tokenUtils';
@@ -286,17 +287,18 @@ function decodeAnchorContent(content: string): { content: string; metadata: NonN
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Threshold for condensation: keep last N tool-result messages verbatim */
-const CONDENSE_KEEP_RECENT = 3;
+const CONDENSE_KEEP_RECENT = 5;
 /** Max summary length per tool result */
-const CONDENSE_SUMMARY_MAX = 120;
+const CONDENSE_SUMMARY_MAX = 300;
 
 /**
  * Condense early tool-result messages in the API message array **in-place**.
- * Replaces verbose tool output from older rounds with compact one-line summaries,
+ * Replaces verbose tool output from older rounds with compact head+tail summaries,
  * while preserving the message structure (role, tool_call_id) that APIs require.
  *
  * Strategy: find all `role: 'tool'` messages, keep the most recent ones verbatim,
- * and compress the rest to `[condensed] tool_name → ok|error: <first line summary>`.
+ * and compress the rest to a head+tail summary. Error results are never condensed
+ * to preserve diagnostic information for the LLM.
  *
  * NOTE: This mutates the `apiMessages` array objects directly.
  */
@@ -331,14 +333,26 @@ function condenseToolMessages(apiMessages: ChatCompletionMessage[]): void {
       // Not JSON — plain text output (success case)
     }
 
-    // Build a one-line summary from the first meaningful line
-    const firstLine = content.split('\n').find(l => l.trim().length > 0) || '';
-    const prefix = isError ? 'error' : 'ok';
-    const summary = firstLine.length > CONDENSE_SUMMARY_MAX
-      ? firstLine.slice(0, CONDENSE_SUMMARY_MAX) + '…'
-      : firstLine;
+    // Never condense error results — they contain critical diagnostic info
+    if (isError) continue;
 
-    msg.content = `[condensed] ${toolName} → ${prefix}: ${summary}`;
+    // Build head+tail summary: first 2 lines + last 2 lines
+    const lines = content.split('\n').filter(l => l.trim().length > 0);
+    let summary: string;
+    if (lines.length <= 4) {
+      // Short enough — keep as-is if within limit
+      summary = lines.join('\n');
+    } else {
+      const head = lines.slice(0, 2).join('\n');
+      const tail = lines.slice(-2).join('\n');
+      summary = `${head}\n... (${lines.length - 4} lines omitted)\n${tail}`;
+    }
+
+    if (summary.length > CONDENSE_SUMMARY_MAX) {
+      summary = summary.slice(0, CONDENSE_SUMMARY_MAX) + '…';
+    }
+
+    msg.content = `[condensed] ${toolName} → ok:\n${summary}`;
   }
 }
 
@@ -855,12 +869,28 @@ You have tools to interact with the user's terminal sessions and workspace. **Us
 ### Key Principles
 - **Act, don't guess**: Use tools to get real data about system state, files, or connections.
 - **One-shot execution**: \`terminal_exec\` with session_id auto-captures output. No need to chain \`await_terminal_output\` unless you passed \`await_output: false\`.
+- **Prefer node_id**: For non-interactive commands, \`node_id\` provides more reliable output capture (direct stdout/stderr) than \`session_id\` (terminal scraping). Use \`session_id\` only when you need to interact with an existing terminal session.
 - **Discover first**: Use \`list_sessions\` / \`list_tabs\` to find targets before operating.
 
+### Error Recovery
+- **If output is empty or incomplete**: Use \`get_terminal_buffer\` to read the full terminal content, or retry the command.
+- **If a tool returns an error**: Explain the error to the user and suggest alternatives.
+- **For long-running commands** (build, install, compilation): Use \`await_output: false\`, then check later with \`get_terminal_buffer\` or \`await_terminal_output\`.
+
 ### Routing
-- \`node_id\`: direct remote execution (captured stdout/stderr).
-- \`session_id\`: send into an open terminal (visible to user, output auto-captured).
-- Context-free tools (\`list_sessions\`, \`list_tabs\`, etc.) need no node or session.`;
+- \`node_id\`: direct remote execution (captured stdout/stderr, more reliable).
+- \`session_id\`: send into an open terminal (visible to user, output auto-captured from screen).
+- Context-free tools (\`list_sessions\`, \`list_tabs\`, etc.) need no node or session.
+
+### Connecting to Servers
+- To connect to a server: first use \`list_saved_connections\` or \`search_saved_connections\` to find the connection ID, then use \`connect_saved_session\` to establish the SSH connection and open a terminal.
+- \`connect_saved_session\` handles authentication (OS keychain), proxy chains (multi-hop), and host key verification automatically.
+
+### Editing Files in IDE
+- To edit a file: use \`ide_get_open_files\` to check if it's open, or \`ide_open_file\` to open it. Then use \`ide_replace_string\` for precise string replacement or \`ide_insert_text\` to insert at a specific line.
+- \`ide_replace_string\`: include 3+ lines of surrounding context in \`old_string\` to ensure a unique match. Only replaces the first occurrence.
+- For creating new files: use \`ide_create_file\` (IDE) or \`sftp_write_file\` (no IDE needed).
+- When IDE is not available, use \`write_file\` (requires remote agent) or \`sftp_write_file\` as fallback.`;
     }
 
     apiMessages.push({
@@ -879,26 +909,38 @@ You have tools to interact with the user's terminal sessions and workspace. **Us
     // Token-Aware History Trimming (with compaction anchor awareness)
     // ════════════════════════════════════════════════════════════════════
 
-    // Resolve tool definitions early so their token cost is included in the budget
+    // Resolve tool definitions — extracted as a function so it can be re-evaluated
+    // between tool rounds (e.g. after open_local_terminal changes the active tab).
     let toolDefs: ReturnType<typeof getToolsForContext> | undefined;
-    if (toolUseEnabled) {
-      const activeTabType = sidebarContext?.env.activeTabType ?? null;
+    let mcpModule: Awaited<typeof import('../lib/ai/mcp')> | null = null;
+    const resolveToolDefs = (): ReturnType<typeof getToolsForContext> | undefined => {
+      if (!toolUseEnabled) return undefined;
+      const appState = useAppStore.getState();
+      const activeTab = appState.tabs.find(t => t.id === appState.activeTabId);
+      const activeTabType = activeTab?.type ?? null;
       const nodes = useSessionTreeStore.getState().nodes;
       const hasAnySSHSession = nodes.some(n =>
         n.runtime?.status === 'connected' || n.runtime?.status === 'active' || n.runtime?.connectionId
       );
       const effectiveDisabled = get().getEffectiveDisabledTools();
-      toolDefs = getToolsForContext(activeTabType, hasAnySSHSession, effectiveDisabled, participantToolOverride);
+      let resolved = getToolsForContext(activeTabType, hasAnySSHSession, effectiveDisabled, participantToolOverride);
 
       // Merge MCP tools from connected servers (respecting disabled list)
-      const { useMcpRegistry } = await import('../lib/ai/mcp');
-      const mcpTools = useMcpRegistry.getState().getAllMcpToolDefinitions();
-      if (mcpTools.length > 0) {
-        const filteredMcpTools = mcpTools.filter(t => !effectiveDisabled.has(t.name));
-        if (filteredMcpTools.length > 0) {
-          toolDefs = [...toolDefs, ...filteredMcpTools];
+      if (mcpModule) {
+        const mcpTools = mcpModule.useMcpRegistry.getState().getAllMcpToolDefinitions();
+        if (mcpTools.length > 0) {
+          const filteredMcpTools = mcpTools.filter(t => !effectiveDisabled.has(t.name));
+          if (filteredMcpTools.length > 0) {
+            resolved = [...resolved, ...filteredMcpTools];
+          }
         }
       }
+      return resolved;
+    };
+
+    if (toolUseEnabled) {
+      mcpModule = await import('../lib/ai/mcp');
+      toolDefs = resolveToolDefs();
 
       // Lazy TUI interaction guidance — only when experimental tools are in the active set
       if (toolDefs?.some(t => t.name === 'read_screen' || t.name === 'send_keys' || t.name === 'send_mouse')) {
@@ -1333,6 +1375,12 @@ You have tools to interact with the user's terminal sessions and workspace. **Us
         // tool output with compact digests.
         if (round >= 2) {
           condenseToolMessages(apiMessages);
+        }
+
+        // Refresh tool definitions to pick up tab/session changes from tool execution
+        // (e.g. open_local_terminal, open_tab, open_session_tab may change activeTabType)
+        if (toolUseEnabled) {
+          toolDefs = resolveToolDefs();
         }
 
         // Accumulate content for UI display, reset for next API round

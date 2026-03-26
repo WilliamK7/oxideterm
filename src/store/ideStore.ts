@@ -159,6 +159,10 @@ interface IdeActions {
   updateTabCursor: (tabId: string, line: number, col: number) => void;
   togglePinTab: (tabId: string) => void;
   
+  // AI 精确编辑操作
+  replaceStringInTab: (tabId: string, oldStr: string, newStr: string) => { success: boolean; error?: string };
+  insertTextInTab: (tabId: string, line: number, text: string) => { success: boolean; insertedAtLine?: number; error?: string };
+  
   // 布局操作
   setTreeWidth: (width: number) => void;
   setTerminalHeight: (height: number) => void;
@@ -591,6 +595,53 @@ export const useIdeStore = create<IdeState & IdeActions>()(
                 : t
             ),
           }));
+        },
+
+        replaceStringInTab: (tabId, oldStr, newStr) => {
+          const tab = get().tabs.find(t => t.id === tabId);
+          if (!tab) return { success: false, error: `Tab not found: ${tabId}` };
+          if (tab.content === null) return { success: false, error: 'Tab content not loaded' };
+          if (!oldStr) return { success: false, error: 'old_string must not be empty' };
+          const idx = tab.content.indexOf(oldStr);
+          if (idx === -1) return { success: false, error: 'String not found in file content' };
+          const newContent = tab.content.substring(0, idx) + newStr + tab.content.substring(idx + oldStr.length);
+          set(state => ({
+            tabs: state.tabs.map(t =>
+              t.id === tabId
+                ? {
+                    ...t,
+                    content: newContent,
+                    isDirty: newContent !== t.originalContent,
+                    contentVersion: t.contentVersion + 1,
+                  }
+                : t
+            ),
+          }));
+          return { success: true };
+        },
+
+        insertTextInTab: (tabId, line, text) => {
+          const tab = get().tabs.find(t => t.id === tabId);
+          if (!tab) return { success: false, error: `Tab not found: ${tabId}` };
+          if (tab.content === null) return { success: false, error: 'Tab content not loaded' };
+          const lines = tab.content.split('\n');
+          const insertAt = Math.max(0, Math.min(line - 1, lines.length));
+          const textLines = text.split('\n');
+          lines.splice(insertAt, 0, ...textLines);
+          const newContent = lines.join('\n');
+          set(state => ({
+            tabs: state.tabs.map(t =>
+              t.id === tabId
+                ? {
+                    ...t,
+                    content: newContent,
+                    isDirty: newContent !== t.originalContent,
+                    contentVersion: t.contentVersion + 1,
+                  }
+                : t
+            ),
+          }));
+          return { success: true, insertedAtLine: insertAt + 1 };
         },
 
         updateTabCursor: (tabId, line, col) => {
