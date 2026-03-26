@@ -48,7 +48,19 @@
       "title": "Général",
       "description": "Paramètres généraux de l'application.",
       "language": "Langue",
-      "language_hint": "Choisissez votre langue préférée"
+      "language_hint": "Choisissez votre langue préférée",
+      "data_directory": "Répertoire de données",
+      "data_directory_hint": "Emplacement de stockage des connexions, journaux et autres données",
+      "select_data_directory": "Sélectionner le répertoire de données",
+      "data_directory_changed": "Le répertoire de données a été modifié. Redémarrez l'application pour appliquer.",
+      "change": "Modifier",
+      "reset_data_directory": "Réinitialiser le répertoire de données",
+      "reset_data_directory_confirm": "Réinitialiser le répertoire de données par défaut ? Les données existantes à l'emplacement personnalisé ne seront pas déplacées. Un redémarrage est nécessaire.",
+      "reset_to_default": "Rétablir par défaut",
+      "data_directory_reset": "Le répertoire de données a été réinitialisé par défaut. Redémarrez l'application pour appliquer.",
+      "data_directory_restart_notice": "La modification du répertoire de données nécessite un redémarrage de l'application. Les données existantes ne sont pas migrées automatiquement.",
+      "data_directory_conflict": "Données existantes détectées",
+      "data_directory_conflict_detail": "Le répertoire sélectionné contient déjà des fichiers de données OxideTerm : {{files}}. Ces fichiers pourraient être écrasés. Continuer ?"
     },
     "terminal": {
       "title": "Paramètres du terminal",
@@ -255,7 +267,14 @@
         "title": "Importer depuis la config SSH",
         "description": "Scanner ~/.ssh/config pour les hôtes.",
         "no_hosts": "Aucun hôte trouvé dans ~/.ssh/config",
-        "import": "Importer"
+        "import": "Importer",
+        "select_all": "Tout sélectionner",
+        "deselect_all": "Tout désélectionner",
+        "import_selected": "Importer la sélection ({{count}})",
+        "importing": "Importation...",
+        "batch_import_success": "{{count}} hôte(s) importé(s) avec succès",
+        "batch_import_skipped": "{{count}} hôte(s) ignoré(s) (déjà existant(s))",
+        "already_imported": "Déjà importé"
       }
     },
     "ssh_keys": {

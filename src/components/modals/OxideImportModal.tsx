@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
-import { X, AlertTriangle, CheckCircle } from 'lucide-react';
+import { X, AlertTriangle, CheckCircle, CheckSquare, Square } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -27,6 +27,7 @@ export function OxideImportModal({ isOpen, onClose }: OxideImportModalProps) {
   const [previewing, setPreviewing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
+  const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set());
 
   // ... (handlers unchanged)
 
@@ -79,6 +80,12 @@ export function OxideImportModal({ isOpen, onClose }: OxideImportModalProps) {
         password,
       });
       setPreview(previewResult);
+      // Auto-select all connections
+      const allNames = new Set([
+        ...previewResult.unchanged,
+        ...previewResult.willRename.map(([original]) => original),
+      ]);
+      setSelectedNames(allNames);
     } catch (err) {
       console.error('Preview failed:', err);
       const errorMsg = String(err).toLowerCase();
@@ -107,6 +114,7 @@ export function OxideImportModal({ isOpen, onClose }: OxideImportModalProps) {
       const importResult: ImportResult = await invoke('import_from_oxide', {
         fileData: Array.from(fileData),
         password,
+        selectedNames: Array.from(selectedNames),
       });
 
       setResult(importResult);
@@ -134,6 +142,28 @@ export function OxideImportModal({ isOpen, onClose }: OxideImportModalProps) {
     }
   };
 
+  const toggleName = (name: string) => {
+    setSelectedNames(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (!preview) return;
+    const allNames = [
+      ...preview.unchanged,
+      ...preview.willRename.map(([original]) => original),
+    ];
+    if (selectedNames.size === allNames.length) {
+      setSelectedNames(new Set());
+    } else {
+      setSelectedNames(new Set(allNames));
+    }
+  };
+
   const handleClose = () => {
     setFileData(null);
     setMetadata(null);
@@ -141,6 +171,7 @@ export function OxideImportModal({ isOpen, onClose }: OxideImportModalProps) {
     setPreview(null);
     setError(null);
     setResult(null);
+    setSelectedNames(new Set());
     onClose();
   };
 
@@ -219,13 +250,28 @@ export function OxideImportModal({ isOpen, onClose }: OxideImportModalProps) {
             /* Preview - Show what will happen before confirming */
             <>
               <div className="border border-theme-border rounded-md p-4 space-y-3 bg-theme-bg">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <h3 className="font-semibold text-theme-text">{t('modals.import.preview_title')}</h3>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <h3 className="font-semibold text-theme-text">{t('modals.import.preview_title')}</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={toggleAll}
+                    className="text-xs text-theme-accent hover:text-theme-accent-hover transition-colors"
+                  >
+                    {selectedNames.size === (preview.unchanged.length + preview.willRename.length)
+                      ? t('modals.import.deselect_all')
+                      : t('modals.import.select_all')}
+                  </button>
                 </div>
                 
                 <p className="text-sm text-theme-text">
                   {t('modals.import.preview_total', { count: preview.totalConnections })}
+                  {' — '}
+                  <span className="text-theme-accent font-medium">
+                    {t('modals.import.selected_count', { count: selectedNames.size })}
+                  </span>
                 </p>
 
                 {/* Connections without conflicts */}
@@ -236,7 +282,16 @@ export function OxideImportModal({ isOpen, onClose }: OxideImportModalProps) {
                     </p>
                     <ul className="text-xs text-theme-text-muted mt-1 space-y-1 max-h-20 overflow-y-auto">
                       {preview.unchanged.map((name, i) => (
-                        <li key={i}>• {name}</li>
+                        <li
+                          key={i}
+                          className="flex items-center gap-1.5 cursor-pointer hover:text-theme-text transition-colors"
+                          onClick={() => toggleName(name)}
+                        >
+                          {selectedNames.has(name)
+                            ? <CheckSquare className="h-3.5 w-3.5 text-theme-accent flex-shrink-0" />
+                            : <Square className="h-3.5 w-3.5 flex-shrink-0" />}
+                          {name}
+                        </li>
                       ))}
                     </ul>
                   </div>
@@ -253,7 +308,16 @@ export function OxideImportModal({ isOpen, onClose }: OxideImportModalProps) {
                     </div>
                     <ul className="text-xs text-yellow-400 mt-1 space-y-1 max-h-24 overflow-y-auto">
                       {preview.willRename.map(([original, renamed], i) => (
-                        <li key={i}>• "{original}" → "{renamed}"</li>
+                        <li
+                          key={i}
+                          className="flex items-center gap-1.5 cursor-pointer hover:text-yellow-300 transition-colors"
+                          onClick={() => toggleName(original)}
+                        >
+                          {selectedNames.has(original)
+                            ? <CheckSquare className="h-3.5 w-3.5 text-theme-accent flex-shrink-0" />
+                            : <Square className="h-3.5 w-3.5 flex-shrink-0" />}
+                          "{original}" → "{renamed}"
+                        </li>
                       ))}
                     </ul>
                   </div>
@@ -263,6 +327,13 @@ export function OxideImportModal({ isOpen, onClose }: OxideImportModalProps) {
                 {preview.hasEmbeddedKeys && (
                   <div className="bg-blue-500/10 border border-blue-500/20 text-blue-500 px-3 py-2 rounded text-xs">
                     {t('modals.import.preview_embedded_keys')}
+                  </div>
+                )}
+
+                {/* Port forwarding rules notice */}
+                {preview.totalForwards > 0 && (
+                  <div className="bg-blue-500/10 border border-blue-500/20 text-blue-500 px-3 py-2 rounded text-xs">
+                    {t('modals.import.preview_forwards', { count: preview.totalForwards })}
                   </div>
                 )}
               </div>
@@ -279,7 +350,7 @@ export function OxideImportModal({ isOpen, onClose }: OxideImportModalProps) {
                 </Button>
                 <Button 
                   onClick={handleImport} 
-                  disabled={importing}
+                  disabled={importing || selectedNames.size === 0}
                   className="bg-theme-accent text-white hover:bg-theme-accent-hover disabled:opacity-50"
                 >
                   {importing ? t('modals.import.importing') : t('modals.import.confirm_import')}

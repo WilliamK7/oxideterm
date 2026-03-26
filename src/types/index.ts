@@ -518,6 +518,8 @@ export interface ImportPreview {
   willRename: [string, string][];
   /** Whether any embedded keys will be extracted */
   hasEmbeddedKeys: boolean;
+  /** Total number of port forwarding rules across all connections */
+  totalForwards: number;
 }
 
 export interface ExportPreflightResult {
@@ -755,6 +757,24 @@ export interface SshHostInfo {
     user: string | null;
     port: number;
     identity_file: string | null;
+    already_imported: boolean;
+}
+
+export interface SshBatchImportResult {
+  imported: number;
+  skipped: number;
+  errors: string[];
+}
+
+export type DataDirInfo = {
+  path: string;
+  is_custom: boolean;
+  default_path: string;
+}
+
+export type DataDirCheck = {
+  has_existing_data: boolean;
+  files_found: string[];
 }
 
 export interface SshKeyInfo {

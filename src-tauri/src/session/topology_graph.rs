@@ -306,9 +306,9 @@ impl NetworkTopology {
 
     /// Get edges overlay config path
     fn get_edges_config_path() -> Result<PathBuf, String> {
-        let config_dir =
-            dirs::config_dir().ok_or_else(|| "Failed to get config directory".to_string())?;
-        Ok(config_dir.join("oxideterm").join("topology_edges.json"))
+        let config_dir = crate::config::storage::config_dir()
+            .map_err(|e| format!("Failed to get config directory: {}", e))?;
+        Ok(config_dir.join("topology_edges.json"))
     }
 
     /// Load custom edges overlay

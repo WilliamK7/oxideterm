@@ -48,7 +48,19 @@
       "title": "常规",
       "description": "常规应用程序设置。",
       "language": "语言",
-      "language_hint": "选择您偏好的语言"
+      "language_hint": "选择您偏好的语言",
+      "data_directory": "数据目录",
+      "data_directory_hint": "连接、日志和其他数据的存储位置",
+      "select_data_directory": "选择数据目录",
+      "data_directory_changed": "数据目录已更改。请重启应用以生效。",
+      "change": "更改",
+      "reset_data_directory": "重置数据目录",
+      "reset_data_directory_confirm": "确定要将数据目录重置为默认值吗？自定义位置的现有数据不会被移动。需要重启应用。",
+      "reset_to_default": "恢复默认",
+      "data_directory_reset": "数据目录已重置为默认值。请重启应用以生效。",
+      "data_directory_restart_notice": "更改数据目录需要重启应用。现有数据不会自动迁移。",
+      "data_directory_conflict": "发现已有数据",
+      "data_directory_conflict_detail": "所选目录已包含 OxideTerm 数据文件：{{files}}。这些文件可能会被覆盖。是否继续？"
     },
     "terminal": {
       "title": "终端设置",
@@ -255,7 +267,14 @@
         "title": "从 SSH 配置导入",
         "description": "扫描 ~/.ssh/config 中的主机。",
         "no_hosts": "在 ~/.ssh/config 中未找到主机",
-        "import": "导入"
+        "import": "导入",
+        "select_all": "全选",
+        "deselect_all": "取消全选",
+        "import_selected": "导入所选 ({{count}})",
+        "importing": "导入中...",
+        "batch_import_success": "成功导入 {{count}} 个主机",
+        "batch_import_skipped": "跳过 {{count}} 个主机（已存在）",
+        "already_imported": "已导入"
       }
     },
     "ssh_keys": {

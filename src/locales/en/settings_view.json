@@ -48,7 +48,19 @@
       "title": "General",
       "description": "General application settings.",
       "language": "Language",
-      "language_hint": "Choose your preferred language"
+      "language_hint": "Choose your preferred language",
+      "data_directory": "Data Directory",
+      "data_directory_hint": "Location where connections, logs, and other data are stored",
+      "select_data_directory": "Select Data Directory",
+      "data_directory_changed": "Data directory changed. Restart the app to apply.",
+      "change": "Change",
+      "reset_data_directory": "Reset Data Directory",
+      "reset_data_directory_confirm": "Reset data directory to default? Existing data at the custom location will not be moved. Restart required.",
+      "reset_to_default": "Reset to Default",
+      "data_directory_reset": "Data directory reset to default. Restart the app to apply.",
+      "data_directory_restart_notice": "Changing the data directory requires an app restart. Existing data is not automatically migrated.",
+      "data_directory_conflict": "Existing Data Found",
+      "data_directory_conflict_detail": "The selected directory already contains OxideTerm data files: {{files}}. These files may be overwritten. Continue?"
     },
     "terminal": {
       "title": "Terminal Settings",
@@ -255,7 +267,14 @@
         "title": "Import from SSH Config",
         "description": "Scan ~/.ssh/config for hosts.",
         "no_hosts": "No hosts found in ~/.ssh/config",
-        "import": "Import"
+        "import": "Import",
+        "select_all": "Select All",
+        "deselect_all": "Deselect All",
+        "import_selected": "Import Selected ({{count}})",
+        "importing": "Importing...",
+        "batch_import_success": "Successfully imported {{count}} host(s)",
+        "batch_import_skipped": "{{count}} host(s) skipped (already exist)",
+        "already_imported": "Already imported"
       }
     },
     "ssh_keys": {

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
 import { save } from '@tauri-apps/plugin-dialog';
 import { writeFile } from '@tauri-apps/plugin-fs';
-import { X, AlertTriangle, Key, Lock, Shield, FileKey, Loader2 } from 'lucide-react';
+import { X, AlertTriangle, Key, Lock, Shield, FileKey, Loader2, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -32,6 +32,17 @@ export function OxideExportModal({ isOpen, onClose }: OxideExportModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [preflight, setPreflight] = useState<ExportPreflightResult | null>(null);
   const [preflightLoading, setPreflightLoading] = useState(false);
+
+  const lastExportTimestamp = typeof localStorage !== 'undefined'
+    ? Number(localStorage.getItem('oxideterm:lastExportTimestamp') || '0')
+    : 0;
+
+  const isNewSinceLastExport = (createdAt: string): boolean => {
+    if (!lastExportTimestamp) return false;
+    return new Date(createdAt).getTime() > lastExportTimestamp;
+  };
+
+  const newConnectionCount = savedConnections.filter(c => isNewSinceLastExport(c.created_at)).length;
 
   // Load connections when modal opens
   useEffect(() => {
@@ -166,6 +177,9 @@ export function OxideExportModal({ isOpen, onClose }: OxideExportModalProps) {
         // Write binary file
         await writeFile(savePath, new Uint8Array(fileData));
         setExportStage('done');
+
+        // Record export timestamp
+        localStorage.setItem('oxideterm:lastExportTimestamp', String(Date.now()));
         
         // Brief success pause before closing
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -213,6 +227,13 @@ export function OxideExportModal({ isOpen, onClose }: OxideExportModalProps) {
               </Button>
             </div>
 
+            {newConnectionCount > 0 && (
+              <div className="flex items-center gap-1.5 text-xs text-green-500 mb-1">
+                <Sparkles className="h-3 w-3" />
+                {t('modals.export.new_since_last_export', { count: newConnectionCount })}
+              </div>
+            )}
+
             <div className="max-h-64 overflow-y-auto border border-theme-border rounded-md p-2 space-y-1 bg-theme-bg">
               {savedConnections.length === 0 ? (
                 <p className="text-sm text-theme-text-muted py-4 text-center">
@@ -227,7 +248,15 @@ export function OxideExportModal({ isOpen, onClose }: OxideExportModalProps) {
                       className="border-theme-text-muted data-[state=checked]:bg-theme-accent data-[state=checked]:border-theme-accent"
                     />
                     <Label className="flex-1 cursor-pointer text-theme-text">
-                      <div className="font-medium">{conn.name}</div>
+                      <div className="font-medium flex items-center gap-1.5">
+                        {conn.name}
+                        {isNewSinceLastExport(conn.created_at) && (
+                          <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-500 leading-none">
+                            <Sparkles className="h-2.5 w-2.5" />
+                            {t('modals.export.badge_new')}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-theme-text-muted">
                         {conn.username}@{conn.host}:{conn.port}
                         {conn.group && ` [${conn.group}]`}

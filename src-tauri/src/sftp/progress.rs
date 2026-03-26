@@ -246,13 +246,11 @@ impl RedbProgressStore {
         Ok(Self { db })
     }
 
-    /// Get default progress store path (in ~/.oxideterm)
+    /// Get default progress store path (in config dir)
     pub fn default_path() -> Result<PathBuf, SftpError> {
-        let home = dirs::home_dir().ok_or_else(|| {
-            SftpError::StorageError("Cannot determine home directory".to_string())
+        let config_dir = crate::config::storage::config_dir().map_err(|e| {
+            SftpError::StorageError(format!("Cannot determine config directory: {}", e))
         })?;
-
-        let config_dir = home.join(".oxideterm");
 
         // Ensure directory exists
         std::fs::create_dir_all(&config_dir).map_err(|e| {

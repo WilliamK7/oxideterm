@@ -2,8 +2,13 @@
 //!
 //! Handles reading/writing configuration files to disk.
 //! Config location: ~/.oxideterm on macOS/Linux, %APPDATA%\OxideTerm on Windows
+//!
+//! Supports configurable data directory via bootstrap.json at the default location.
+//! If `~/.oxideterm/bootstrap.json` contains `{ "data_dir": "/custom/path" }`,
+//! all data files will be stored at that custom path instead.
 
 use std::path::PathBuf;
+use std::sync::OnceLock;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
 
@@ -25,16 +30,35 @@ pub enum StorageError {
     VersionTooNew { found: u32, supported: u32 },
 }
 
-/// Get the OxideTerm configuration directory
-/// Returns %APPDATA%\OxideTerm on Windows, ~/.oxideterm on macOS/Linux
-pub fn config_dir() -> Result<PathBuf, StorageError> {
+/// Bootstrap configuration stored at the fixed default location.
+/// This file controls where the actual data directory lives.
+#[derive(serde::Deserialize, serde::Serialize, Default)]
+pub struct BootstrapConfig {
+    /// Custom data directory path. If None, uses the default location.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    data_dir: Option<String>,
+}
+
+impl BootstrapConfig {
+    pub fn new_with_data_dir(path: String) -> Self {
+        Self {
+            data_dir: Some(path),
+        }
+    }
+}
+
+/// Cached resolved data directory path
+static DATA_DIR: OnceLock<PathBuf> = OnceLock::new();
+
+/// Get the default (fixed) OxideTerm directory.
+/// This is always the same location regardless of bootstrap config.
+/// Bootstrap config file lives here.
+pub fn default_dir() -> Result<PathBuf, StorageError> {
     #[cfg(windows)]
     {
-        // On Windows, prefer APPDATA for better compatibility
         if let Some(app_data) = dirs::config_dir() {
             return Ok(app_data.join("OxideTerm"));
         }
-        // Fallback to home directory
         dirs::home_dir()
             .map(|home| home.join(".oxideterm"))
             .ok_or(StorageError::NoConfigDir)
@@ -46,6 +70,75 @@ pub fn config_dir() -> Result<PathBuf, StorageError> {
             .map(|home| home.join(".oxideterm"))
             .ok_or(StorageError::NoConfigDir)
     }
+}
+
+/// Get the bootstrap config file path (always at the default location)
+pub fn bootstrap_config_path() -> Result<PathBuf, StorageError> {
+    Ok(default_dir()?.join("bootstrap.json"))
+}
+
+/// Read the bootstrap config from disk (synchronous, used during init)
+fn read_bootstrap_config() -> Option<BootstrapConfig> {
+    let path = bootstrap_config_path().ok()?;
+    let contents = std::fs::read_to_string(&path).ok()?;
+    match serde_json::from_str(&contents) {
+        Ok(config) => Some(config),
+        Err(e) => {
+            tracing::warn!("Failed to parse bootstrap.json: {}", e);
+            None
+        }
+    }
+}
+
+/// Save bootstrap config to disk (atomic write)
+pub fn save_bootstrap_config(config: &BootstrapConfig) -> Result<(), StorageError> {
+    let path = bootstrap_config_path()?;
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let json = serde_json::to_string_pretty(config)?;
+    let temp_path = path.with_extension("json.tmp");
+    std::fs::write(&temp_path, json.as_bytes())?;
+    std::fs::rename(&temp_path, &path)?;
+    Ok(())
+}
+
+/// Get the effective OxideTerm data directory.
+/// Checks bootstrap.json for a custom data_dir override, caches result.
+/// Returns %APPDATA%\OxideTerm on Windows, ~/.oxideterm on macOS/Linux by default.
+pub fn config_dir() -> Result<PathBuf, StorageError> {
+    if let Some(cached) = DATA_DIR.get() {
+        return Ok(cached.clone());
+    }
+
+    let resolved = resolve_data_dir()?;
+    Ok(DATA_DIR.get_or_init(|| resolved).clone())
+}
+
+/// Resolve the data directory by checking bootstrap config
+fn resolve_data_dir() -> Result<PathBuf, StorageError> {
+    if let Some(bootstrap) = read_bootstrap_config() {
+        if let Some(custom_dir) = bootstrap.data_dir {
+            let path = PathBuf::from(&custom_dir);
+            if path.is_absolute() {
+                tracing::info!("Using custom data directory: {:?}", path);
+                return Ok(path);
+            }
+            tracing::warn!(
+                "Ignoring non-absolute data_dir in bootstrap.json: {:?}",
+                custom_dir
+            );
+        }
+    }
+    default_dir()
+}
+
+/// Get the current effective data directory path and whether it's custom
+pub fn get_data_dir_info() -> Result<(PathBuf, bool), StorageError> {
+    let effective = config_dir()?;
+    let default = default_dir()?;
+    let is_custom = effective != default;
+    Ok((effective, is_custom))
 }
 
 /// Get the log directory for storing application logs

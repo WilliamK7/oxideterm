@@ -8,7 +8,7 @@ use crate::config::{
 };
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use tauri::{Manager, State};
 
@@ -202,6 +202,7 @@ pub struct SshHostInfo {
     pub user: Option<String>,
     pub port: u16,
     pub identity_file: Option<String>,
+    pub already_imported: bool,
 }
 
 impl From<&SshConfigHost> for SshHostInfo {
@@ -212,6 +213,7 @@ impl From<&SshConfigHost> for SshHostInfo {
             user: host.user.clone(),
             port: host.effective_port(),
             identity_file: host.identity_file.clone(),
+            already_imported: false,
         }
     }
 }
@@ -617,9 +619,22 @@ pub async fn get_connection_password(
 
 /// Import hosts from SSH config
 #[tauri::command]
-pub async fn list_ssh_config_hosts() -> Result<Vec<SshHostInfo>, String> {
+pub async fn list_ssh_config_hosts(
+    state: State<'_, Arc<ConfigState>>,
+) -> Result<Vec<SshHostInfo>, String> {
     let hosts = parse_ssh_config(None).await.map_err(|e| e.to_string())?;
-    Ok(hosts.iter().map(SshHostInfo::from).collect())
+    let existing_names: HashSet<String> = {
+        let config = state.config.read();
+        config.connections.iter().map(|c| c.name.clone()).collect()
+    };
+    Ok(hosts
+        .iter()
+        .map(|h| {
+            let mut info = SshHostInfo::from(h);
+            info.already_imported = existing_names.contains(&h.alias);
+            info
+        })
+        .collect())
 }
 
 /// Import a single SSH config host as a saved connection
@@ -677,6 +692,99 @@ pub async fn import_ssh_host(
     state.save().await?;
 
     Ok(ConnectionInfo::from(&conn))
+}
+
+/// Batch result for importing multiple SSH config hosts
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SshBatchImportResult {
+    pub imported: usize,
+    pub skipped: usize,
+    pub errors: Vec<String>,
+}
+
+/// Import multiple SSH config hosts as saved connections
+#[tauri::command]
+pub async fn import_ssh_hosts(
+    state: State<'_, Arc<ConfigState>>,
+    aliases: Vec<String>,
+) -> Result<SshBatchImportResult, String> {
+    let hosts = parse_ssh_config(None).await.map_err(|e| e.to_string())?;
+
+    let mut imported = 0usize;
+    let mut skipped = 0usize;
+    let mut errors = Vec::new();
+
+    // Collect existing names for conflict detection
+    let existing_names: HashSet<String> = {
+        let config = state.config.read();
+        config.connections.iter().map(|c| c.name.clone()).collect()
+    };
+
+    for alias in &aliases {
+        let host = match hosts.iter().find(|h| &h.alias == alias) {
+            Some(h) => h,
+            None => {
+                errors.push(format!("Host '{}' not found in SSH config", alias));
+                continue;
+            }
+        };
+
+        if existing_names.contains(alias) {
+            skipped += 1;
+            continue;
+        }
+
+        let auth = if let Some(ref key_path) = host.identity_file {
+            SavedAuth::Key {
+                key_path: key_path.clone(),
+                has_passphrase: false,
+                passphrase_keychain_id: None,
+            }
+        } else {
+            SavedAuth::Agent
+        };
+
+        let username = host.user.clone().unwrap_or_else(whoami::username);
+
+        let conn = SavedConnection {
+            id: uuid::Uuid::new_v4().to_string(),
+            version: crate::config::CONFIG_VERSION,
+            name: alias.clone(),
+            group: Some("Imported".to_string()),
+            host: host.effective_hostname().to_string(),
+            port: host.effective_port(),
+            username,
+            auth,
+            options: Default::default(),
+            created_at: chrono::Utc::now(),
+            last_used_at: None,
+            color: None,
+            tags: vec!["ssh-config".to_string()],
+            proxy_chain: Vec::new(),
+        };
+
+        {
+            let mut config = state.config.write();
+            config.add_connection(conn);
+
+            if !config.groups.contains(&"Imported".to_string()) {
+                config.groups.push("Imported".to_string());
+            }
+        }
+
+        imported += 1;
+    }
+
+    if imported > 0 {
+        state.save().await?;
+    }
+
+    Ok(SshBatchImportResult {
+        imported,
+        skipped,
+        errors,
+    })
 }
 
 /// Get SSH config file path
@@ -1176,4 +1284,132 @@ pub async fn list_ai_provider_keys(
     }
 
     Ok(providers.into_iter().collect())
+}
+
+// ─── Data Directory Management ──────────────────────────────────────────────
+
+#[derive(Serialize)]
+pub struct DataDirInfo {
+    pub path: String,
+    pub is_custom: bool,
+    pub default_path: String,
+}
+
+/// Get current data directory information
+#[tauri::command]
+pub async fn get_data_directory() -> Result<DataDirInfo, String> {
+    let (effective, is_custom) =
+        crate::config::storage::get_data_dir_info().map_err(|e| e.to_string())?;
+    let default = crate::config::storage::default_dir().map_err(|e| e.to_string())?;
+
+    Ok(DataDirInfo {
+        path: effective.to_string_lossy().to_string(),
+        is_custom,
+        default_path: default.to_string_lossy().to_string(),
+    })
+}
+
+/// Set a custom data directory. Writes to bootstrap.json.
+/// Returns true if the path was changed (app restart required).
+#[tauri::command]
+pub async fn set_data_directory(new_path: String) -> Result<bool, String> {
+    let path = std::path::PathBuf::from(&new_path);
+
+    if !path.is_absolute() {
+        return Err("Data directory must be an absolute path".to_string());
+    }
+
+    // Reject paths containing ".." to prevent traversal
+    if path.components().any(|c| matches!(c, std::path::Component::ParentDir)) {
+        return Err("Data directory path must not contain '..'".to_string());
+    }
+
+    // Create directory if it doesn't exist
+    std::fs::create_dir_all(&path).map_err(|e| format!("Failed to create directory: {}", e))?;
+
+    // Canonicalize after creation to resolve symlinks
+    let canonical = path
+        .canonicalize()
+        .map_err(|e| format!("Failed to resolve path: {}", e))?;
+
+    // Check directory is writable using a unique temp file
+    let test_filename = format!(".oxideterm_test_{}", std::process::id());
+    let test_file = canonical.join(&test_filename);
+    std::fs::write(&test_file, b"test")
+        .map_err(|e| format!("Directory is not writable: {}", e))?;
+    if let Err(e) = std::fs::remove_file(&test_file) {
+        tracing::warn!("Failed to remove write test file {:?}: {}", test_file, e);
+    }
+
+    let canonical_str = canonical.to_string_lossy().to_string();
+    let bootstrap = crate::config::storage::BootstrapConfig::new_with_data_dir(canonical_str);
+    tokio::task::spawn_blocking(move || {
+        crate::config::storage::save_bootstrap_config(&bootstrap)
+    })
+    .await
+    .map_err(|e| format!("Task failed: {}", e))?
+    .map_err(|e| e.to_string())?;
+
+    Ok(true)
+}
+
+/// Reset data directory to default. Removes data_dir from bootstrap.json.
+#[tauri::command]
+pub async fn reset_data_directory() -> Result<bool, String> {
+    let bootstrap = crate::config::storage::BootstrapConfig::default();
+    tokio::task::spawn_blocking(move || {
+        crate::config::storage::save_bootstrap_config(&bootstrap)
+    })
+    .await
+    .map_err(|e| format!("Task failed: {}", e))?
+    .map_err(|e| e.to_string())?;
+    Ok(true)
+}
+
+/// Check if a directory already contains OxideTerm data files
+#[tauri::command]
+pub async fn check_data_directory(path: String) -> Result<DataDirCheck, String> {
+    let dir = std::path::PathBuf::from(&path);
+    if !dir.is_dir() {
+        return Ok(DataDirCheck {
+            has_existing_data: false,
+            files_found: Vec::new(),
+        });
+    }
+
+    let known_files = [
+        "connections.json",
+        "state.redb",
+        "chat_history.redb",
+        "agent_history.redb",
+        "sftp_progress.redb",
+        "rag_index.redb",
+        "plugin-config.json",
+        "bootstrap.json",
+        "topology_edges.json",
+    ];
+
+    let mut found = Vec::new();
+    for name in &known_files {
+        if dir.join(name).exists() {
+            found.push(name.to_string());
+        }
+    }
+    // Check known subdirectories
+    for subdir in &["logs", "plugins", "rag_hnsw.bin"] {
+        if dir.join(subdir).exists() {
+            found.push(subdir.to_string());
+        }
+    }
+
+    Ok(DataDirCheck {
+        has_existing_data: !found.is_empty(),
+        files_found: found,
+    })
+}
+
+#[derive(Serialize)]
+pub struct DataDirCheck {
+    pub has_existing_data: bool,
+    pub files_found: Vec<String>,
 }

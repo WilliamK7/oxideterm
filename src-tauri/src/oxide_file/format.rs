@@ -152,6 +152,21 @@ pub struct EncryptedConnection {
     /// Proxy chain for multi-hop connections (intermediate jump hosts)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub proxy_chain: Vec<EncryptedProxyHop>,
+    /// Port forwarding rules associated with this connection
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub forwards: Vec<EncryptedForward>,
+}
+
+/// Port forwarding rule stored in encrypted payload
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EncryptedForward {
+    pub forward_type: String,
+    pub bind_address: String,
+    pub bind_port: u16,
+    pub target_host: String,
+    pub target_port: u16,
+    pub description: Option<String>,
+    pub auto_start: bool,
 }
 
 /// Encrypted proxy hop for multi-hop connections

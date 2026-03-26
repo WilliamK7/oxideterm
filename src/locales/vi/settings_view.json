@@ -48,7 +48,19 @@
       "title": "Chung",
       "description": "Cài đặt ứng dụng chung.",
       "language": "Ngôn ngữ",
-      "language_hint": "Chọn ngôn ngữ ưa thích"
+      "language_hint": "Chọn ngôn ngữ ưa thích",
+      "data_directory": "Thư mục dữ liệu",
+      "data_directory_hint": "Vị trí lưu trữ kết nối, nhật ký và dữ liệu khác",
+      "select_data_directory": "Chọn thư mục dữ liệu",
+      "data_directory_changed": "Thư mục dữ liệu đã được thay đổi. Khởi động lại ứng dụng để áp dụng.",
+      "change": "Thay đổi",
+      "reset_data_directory": "Đặt lại thư mục dữ liệu",
+      "reset_data_directory_confirm": "Đặt lại thư mục dữ liệu về mặc định? Dữ liệu hiện có tại vị trí tùy chỉnh sẽ không được di chuyển. Cần khởi động lại.",
+      "reset_to_default": "Khôi phục mặc định",
+      "data_directory_reset": "Thư mục dữ liệu đã được đặt lại về mặc định. Khởi động lại ứng dụng để áp dụng.",
+      "data_directory_restart_notice": "Thay đổi thư mục dữ liệu yêu cầu khởi động lại ứng dụng. Dữ liệu hiện có không được di chuyển tự động.",
+      "data_directory_conflict": "Phát hiện dữ liệu hiện có",
+      "data_directory_conflict_detail": "Thư mục đã chọn đã chứa các tệp dữ liệu OxideTerm: {{files}}. Các tệp này có thể bị ghi đè. Tiếp tục?"
     },
     "terminal": {
       "title": "Cài đặt Terminal",
@@ -255,7 +267,14 @@
         "title": "Nhập từ SSH Config",
         "description": "Quét ~/.ssh/config để tìm host.",
         "no_hosts": "Không tìm thấy host trong ~/.ssh/config",
-        "import": "Nhập"
+        "import": "Nhập",
+        "select_all": "Chọn tất cả",
+        "deselect_all": "Bỏ chọn tất cả",
+        "import_selected": "Nhập đã chọn ({{count}})",
+        "importing": "Đang nhập...",
+        "batch_import_success": "Đã nhập thành công {{count}} máy chủ",
+        "batch_import_skipped": "Đã bỏ qua {{count}} máy chủ (đã tồn tại)",
+        "already_imported": "Đã nhập"
       }
     },
     "ssh_keys": {

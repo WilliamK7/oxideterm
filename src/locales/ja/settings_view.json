@@ -48,7 +48,19 @@
       "title": "一般",
       "description": "一般的なアプリケーション設定。",
       "language": "言語",
-      "language_hint": "お好みの言語を選択してください"
+      "language_hint": "お好みの言語を選択してください",
+      "data_directory": "データディレクトリ",
+      "data_directory_hint": "接続、ログ、その他のデータの保存場所",
+      "select_data_directory": "データディレクトリを選択",
+      "data_directory_changed": "データディレクトリが変更されました。アプリを再起動して適用してください。",
+      "change": "変更",
+      "reset_data_directory": "データディレクトリをリセット",
+      "reset_data_directory_confirm": "データディレクトリをデフォルトにリセットしますか？カスタムの場所にある既存データは移動されません。再起動が必要です。",
+      "reset_to_default": "デフォルトに戻す",
+      "data_directory_reset": "データディレクトリがデフォルトにリセットされました。アプリを再起動して適用してください。",
+      "data_directory_restart_notice": "データディレクトリの変更にはアプリの再起動が必要です。既存のデータは自動的に移行されません。",
+      "data_directory_conflict": "既存データを検出",
+      "data_directory_conflict_detail": "選択したディレクトリには既にOxideTermのデータファイルが含まれています：{{files}}。これらのファイルは上書きされる可能性があります。続行しますか？"
     },
     "terminal": {
       "title": "ターミナル設定",
@@ -255,7 +267,14 @@
         "title": "SSH設定からインポート",
         "description": "~/.ssh/configのホストをスキャンします。",
         "no_hosts": "~/.ssh/configにホストが見つかりません",
-        "import": "インポート"
+        "import": "インポート",
+        "select_all": "すべて選択",
+        "deselect_all": "選択解除",
+        "import_selected": "選択したものをインポート ({{count}})",
+        "importing": "インポート中...",
+        "batch_import_success": "{{count}} 件のホストを正常にインポートしました",
+        "batch_import_skipped": "{{count}} 件のホストをスキップしました（既存）",
+        "already_imported": "インポート済み"
       }
     },
     "ssh_keys": {

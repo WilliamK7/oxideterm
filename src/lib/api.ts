@@ -11,6 +11,9 @@ import {
   ForwardRule,
   ForwardResponse,
   SshHostInfo,
+  SshBatchImportResult,
+  DataDirInfo,
+  DataDirCheck,
   SshKeyInfo,
   PersistedSessionInfo,
   PersistedForwardInfo,
@@ -389,6 +392,31 @@ export const api = {
   importSshHost: async (alias: string): Promise<ConnectionInfo> => {
     if (USE_MOCK) throw new Error("Mock import not implemented");
     return invoke('import_ssh_host', { alias });
+  },
+
+  importSshHosts: async (aliases: string[]): Promise<SshBatchImportResult> => {
+    if (USE_MOCK) throw new Error("Mock import not implemented");
+    return invoke('import_ssh_hosts', { aliases });
+  },
+
+  getDataDirectory: async (): Promise<DataDirInfo> => {
+    if (USE_MOCK) return { path: '~/.oxideterm', is_custom: false, default_path: '~/.oxideterm' };
+    return invoke('get_data_directory');
+  },
+
+  setDataDirectory: async (newPath: string): Promise<boolean> => {
+    if (USE_MOCK) return true;
+    return invoke('set_data_directory', { newPath });
+  },
+
+  resetDataDirectory: async (): Promise<boolean> => {
+    if (USE_MOCK) return true;
+    return invoke('reset_data_directory');
+  },
+
+  checkDataDirectory: async (path: string): Promise<DataDirCheck> => {
+    if (USE_MOCK) return { has_existing_data: false, files_found: [] };
+    return invoke('check_data_directory', { path });
   },
 
   getSshConfigPath: async (): Promise<string> => {

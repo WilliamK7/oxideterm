@@ -37,7 +37,7 @@ import { TOOL_GROUPS, WRITE_TOOLS, EXPERIMENTAL_TOOLS } from '../../lib/ai/tools
 import { McpServersPanel } from './McpServersPanel';
 import { DocumentManager } from './DocumentManager';
 import { useLocalTerminalStore } from '../../store/localTerminalStore';
-import { SshKeyInfo, SshHostInfo } from '../../types';
+import { SshKeyInfo, SshHostInfo, DataDirInfo } from '../../types';
 import { themes, getTerminalTheme, getCustomThemes, isCustomTheme, exportTheme, importTheme } from '../../lib/themes';
 import { platform } from '../../lib/platform';
 import { cn } from '../../lib/utils';
@@ -1091,9 +1091,21 @@ export const SettingsView = () => {
     const [groups, setGroups] = useState<string[]>([]);
     const [newGroup, setNewGroup] = useState('');
     const [sshHosts, setSshHosts] = useState<SshHostInfo[]>([]);
+    const [selectedSshHosts, setSelectedSshHosts] = useState<Set<string>>(new Set());
+    const [batchImporting, setBatchImporting] = useState(false);
+
+    // Data directory state
+    const [dataDirInfo, setDataDirInfo] = useState<DataDirInfo | null>(null);
+    const [dataDirLoading, setDataDirLoading] = useState(false);
 
     useEffect(() => {
-        if (activeTab === 'ssh') {
+        if (activeTab === 'general') {
+            api.getDataDirectory()
+                .then(setDataDirInfo)
+                .catch((e) => {
+                    console.error('Failed to load data directory info:', e);
+                });
+        } else if (activeTab === 'ssh') {
             api.checkSshKeys()
                 .then(setKeys)
                 .catch((e) => {
@@ -1144,14 +1156,73 @@ export const SettingsView = () => {
         try {
             const imported = await api.importSshHost(alias);
             toastSuccess(t('settings_view.errors.import_success', { name: imported.name }));
-            // Remove from list to show it's imported
-            setSshHosts(prev => prev.filter(h => h.alias !== alias));
+            // Refresh list to show already_imported status
+            const updatedHosts = await api.listSshConfigHosts();
+            setSshHosts(updatedHosts);
+            setSelectedSshHosts(prev => {
+                const next = new Set(prev);
+                next.delete(alias);
+                return next;
+            });
             // Refresh saved connections in sidebar
             const { loadSavedConnections } = useAppStore.getState();
             await loadSavedConnections();
         } catch (e) {
             console.error('Failed to import SSH host:', e);
             toastError(t('settings_view.errors.import_failed', { error: e }));
+        }
+    };
+
+    const handleBatchImportHosts = async () => {
+        if (selectedSshHosts.size === 0) return;
+        setBatchImporting(true);
+        try {
+            const result = await api.importSshHosts(Array.from(selectedSshHosts));
+            const parts: string[] = [];
+            if (result.imported > 0) {
+                parts.push(t('settings_view.connections.ssh_config.batch_import_success', { count: result.imported }));
+            }
+            if (result.skipped > 0) {
+                parts.push(t('settings_view.connections.ssh_config.batch_import_skipped', { count: result.skipped }));
+            }
+            if (result.errors.length > 0) {
+                parts.push(result.errors.join(', '));
+            }
+            if (result.imported > 0 || result.skipped > 0) {
+                toastSuccess(parts.join(' · '));
+                // Refresh host list to update already_imported status
+                const updatedHosts = await api.listSshConfigHosts();
+                setSshHosts(updatedHosts);
+                setSelectedSshHosts(new Set());
+                const { loadSavedConnections } = useAppStore.getState();
+                await loadSavedConnections();
+            } else if (result.errors.length > 0) {
+                toastError(parts.join(' · '));
+            }
+        } catch (e) {
+            console.error('Batch import failed:', e);
+            toastError(t('settings_view.errors.import_failed', { error: e }));
+        } finally {
+            setBatchImporting(false);
+        }
+    };
+
+    const toggleSshHost = (alias: string) => {
+        setSelectedSshHosts(prev => {
+            const next = new Set(prev);
+            if (next.has(alias)) next.delete(alias);
+            else next.add(alias);
+            return next;
+        });
+    };
+
+    const toggleAllSshHosts = () => {
+        const importable = sshHosts.filter(h => !h.already_imported);
+        const allSelected = importable.length > 0 && importable.every(h => selectedSshHosts.has(h.alias));
+        if (allSelected) {
+            setSelectedSshHosts(new Set());
+        } else {
+            setSelectedSshHosts(new Set(importable.map(h => h.alias)));
         }
     };
 
@@ -1311,6 +1382,95 @@ export const SettingsView = () => {
                                             </SelectContent>
                                         </Select>
                                     </div>
+                                </div>
+                            </div>
+
+                            {/* Data Directory */}
+                            <div className="rounded-lg border border-theme-border bg-theme-bg-panel/50 p-5">
+                                <h4 className="text-sm font-medium text-theme-text mb-4 uppercase tracking-wider">
+                                    {t('settings_view.general.data_directory')}
+                                </h4>
+                                <div className="space-y-4">
+                                    <div>
+                                        <Label className="text-theme-text">{t('settings_view.general.data_directory')}</Label>
+                                        <p className="text-xs text-theme-text-muted mt-0.5">{t('settings_view.general.data_directory_hint')}</p>
+                                    </div>
+                                    {dataDirInfo && (
+                                        <div className="flex items-center gap-3">
+                                            <code className="flex-1 px-3 py-2 bg-theme-bg-subtle rounded text-sm text-theme-text font-mono truncate">
+                                                {dataDirInfo.path}
+                                            </code>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                disabled={dataDirLoading}
+                                                onClick={async () => {
+                                                    const selected = await openFileDialog({
+                                                        directory: true,
+                                                        title: t('settings_view.general.select_data_directory'),
+                                                    });
+                                                    if (selected && typeof selected === 'string') {
+                                                        setDataDirLoading(true);
+                                                        try {
+                                                            // Check for existing data at target
+                                                            const check = await api.checkDataDirectory(selected);
+                                                            if (check.has_existing_data) {
+                                                                const proceed = await confirmDialog({
+                                                                    title: t('settings_view.general.data_directory_conflict'),
+                                                                    description: t('settings_view.general.data_directory_conflict_detail', {
+                                                                        files: check.files_found.join(', '),
+                                                                    }),
+                                                                });
+                                                                if (!proceed) {
+                                                                    setDataDirLoading(false);
+                                                                    return;
+                                                                }
+                                                            }
+                                                            await api.setDataDirectory(selected);
+                                                            toastSuccess(t('settings_view.general.data_directory_changed'));
+                                                            setDataDirInfo({ ...dataDirInfo, path: selected, is_custom: true });
+                                                        } catch (e) {
+                                                            toastError(String(e));
+                                                        } finally {
+                                                            setDataDirLoading(false);
+                                                        }
+                                                    }
+                                                }}
+                                            >
+                                                {t('settings_view.general.change')}
+                                            </Button>
+                                            {dataDirInfo.is_custom && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    disabled={dataDirLoading}
+                                                    onClick={async () => {
+                                                        const confirmed = await confirmDialog({
+                                                            title: t('settings_view.general.reset_data_directory'),
+                                                            description: t('settings_view.general.reset_data_directory_confirm'),
+                                                        });
+                                                        if (confirmed) {
+                                                            setDataDirLoading(true);
+                                                            try {
+                                                                await api.resetDataDirectory();
+                                                                toastSuccess(t('settings_view.general.data_directory_reset'));
+                                                                setDataDirInfo({ ...dataDirInfo, path: dataDirInfo.default_path, is_custom: false });
+                                                            } catch (e) {
+                                                                toastError(String(e));
+                                                            } finally {
+                                                                setDataDirLoading(false);
+                                                            }
+                                                        }
+                                                    }}
+                                                >
+                                                    {t('settings_view.general.reset_to_default')}
+                                                </Button>
+                                            )}
+                                        </div>
+                                    )}
+                                    <p className="text-xs text-yellow-500">
+                                        {t('settings_view.general.data_directory_restart_notice')}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -1943,14 +2103,62 @@ export const SettingsView = () => {
                                 <p className="text-sm text-theme-text-muted mb-4">{t('settings_view.connections.ssh_config.description')}</p>
                                 <Separator className="mb-4" />
 
+                                {sshHosts.length > 0 && (
+                                    <div className="flex items-center justify-between mb-2 max-w-2xl">
+                                        <button
+                                            type="button"
+                                            onClick={toggleAllSshHosts}
+                                            className="text-xs text-theme-accent hover:text-theme-accent-hover transition-colors"
+                                        >
+                                            {sshHosts.filter(h => !h.already_imported).length > 0 && sshHosts.filter(h => !h.already_imported).every(h => selectedSshHosts.has(h.alias))
+                                                ? t('settings_view.connections.ssh_config.deselect_all')
+                                                : t('settings_view.connections.ssh_config.select_all')}
+                                        </button>
+                                        {selectedSshHosts.size > 0 && (
+                                            <Button
+                                                size="sm"
+                                                variant="secondary"
+                                                onClick={handleBatchImportHosts}
+                                                disabled={batchImporting}
+                                                className="h-7 text-xs"
+                                            >
+                                                <FolderInput className="h-3.5 w-3.5 mr-1" />
+                                                {batchImporting
+                                                    ? t('settings_view.connections.ssh_config.importing')
+                                                    : t('settings_view.connections.ssh_config.import_selected', { count: selectedSshHosts.size })}
+                                            </Button>
+                                        )}
+                                    </div>
+                                )}
+
                                 <div className="h-64 overflow-y-auto border border-theme-border rounded-md bg-theme-bg-panel p-2 max-w-2xl">
                                     {sshHosts.map(host => (
-                                        <div key={host.alias} className="flex items-center justify-between p-3 hover:bg-theme-bg-hover rounded-md border border-transparent hover:border-theme-border mb-1">
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-medium">{host.alias}</span>
-                                                <span className="text-xs text-theme-text-muted">{host.user}@{host.hostname}:{host.port}</span>
+                                        <div key={host.alias} className={cn(
+                                            "flex items-center justify-between p-3 rounded-md border mb-1",
+                                            host.already_imported
+                                                ? "opacity-50 border-transparent"
+                                                : "hover:bg-theme-bg-hover border-transparent hover:border-theme-border"
+                                        )}>
+                                            <div className="flex items-center gap-2 flex-1 cursor-pointer" onClick={() => !host.already_imported && toggleSshHost(host.alias)}>
+                                                <Checkbox
+                                                    checked={selectedSshHosts.has(host.alias)}
+                                                    disabled={host.already_imported}
+                                                    onCheckedChange={() => !host.already_imported && toggleSshHost(host.alias)}
+                                                    className="border-theme-text-muted data-[state=checked]:bg-theme-accent data-[state=checked]:border-theme-accent"
+                                                />
+                                                <div className="flex flex-col">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-medium">{host.alias}</span>
+                                                        {host.already_imported && (
+                                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-theme-accent/20 text-theme-accent">
+                                                                {t('settings_view.connections.ssh_config.already_imported')}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-xs text-theme-text-muted">{host.user}@{host.hostname}:{host.port}</span>
+                                                </div>
                                             </div>
-                                            <Button size="sm" variant="secondary" onClick={() => handleImportHost(host.alias)}>
+                                            <Button size="sm" variant="secondary" onClick={() => handleImportHost(host.alias)} disabled={host.already_imported}>
                                                 <FolderInput className="h-4 w-4 mr-1" /> {t('settings_view.connections.ssh_config.import')}
                                             </Button>
                                         </div>

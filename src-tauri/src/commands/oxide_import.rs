@@ -41,6 +41,8 @@ pub struct ImportPreview {
     pub will_rename: Vec<(String, String)>,
     /// Whether any embedded keys will be extracted
     pub has_embedded_keys: bool,
+    /// Total number of port forwarding rules across all connections
+    pub total_forwards: usize,
 }
 
 /// Resolve name conflicts by appending a suffix like macOS does
@@ -234,14 +236,17 @@ pub async fn preview_oxide_import(
         unchanged,
         will_rename,
         has_embedded_keys,
+        total_forwards: payload.connections.iter().map(|c| c.forwards.len()).sum(),
     })
 }
 
 /// Import connections from encrypted .oxide file
+/// If `selected_names` is provided, only import connections whose names are in the list
 #[tauri::command]
 pub async fn import_from_oxide(
     file_data: Vec<u8>,
     password: String,
+    selected_names: Option<Vec<String>>,
     config_state: State<'_, Arc<ConfigState>>,
 ) -> Result<ImportResult, String> {
     info!("Importing from .oxide file ({} bytes)", file_data.len());
@@ -263,6 +268,18 @@ pub async fn import_from_oxide(
         "Decryption successful, importing {} connections",
         payload.connections.len()
     );
+
+    // Filter connections by selected_names if provided
+    let connections_to_import: Vec<_> = if let Some(ref names) = selected_names {
+        let name_set: HashSet<&str> = names.iter().map(|s| s.as_str()).collect();
+        payload
+            .connections
+            .into_iter()
+            .filter(|c| name_set.contains(c.name.as_str()))
+            .collect()
+    } else {
+        payload.connections
+    };
 
     // 3. Phase 1: Build all connections in memory first (no keychain writes yet)
     //    This ensures we don't leave orphan keychain entries if something fails
@@ -397,7 +414,7 @@ pub async fn import_from_oxide(
         (hops, all_entries)
     }
 
-    for enc_conn in payload.connections {
+    for enc_conn in connections_to_import {
         let new_id = Uuid::new_v4().to_string();
         let original_name = enc_conn.name.clone();
 

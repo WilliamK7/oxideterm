@@ -48,7 +48,19 @@
       "title": "Geral",
       "description": "Configurações gerais da aplicação.",
       "language": "Idioma",
-      "language_hint": "Selecione seu idioma preferido"
+      "language_hint": "Selecione seu idioma preferido",
+      "data_directory": "Diretório de dados",
+      "data_directory_hint": "Local onde conexões, logs e outros dados são armazenados",
+      "select_data_directory": "Selecionar diretório de dados",
+      "data_directory_changed": "O diretório de dados foi alterado. Reinicie o aplicativo para aplicar.",
+      "change": "Alterar",
+      "reset_data_directory": "Redefinir diretório de dados",
+      "reset_data_directory_confirm": "Redefinir o diretório de dados para o padrão? Os dados existentes no local personalizado não serão movidos. Reinicialização necessária.",
+      "reset_to_default": "Restaurar padrão",
+      "data_directory_reset": "O diretório de dados foi redefinido para o padrão. Reinicie o aplicativo para aplicar.",
+      "data_directory_restart_notice": "Alterar o diretório de dados requer a reinicialização do aplicativo. Os dados existentes não são migrados automaticamente.",
+      "data_directory_conflict": "Dados existentes encontrados",
+      "data_directory_conflict_detail": "O diretório selecionado já contém arquivos de dados do OxideTerm: {{files}}. Esses arquivos podem ser sobrescritos. Continuar?"
     },
     "terminal": {
       "title": "Configurações do terminal",
@@ -255,7 +267,14 @@
         "title": "Importar da configuração SSH",
         "description": "Escanear hosts em ~/.ssh/config.",
         "no_hosts": "Nenhum host encontrado em ~/.ssh/config",
-        "import": "Importar"
+        "import": "Importar",
+        "select_all": "Selecionar tudo",
+        "deselect_all": "Desmarcar tudo",
+        "import_selected": "Importar selecionados ({{count}})",
+        "importing": "Importando...",
+        "batch_import_success": "{{count}} host(s) importado(s) com sucesso",
+        "batch_import_skipped": "{{count}} host(s) ignorado(s) (já existente(s))",
+        "already_imported": "Já importado"
       }
     },
     "ssh_keys": {

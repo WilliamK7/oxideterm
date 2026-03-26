@@ -48,7 +48,19 @@
       "title": "Generale",
       "description": "Impostazioni generali dell'applicazione.",
       "language": "Lingua",
-      "language_hint": "Scegli la tua lingua preferita"
+      "language_hint": "Scegli la tua lingua preferita",
+      "data_directory": "Directory dei dati",
+      "data_directory_hint": "Posizione in cui vengono archiviati connessioni, log e altri dati",
+      "select_data_directory": "Seleziona directory dei dati",
+      "data_directory_changed": "La directory dei dati è stata modificata. Riavvia l'app per applicare.",
+      "change": "Modifica",
+      "reset_data_directory": "Reimposta directory dei dati",
+      "reset_data_directory_confirm": "Reimpostare la directory dei dati ai valori predefiniti? I dati esistenti nella posizione personalizzata non verranno spostati. È necessario il riavvio.",
+      "reset_to_default": "Ripristina predefinito",
+      "data_directory_reset": "La directory dei dati è stata reimpostata ai valori predefiniti. Riavvia l'app per applicare.",
+      "data_directory_restart_notice": "La modifica della directory dei dati richiede il riavvio dell'app. I dati esistenti non vengono migrati automaticamente.",
+      "data_directory_conflict": "Dati esistenti trovati",
+      "data_directory_conflict_detail": "La directory selezionata contiene già file di dati OxideTerm: {{files}}. Questi file potrebbero essere sovrascritti. Continuare?"
     },
     "terminal": {
       "title": "Impostazioni Terminale",
@@ -255,7 +267,14 @@
         "title": "Importa da SSH Config",
         "description": "Scansiona ~/.ssh/config per host.",
         "no_hosts": "Nessun host trovato in ~/.ssh/config",
-        "import": "Importa"
+        "import": "Importa",
+        "select_all": "Seleziona tutto",
+        "deselect_all": "Deseleziona tutto",
+        "import_selected": "Importa selezionati ({{count}})",
+        "importing": "Importazione...",
+        "batch_import_success": "{{count}} host importato/i con successo",
+        "batch_import_skipped": "{{count}} host ignorato/i (già esistente/i)",
+        "already_imported": "Già importato"
       }
     },
     "ssh_keys": {

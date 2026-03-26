@@ -48,7 +48,19 @@
       "title": "一般",
       "description": "一般應用程式設定。",
       "language": "語言",
-      "language_hint": "選擇您偏好的語言"
+      "language_hint": "選擇您偏好的語言",
+      "data_directory": "資料目錄",
+      "data_directory_hint": "連線、日誌和其他資料的儲存位置",
+      "select_data_directory": "選擇資料目錄",
+      "data_directory_changed": "資料目錄已變更。請重新啟動應用程式以套用。",
+      "change": "變更",
+      "reset_data_directory": "重設資料目錄",
+      "reset_data_directory_confirm": "確定要將資料目錄重設為預設值嗎？自訂位置的現有資料不會被移動。需要重新啟動。",
+      "reset_to_default": "恢復預設",
+      "data_directory_reset": "資料目錄已重設為預設值。請重新啟動應用程式以套用。",
+      "data_directory_restart_notice": "變更資料目錄需要重新啟動應用程式。現有資料不會自動遷移。",
+      "data_directory_conflict": "發現已有資料",
+      "data_directory_conflict_detail": "所選目錄已包含 OxideTerm 資料檔案：{{files}}。這些檔案可能會被覆蓋。是否繼續？"
     },
     "terminal": {
       "title": "終端機設定",
@@ -255,7 +267,14 @@
         "title": "從 SSH Config 匯入",
         "description": "掃描 ~/.ssh/config 中的主機。",
         "no_hosts": "在 ~/.ssh/config 中找不到主機",
-        "import": "匯入"
+        "import": "匯入",
+        "select_all": "全選",
+        "deselect_all": "取消全選",
+        "import_selected": "匯入所選 ({{count}})",
+        "importing": "匯入中...",
+        "batch_import_success": "成功匯入 {{count}} 個主機",
+        "batch_import_skipped": "跳過 {{count}} 個主機（已存在）",
+        "already_imported": "已導入"
       }
     },
     "ssh_keys": {

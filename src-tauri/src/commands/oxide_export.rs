@@ -398,6 +398,7 @@ pub async fn export_to_oxide(
             tags: saved_conn.tags.clone(),
             options: saved_conn.options.clone(),
             proxy_chain: encrypted_proxy_chain,
+            forwards: Vec::new(),
         });
     }
 

@@ -48,7 +48,19 @@
       "title": "Allgemein",
       "description": "Allgemeine Anwendungseinstellungen.",
       "language": "Sprache",
-      "language_hint": "Wählen Sie Ihre bevorzugte Sprache"
+      "language_hint": "Wählen Sie Ihre bevorzugte Sprache",
+      "data_directory": "Datenverzeichnis",
+      "data_directory_hint": "Speicherort für Verbindungen, Protokolle und andere Daten",
+      "select_data_directory": "Datenverzeichnis auswählen",
+      "data_directory_changed": "Das Datenverzeichnis wurde geändert. Starten Sie die App neu, um die Änderung zu übernehmen.",
+      "change": "Ändern",
+      "reset_data_directory": "Datenverzeichnis zurücksetzen",
+      "reset_data_directory_confirm": "Datenverzeichnis auf Standard zurücksetzen? Vorhandene Daten am benutzerdefinierten Speicherort werden nicht verschoben. Neustart erforderlich.",
+      "reset_to_default": "Standard wiederherstellen",
+      "data_directory_reset": "Das Datenverzeichnis wurde auf den Standard zurückgesetzt. Starten Sie die App neu, um die Änderung zu übernehmen.",
+      "data_directory_restart_notice": "Das Ändern des Datenverzeichnisses erfordert einen Neustart der App. Vorhandene Daten werden nicht automatisch migriert.",
+      "data_directory_conflict": "Vorhandene Daten gefunden",
+      "data_directory_conflict_detail": "Das ausgewählte Verzeichnis enthält bereits OxideTerm-Datendateien: {{files}}. Diese Dateien könnten überschrieben werden. Fortfahren?"
     },
     "terminal": {
       "title": "Terminal-Einstellungen",
@@ -255,7 +267,14 @@
         "title": "Aus SSH-Konfiguration importieren",
         "description": "~/.ssh/config nach Hosts durchsuchen.",
         "no_hosts": "Keine Hosts in ~/.ssh/config gefunden",
-        "import": "Importieren"
+        "import": "Importieren",
+        "select_all": "Alle auswählen",
+        "deselect_all": "Alle abwählen",
+        "import_selected": "Auswahl importieren ({{count}})",
+        "importing": "Importiere...",
+        "batch_import_success": "{{count}} Host(s) erfolgreich importiert",
+        "batch_import_skipped": "{{count}} Host(s) übersprungen (bereits vorhanden)",
+        "already_imported": "Bereits importiert"
       }
     },
     "ssh_keys": {
