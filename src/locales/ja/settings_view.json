@@ -60,7 +60,15 @@
       "data_directory_reset": "データディレクトリがデフォルトにリセットされました。アプリを再起動して適用してください。",
       "data_directory_restart_notice": "データディレクトリの変更にはアプリの再起動が必要です。既存のデータは自動的に移行されません。",
       "data_directory_conflict": "既存データを検出",
-      "data_directory_conflict_detail": "選択したディレクトリには既にOxideTermのデータファイルが含まれています：{{files}}。これらのファイルは上書きされる可能性があります。続行しますか？"
+      "data_directory_conflict_detail": "選択したディレクトリには既にOxideTermのデータファイルが含まれています：{{files}}。これらのファイルは上書きされる可能性があります。続行しますか？",
+      "cli_companion": "CLI コンパニオン",
+      "cli_tool": "CLI ツール",
+      "cli_tool_hint": "oxt CLI をインストールしてターミナルから接続を管理",
+      "cli_installed": "インストール済み",
+      "cli_not_installed": "未インストール",
+      "cli_install": "インストール",
+      "cli_uninstall": "アンインストール",
+      "cli_not_bundled": "このビルドには CLI バイナリが含まれていません"
     },
     "terminal": {
       "title": "ターミナル設定",

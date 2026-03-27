@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.20.3-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.21.0-blue" alt="Version">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue" alt="Platform">
   <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial-blueviolet" alt="License">
   <img src="https://img.shields.io/badge/rust-1.75+-orange" alt="Rust">
@@ -313,6 +313,15 @@ Le frontend adopte un pattern **Multi-Store** (16 stores) pour gérer des domain
 | **RecordingStore** | Enregistrement & lecture sessions terminal |
 | **UpdateStore** | Cycle de vie mise à jour auto (vérifier → télécharger → installer) |
 Malgré des sources d’état différentes, la logique de rendu est unifiée via les composants `TerminalView` et `IdeView`.
+### 🖥️ CLI Companion — `oxt`
+
+Un outil CLI autonome qui communique avec le GUI OxideTerm en cours d'exécution via IPC :
+
+- **Protocole** : JSON-RPC 2.0 via Unix Domain Socket (macOS/Linux) ou Named Pipe (Windows)
+- **Commandes** : `oxt status`, `oxt list connections`, `oxt list sessions`, `oxt ping`
+- **Modes de sortie** : détection automatique format lisible, `--json` pour les scripts
+- **Distribué avec le GUI** : intégré au package, installable via Paramètres → Général vers `~/.local/bin/`
+- **Sécurité** : 16 connexions simultanées max, limite de requête 1 Mo, délai d'inactivité 60s, permissions Socket propriétaire uniquement
 ---
 
 ## Stack technique
@@ -335,6 +344,7 @@ Malgré des sources d’état différentes, la logique de rendu est unifiée via
 | **WebSocket** | tokio-tungstenite 0.24 | WebSocket async pour le plan de données terminal |
 | **Protocole** | Wire Protocol v1 | Binaire `[Type:1][Length:4][Payload:n]` sur WebSocket |
 | **Plugins** | Runtime ESM | PluginContext gelé + 24 composants UI Kit |
+| **CLI** | oxide-cli | JSON-RPC 2.0, Unix Socket / Named Pipe |
 
 ---
 
@@ -351,6 +361,7 @@ Malgré des sources d’état différentes, la logique de rendu est unifiée via
 | **IA** | Panneau inline + chat latéral, SSE streaming, insertion de code, 40+ outils, intégration serveurs MCP, contexte multi-sources, base de connaissances RAG, OpenAI/Ollama/DeepSeek |
 | **Plugins** | Chargement ESM runtime, 8 espaces API, 24 UI Kit, exécution sandboxée, disjoncteur |
 | **WSL Graphics** ⚠️ | Visionneuse VNC intégrée (Expérimental) : mode Bureau (9 DE) + mode Application (GUI unique), détection WSLg, Xtigervnc + noVNC, reconnexion, feature-gated |
+| **CLI** | Outil compagnon `oxt`, IPC JSON-RPC, statut/liste/ping, sortie lisible + JSON, installation intégrée |
 | **Sécurité** | Chiffrement .oxide, trousseau système, `zeroize` mémoire, TOFU clé d'hôte |
 | **i18n** | EN, 简体中文, 繁體中文, 日本語, FR, DE, ES, IT, 한국어, PT-BR, VI |
 

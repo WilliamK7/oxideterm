@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.20.3-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.21.0-blue" alt="Version">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue" alt="Platform">
   <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial-blueviolet" alt="License">
   <img src="https://img.shields.io/badge/rust-1.75+-orange" alt="Rust">
@@ -320,6 +320,16 @@ Frontend áp dụng mẫu **Multi-Store** (16 stores) để xử lý các miền
 
 Mặc dù nguồn trạng thái khác nhau, logic kết xuất được thống nhất qua các component `TerminalView` và `IdeView`.
 
+### 🖥️ CLI Companion — `oxt`
+
+Công cụ dòng lệnh độc lập giao tiếp với OxideTerm GUI đang chạy qua IPC:
+
+- **Giao thức**: JSON-RPC 2.0 qua Unix Domain Socket (macOS/Linux) hoặc Named Pipe (Windows)
+- **Lệnh**: `oxt status`, `oxt list connections`, `oxt list sessions`, `oxt ping`
+- **Chế độ xuất**: tự động phát hiện định dạng đọc được, `--json` cho scripting
+- **Đi kèm GUI**: tích hợp trong gói ứng dụng, cài đặt qua Cài đặt → Tổng quát vào `~/.local/bin/`
+- **Bảo mật**: tối đa 16 kết nối đồng thời, giới hạn yêu cầu 1 MB, hết thời gian chờ 60s, quyền Socket chỉ chủ sở hữu
+
 ---
 
 ## Ngăn xếp Công nghệ
@@ -342,6 +352,7 @@ Mặc dù nguồn trạng thái khác nhau, logic kết xuất được thống 
 | **WebSocket** | tokio-tungstenite 0.24 | WebSocket bất đồng bộ cho mặt phẳng dữ liệu terminal |
 | **Giao thức** | Wire Protocol v1 | Nhị phân `[Type:1][Length:4][Payload:n]` qua WebSocket |
 | **Plugin** | ESM Runtime | PluginContext đóng băng + 24 thành phần UI Kit |
+| **CLI** | oxide-cli | JSON-RPC 2.0, Unix Socket / Named Pipe |
 
 ---
 
@@ -358,6 +369,7 @@ Mặc dù nguồn trạng thái khác nhau, logic kết xuất được thống 
 | **AI** | Bảng nội tuyến + chat bên lề, streaming SSE, chèn mã, 40+ công cụ sử dụng, tích hợp MCP server, ngữ cảnh đa nguồn, cơ sở kiến thức RAG, OpenAI/Ollama/DeepSeek |
 | **Plugin** | Tải ESM runtime, 8 API namespaces, 24 UI Kit, sandbox, circuit breaker |
 | **WSL Graphics** ⚠️ | Trình xem VNC tích hợp (Thử nghiệm): Chế độ Desktop (9 DE) + Chế độ App (ứng dụng GUI đơn), phát hiện WSLg, Xtigervnc + noVNC, kết nối lại, gắn feature gate |
+| **CLI** | Công cụ `oxt`, IPC JSON-RPC, trạng thái/danh sách/ping, đầu ra đọc được + JSON, cài đặt tích hợp |
 | **Bảo mật** | Mã hóa .oxide, OS keychain, xóa bộ nhớ `zeroize`, TOFU host key |
 | **i18n** | EN, 简体中文, 繁體中文, 日本語, FR, DE, ES, IT, 한국어, PT-BR, VI |
 

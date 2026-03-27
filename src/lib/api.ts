@@ -1491,6 +1491,26 @@ export const api = {
     if (USE_MOCK) return;
     return invoke('update_cancel_resumable_install', { taskId });
   },
+
+  // ── CLI Companion ───────────────────────────────────────────────────
+
+  /** Get CLI installation status */
+  cliGetStatus: async (): Promise<{ bundled: boolean; installed: boolean; install_path: string | null; bundle_path: string | null }> => {
+    if (USE_MOCK) return { bundled: false, installed: false, install_path: null, bundle_path: null };
+    return invoke('cli_get_status');
+  },
+
+  /** Install the CLI binary (symlink on Unix, copy on Windows) */
+  cliInstall: async (): Promise<string> => {
+    if (USE_MOCK) return 'CLI installed';
+    return invoke('cli_install');
+  },
+
+  /** Uninstall the CLI binary */
+  cliUninstall: async (): Promise<string> => {
+    if (USE_MOCK) return 'CLI uninstalled';
+    return invoke('cli_uninstall');
+  },
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

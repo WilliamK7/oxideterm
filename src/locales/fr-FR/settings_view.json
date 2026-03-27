@@ -60,7 +60,15 @@
       "data_directory_reset": "Le répertoire de données a été réinitialisé par défaut. Redémarrez l'application pour appliquer.",
       "data_directory_restart_notice": "La modification du répertoire de données nécessite un redémarrage de l'application. Les données existantes ne sont pas migrées automatiquement.",
       "data_directory_conflict": "Données existantes détectées",
-      "data_directory_conflict_detail": "Le répertoire sélectionné contient déjà des fichiers de données OxideTerm : {{files}}. Ces fichiers pourraient être écrasés. Continuer ?"
+      "data_directory_conflict_detail": "Le répertoire sélectionné contient déjà des fichiers de données OxideTerm : {{files}}. Ces fichiers pourraient être écrasés. Continuer ?",
+      "cli_companion": "Compagnon CLI",
+      "cli_tool": "Outil CLI",
+      "cli_tool_hint": "Installez l'outil CLI oxt pour gérer les connexions depuis votre terminal",
+      "cli_installed": "Installé",
+      "cli_not_installed": "Non installé",
+      "cli_install": "Installer",
+      "cli_uninstall": "Désinstaller",
+      "cli_not_bundled": "Le binaire CLI n'est pas inclus dans cette version"
     },
     "terminal": {
       "title": "Paramètres du terminal",

@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.20.3-blue" alt="Versión">
+  <img src="https://img.shields.io/badge/version-0.21.0-blue" alt="Versión">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue" alt="Plataforma">
   <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial-blueviolet" alt="Licencia">
   <img src="https://img.shields.io/badge/rust-1.75+-orange" alt="Rust">
@@ -320,6 +320,16 @@ El frontend adopta un patrón **Multi-Store** (16 stores) para manejar dominios 
 
 A pesar de las diferentes fuentes de estado, la lógica de renderizado está unificada a través de los componentes `TerminalView` e `IdeView`.
 
+### 🖥️ CLI Companion — `oxt`
+
+Una herramienta CLI independiente que se comunica con la GUI de OxideTerm en ejecución vía IPC:
+
+- **Protocolo**: JSON-RPC 2.0 sobre Unix Domain Socket (macOS/Linux) o Named Pipe (Windows)
+- **Comandos**: `oxt status`, `oxt list connections`, `oxt list sessions`, `oxt ping`
+- **Modos de salida**: detección automática de formato legible, `--json` para scripts
+- **Distribuido con GUI**: integrado en el paquete, instalable desde Configuración → General a `~/.local/bin/`
+- **Seguridad**: máx. 16 conexiones simultáneas, límite de solicitud 1 MB, timeout inactivo 60s, permisos Socket solo propietario
+
 ---
 
 ## Pila tecnológica
@@ -342,6 +352,7 @@ A pesar de las diferentes fuentes de estado, la lógica de renderizado está uni
 | **WebSocket** | tokio-tungstenite 0.24 | WebSocket asíncrono para el plano de datos del terminal |
 | **Protocolo** | Wire Protocol v1 | Binario `[Type:1][Length:4][Payload:n]` sobre WebSocket |
 | **Plugins** | ESM Runtime | PluginContext congelado + 24 componentes UI Kit |
+| **CLI** | oxide-cli | JSON-RPC 2.0, Unix Socket / Named Pipe |
 
 ---
 
@@ -358,6 +369,7 @@ A pesar de las diferentes fuentes de estado, la lógica de renderizado está uni
 | **IA** | Panel inline + chat lateral, streaming SSE, inserción de código, más de 40 herramientas, integración de servidores MCP, contexto multi-fuente, base de conocimiento RAG, OpenAI/Ollama/DeepSeek |
 | **Plugins** | Carga ESM en runtime, 8 espacios de nombres API, 24 UI Kit, sandbox, circuit breaker |
 | **WSL Graphics** ⚠️ | Visor VNC integrado (Experimental): modo escritorio (9 entornos) + modo aplicación (GUI individual), detección WSLg, Xtigervnc + noVNC, reconexión, feature-gated |
+| **CLI** | Herramienta `oxt`, IPC JSON-RPC, estado/lista/ping, salida legible + JSON, instalación integrada |
 | **Seguridad** | Cifrado .oxide, llavero del SO, memoria `zeroize`, TOFU para claves de host |
 | **i18n** | EN, 简体中文, 繁體中文, 日本語, FR, DE, ES, IT, 한국어, PT-BR, VI |
 

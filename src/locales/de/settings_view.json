@@ -60,7 +60,15 @@
       "data_directory_reset": "Das Datenverzeichnis wurde auf den Standard zurückgesetzt. Starten Sie die App neu, um die Änderung zu übernehmen.",
       "data_directory_restart_notice": "Das Ändern des Datenverzeichnisses erfordert einen Neustart der App. Vorhandene Daten werden nicht automatisch migriert.",
       "data_directory_conflict": "Vorhandene Daten gefunden",
-      "data_directory_conflict_detail": "Das ausgewählte Verzeichnis enthält bereits OxideTerm-Datendateien: {{files}}. Diese Dateien könnten überschrieben werden. Fortfahren?"
+      "data_directory_conflict_detail": "Das ausgewählte Verzeichnis enthält bereits OxideTerm-Datendateien: {{files}}. Diese Dateien könnten überschrieben werden. Fortfahren?",
+      "cli_companion": "CLI-Begleiter",
+      "cli_tool": "CLI-Werkzeug",
+      "cli_tool_hint": "Installieren Sie die oxt CLI, um Verbindungen vom Terminal aus zu verwalten",
+      "cli_installed": "Installiert",
+      "cli_not_installed": "Nicht installiert",
+      "cli_install": "Installieren",
+      "cli_uninstall": "Deinstallieren",
+      "cli_not_bundled": "CLI-Binärdatei ist in diesem Build nicht enthalten"
     },
     "terminal": {
       "title": "Terminal-Einstellungen",

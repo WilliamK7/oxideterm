@@ -60,7 +60,15 @@
       "data_directory_reset": "Thư mục dữ liệu đã được đặt lại về mặc định. Khởi động lại ứng dụng để áp dụng.",
       "data_directory_restart_notice": "Thay đổi thư mục dữ liệu yêu cầu khởi động lại ứng dụng. Dữ liệu hiện có không được di chuyển tự động.",
       "data_directory_conflict": "Phát hiện dữ liệu hiện có",
-      "data_directory_conflict_detail": "Thư mục đã chọn đã chứa các tệp dữ liệu OxideTerm: {{files}}. Các tệp này có thể bị ghi đè. Tiếp tục?"
+      "data_directory_conflict_detail": "Thư mục đã chọn đã chứa các tệp dữ liệu OxideTerm: {{files}}. Các tệp này có thể bị ghi đè. Tiếp tục?",
+      "cli_companion": "Công cụ CLI",
+      "cli_tool": "Công cụ CLI",
+      "cli_tool_hint": "Cài đặt oxt CLI để quản lý kết nối từ terminal",
+      "cli_installed": "Đã cài đặt",
+      "cli_not_installed": "Chưa cài đặt",
+      "cli_install": "Cài đặt",
+      "cli_uninstall": "Gỡ cài đặt",
+      "cli_not_bundled": "Tệp nhị phân CLI không có trong bản dựng này"
     },
     "terminal": {
       "title": "Cài đặt Terminal",

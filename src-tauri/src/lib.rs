@@ -9,6 +9,7 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 pub mod agent;
 pub mod bridge;
+pub mod cli_server;
 pub mod commands;
 pub mod config;
 pub mod forwarding;
@@ -471,6 +472,22 @@ pub fn run() {
             }
         }
 
+        // Start CLI IPC server (non-fatal if it fails)
+        {
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                match cli_server::CliServer::start(handle.clone()).await {
+                    Ok(server) => {
+                        handle.manage(server);
+                        tracing::info!("CLI IPC server started");
+                    }
+                    Err(e) => {
+                        tracing::warn!("Failed to start CLI server: {e}");
+                    }
+                }
+            });
+        }
+
         write_startup_log("Tauri setup complete");
         Ok(())
     });
@@ -804,6 +821,10 @@ pub fn run() {
         commands::mcp_spawn_server,
         commands::mcp_send_request,
         commands::mcp_close_server,
+        // CLI companion commands
+        commands::cli_get_status,
+        commands::cli_install,
+        commands::cli_uninstall,
     ]);
     #[cfg(not(feature = "local-terminal"))]
     let builder = builder.invoke_handler(tauri::generate_handler![
@@ -1109,6 +1130,10 @@ pub fn run() {
         commands::mcp_spawn_server,
         commands::mcp_send_request,
         commands::mcp_close_server,
+        // CLI companion commands
+        commands::cli_get_status,
+        commands::cli_install,
+        commands::cli_uninstall,
     ]);
 
     builder
@@ -1218,6 +1243,14 @@ pub fn run() {
                         tauri::async_runtime::block_on(async {
                             gfx_state.shutdown().await;
                         });
+                    }
+
+                    // Clean up CLI IPC server
+                    if let Some(server) =
+                        app_handle.try_state::<Arc<cli_server::CliServer>>()
+                    {
+                        tracing::info!("Shutting down CLI IPC server...");
+                        server.shutdown();
                     }
 
                     tracing::info!("All resources cleaned up, exiting...");

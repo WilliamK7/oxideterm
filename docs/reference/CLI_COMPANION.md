@@ -1,0 +1,560 @@
+# CLI 伴侣工具 — `oxt`
+
+> OxideTerm CLI 伴侣工具的完整参考文档。
+
+## 概述
+
+`oxt` CLI 是一个独立的命令行二进制程序，通过 IPC（进程间通信）与正在运行的 OxideTerm GUI 进行通信。用户可以在终端或 shell 脚本中查询 OxideTerm 状态、列出连接和会话、查看端口转发与健康状态、断开会话、执行连通性检查——一切从终端或 shell 脚本完成。
+
+**主要设计决策：**
+
+- **独立二进制**：`oxt` 是一个独立的 Rust crate（`cli/`），不编译进 Tauri 后端，保持 CLI 轻量（约 1 MB）且与 GUI 生命周期解耦。
+- **内置不自动安装**：CLI 二进制文件作为 Tauri 资源分发在应用包内。用户通过 设置 → 通用 → CLI 伴侣工具 选择安装，安装后会在 Unix 上创建符号链接，在 Windows 上复制二进制到 `~/.local/bin/oxt`。
+- **IPC 而非 HTTP**：通信使用 Unix Domain Socket（macOS/Linux）或命名管道（Windows）——无网络暴露、无端口冲突、无 TLS 开销。
+
+## 架构
+
+```
+┌─────────────┐        JSON-RPC 2.0         ┌─────────────────┐
+│  oxt CLI    │◄──── (换行符分隔) ──────────►│  OxideTerm GUI  │
+│  (Rust bin) │                              │   cli_server    │
+└──────┬──────┘                              └────────┬────────┘
+       │                                              │
+  Unix Socket                                    Tokio 异步
+  ~/.oxideterm/oxt.sock                          accept 循环
+       │                                              │
+  Named Pipe（Windows）                          methods.rs
+  \\.\pipe\OxideTerm-CLI-{user}                  ├─ status
+                                                 ├─ list_saved_connections
+                                                 ├─ list_sessions
+                                                 ├─ list_active_connections                                                 ├─ list_forwards
+                                                 ├─ health
+                                                 ├─ disconnect                                                 └─ ping
+```
+
+### 模块结构
+
+**服务端**（`src-tauri/src/cli_server/`）：
+
+| 模块 | 职责 |
+|---|---|
+| `mod.rs` | `CliServer` — 生命周期管理（启动、接受连接循环、关闭） |
+| `transport.rs` | `IpcListener` / `IpcStream` — Unix Socket 与命名管道的抽象层 |
+| `handler.rs` | 单连接请求循环，含读取上限与空闲超时 |
+| `protocol.rs` | JSON-RPC 2.0 的 `Request`、`Response`、`RpcError`、`Notification` 类型 |
+| `methods.rs` | RPC 方法分发与具体实现 |
+
+**客户端**（`cli/src/`）：
+
+| 模块 | 职责 |
+|---|---|
+| `main.rs` | Clap CLI 入口，命令定义 |
+| `connect.rs` | `IpcConnection` — 同步 IPC 客户端（Unix Socket / 命名管道） |
+| `protocol.rs` | 客户端 JSON-RPC 请求/响应类型 |
+| `output.rs` | `OutputMode` — 人类可读或 JSON 输出格式化 |
+
+**GUI 集成**（`src-tauri/src/commands/cli.rs`）：
+
+| 命令 | 职责 |
+|---|---|
+| `cli_get_status` | 返回打包/安装状态供设置界面使用 |
+| `cli_install` | 在 Unix 上创建符号链接，在 Windows 上复制二进制到安装路径 |
+| `cli_uninstall` | 删除已安装的 CLI 二进制文件 |
+
+## 通信协议
+
+### 传输格式
+
+- **传输层**：Unix Domain Socket 或命名管道
+- **帧格式**：换行符分隔 JSON（每行一个 JSON 对象，以 `\n` 结尾）
+- **编码**：UTF-8
+
+### JSON-RPC 2.0
+
+请求示例：
+
+```json
+{"id": 1, "method": "status", "params": {}}
+```
+
+成功响应：
+
+```json
+{"id": 1, "result": {"version": "0.21.0", "sessions": 5, "connections": {"ssh": 3, "local": 2}, "pid": 12345}}
+```
+
+错误响应：
+
+```json
+{"id": 1, "error": {"code": -32601, "message": "Method not found: foo"}}
+```
+
+### 错误码
+
+| 错误码 | 常量 | 含义 |
+|---|---|---|
+| `-32600` | `ERR_INVALID_REQUEST` | JSON-RPC 请求格式错误 |
+| `-32601` | `ERR_METHOD_NOT_FOUND` | 未知方法名 |
+| `-32602` | `ERR_INVALID_PARAMS` | 方法参数无效 |
+| `-32603` | `ERR_INTERNAL` | 内部服务器错误 |
+| `1001` | `ERR_NOT_CONNECTED` | 无活跃连接（保留） |
+| `1003` | `ERR_TIMEOUT` | 操作超时（保留） |
+
+## 可用方法（8 个）
+
+### `status`
+
+返回 OxideTerm 实例的状态摘要。
+
+**参数**：`{}`
+
+**响应**：
+```json
+{
+  "version": "0.21.0",
+  "sessions": 5,
+  "connections": {
+    "ssh": 3,
+    "local": 2
+  },
+  "pid": 12345
+}
+```
+
+### `list_saved_connections`
+
+返回所有已保存的连接配置（来自 `connections.json`）。
+
+**参数**：`{}`
+
+**响应**：
+```json
+[
+  {
+    "name": "prod-server",
+    "host": "10.0.1.5",
+    "port": 22,
+    "username": "deploy",
+    "auth_type": "key"
+  }
+]
+```
+
+> 注意：响应中永远不包含密码和私钥内容。
+
+### `list_sessions`
+
+返回 `SessionRegistry` 中所有活跃会话。
+
+**参数**：`{}`
+
+**响应**：
+```json
+[
+  {
+    "id": "abc123...",
+    "name": "prod-server",
+    "host": "10.0.1.5",
+    "state": "active",
+    "uptime_secs": 3600
+  }
+]
+```
+
+### `list_active_connections`
+
+返回 `SshConnectionRegistry` 中所有活跃 SSH 连接。
+
+**参数**：`{}`
+
+**响应**：
+```json
+[
+  {
+    "id": "conn-456...",
+    "host": "10.0.1.5",
+    "port": 22,
+    "username": "deploy",
+    "state": "active",
+    "ref_count": 2
+  }
+]
+```
+
+### `list_forwards`
+
+列出端口转发规则，可按会话过滤。
+
+**参数**：`{ "session_id": "abc123" }` 或 `{}`（列出所有会话的转发）
+
+**响应**：
+```json
+[
+  {
+    "session_id": "abc123...",
+    "id": "fwd-456...",
+    "forward_type": "local",
+    "bind_address": "127.0.0.1",
+    "bind_port": 8080,
+    "target_host": "localhost",
+    "target_port": 80,
+    "status": "active",
+    "description": "Web server"
+  }
+]
+```
+
+### `health`
+
+获取连接健康状态。
+
+**参数**：`{ "session_id": "abc123" }`（单个会话）或 `{}`（所有会话）
+
+**单个会话响应**：
+```json
+{
+  "session_id": "abc123...",
+  "status": "healthy",
+  "latency_ms": 42,
+  "message": "Connected • 42ms"
+}
+```
+
+**所有会话响应**：
+```json
+{
+  "abc123...": {
+    "session_id": "abc123...",
+    "status": "healthy",
+    "latency_ms": 42,
+    "message": "Connected • 42ms"
+  },
+  "def456...": {
+    "session_id": "def456...",
+    "status": "degraded",
+    "latency_ms": 350,
+    "message": "High latency: 350ms"
+  }
+}
+```
+
+> 健康状态枚举值：`healthy`、`degraded`、`unresponsive`、`disconnected`、`unknown`
+
+### `disconnect`
+
+断开指定会话。支持按会话 ID 或名称匹配。
+
+**参数**：`{ "target": "abc123" }` 或 `{ "target": "prod-server" }`
+
+**响应**：
+```json
+{
+  "success": true,
+  "session_id": "abc123..."
+}
+```
+
+> 断开操作会依次执行：持久化终端缓冲区 → 停止端口转发 → 关闭 SSH 会话 → 清理 WebSocket 桥接 → 清理 SFTP 缓存 → 清理健康检查器 → 释放连接池。
+
+### `ping`
+
+连通性检查，立即返回。
+
+**参数**：`{}`
+
+**响应**：
+```json
+{"pong": true}
+```
+
+## CLI 使用说明
+
+### 安装
+
+CLI 工具已捆绑在 OxideTerm 应用包内，安装步骤：
+
+1. 打开 OxideTerm → 设置 → 通用
+2. 找到 **CLI 伴侣工具** 区块
+3. 点击 **安装**
+
+这将在 macOS/Linux 上创建符号链接，在 Windows 上复制二进制文件到安装路径。
+
+**安装路径：**
+- macOS/Linux：`~/.local/bin/oxt`
+- Windows：`%LOCALAPPDATA%\OxideTerm\bin\oxt.exe`
+
+请确保安装目录已添加到 `$PATH`。
+
+### 命令
+
+```bash
+# 查看 OxideTerm 状态
+oxt status
+
+# 列出已保存的连接
+oxt list connections
+
+# 列出活跃会话
+oxt list sessions
+
+# 列出所有端口转发
+oxt list forwards
+
+# 列出指定会话的端口转发
+oxt list forwards <session-id>
+
+# 查看所有会话健康状态
+oxt health
+
+# 查看指定会话健康状态
+oxt health <session-id>
+
+# 断开会话（按 ID 或名称）
+oxt disconnect <session-id-or-name>
+
+# 连通性检查
+oxt ping
+
+# 显示版本
+oxt version
+
+# 生成 Shell 补全脚本
+oxt completions bash
+oxt completions zsh
+oxt completions fish
+oxt completions powershell
+```
+
+### 全局参数
+
+| 参数 | 默认值 | 说明 |
+|---|---|---|
+| `--json` | 自动检测 | 强制 JSON 输出（默认：管道时输出 JSON，终端时输出人类可读格式） |
+| `--timeout <ms>` | `30000` | IPC 超时时间（毫秒） |
+| `--socket <path>` | 平台默认值 | 自定义 socket/管道路径（用于调试） |
+
+### 输出模式
+
+CLI 会自动检测 stdout 是否为终端：
+
+- **终端** → 人类可读的格式化表格
+- **管道/重定向** → 紧凑 JSON（单行）
+
+使用 `--json` 可强制始终输出 JSON。
+
+### 示例
+
+```bash
+# 人类可读格式的状态信息
+$ oxt status
+OxideTerm v0.21.0
+  Sessions:      5 active
+  Connections:   3 SSH, 2 local
+
+# JSON 格式输出（适合脚本使用）
+$ oxt status --json
+{"version":"0.21.0","sessions":5,"connections":{"ssh":3,"local":2},"pid":12345}
+
+# 在脚本中列出连接
+$ oxt list connections --json | jq '.[].host'
+"10.0.1.5"
+"192.168.1.100"
+
+# 查看所有会话健康状态
+$ oxt health
+  SESSION        STATUS         LATENCY    MESSAGE
+  abc123de...    healthy        42ms       Connected • 42ms
+  def456gh...    degraded       350ms      High latency: 350ms
+
+# 在监控脚本中检查是否有不健康的会话
+$ oxt health --json | jq 'to_entries[] | select(.value.status != "healthy")'
+
+# 列出端口转发
+$ oxt list forwards
+  SESSION    TYPE     BIND                     TARGET                   STATUS     DESC
+  abc123de   local    127.0.0.1:8080           localhost:80             active     Web server
+  abc123de   dynamic  127.0.0.1:1080           SOCKS5                   active     SOCKS5 Proxy
+
+# 断开会话（按名称）
+$ oxt disconnect prod-server
+Disconnected session: abc123...
+
+# 检查 OxideTerm 是否正在运行
+$ oxt ping && echo "正在运行" || echo "未运行"
+
+# 生成 zsh 补全并安装
+$ oxt completions zsh > ~/.zfunc/_oxt
+
+# 自定义超时时间
+$ oxt status --timeout 5000
+```
+
+### 环境变量
+
+| 变量 | 平台 | 说明 |
+|---|---|---|
+| `OXIDETERM_SOCK` | macOS/Linux | 覆盖默认 socket 路径 |
+| `OXIDETERM_PIPE` | Windows | 覆盖默认命名管道路径 |
+
+## 安全性
+
+### IPC 传输安全
+
+- **Unix Socket**：创建于 `~/.oxideterm/oxt.sock`，权限为 `0o600`（仅所有者可读写）
+- **命名管道**：`\\.\pipe\OxideTerm-CLI-{username}`——作用域限定于当前用户
+- **过期 socket 检测**：启动时服务端会探测已存在的 socket。若不可达则删除过期 socket；若可达则启动失败并提示「另一个 OxideTerm 实例正在运行」。
+
+### 资源限制
+
+| 限制项 | 数值 | 目的 |
+|---|---|---|
+| 最大并发连接数 | 16 | 防止资源耗尽（Semaphore 信号量） |
+| 最大请求大小 | 1 MB | 有界行读取，防止内存滥用 |
+| 最大响应大小 | 4 MB | 客户端 `.take()` 限制 |
+| 空闲超时 | 60 秒 | 断开不活跃的客户端 |
+
+### 数据暴露原则
+
+- 任何 RPC 方法**均不**返回密码
+- `list_saved_connections` 只暴露私钥文件路径，不包含私钥内容
+- IPC 服务端仅绑定到本地 IPC，不开放任何网络可访问端口
+
+## 构建与分发
+
+### 本地构建
+
+```bash
+# 编译检查
+cd cli && cargo check
+
+# 正式构建（体积优化）
+cd cli && cargo build --release
+```
+
+Release 配置使用 `lto = true`、`strip = true`、`opt-level = "z"`，最终二进制约 1 MB。
+
+### CI 集成
+
+CLI 在 GitHub Actions 中自动为全部 6 个平台目标构建并打包：
+
+1. **构建步骤**：在 `cli/` 目录执行 `cargo build --release --target ${{ matrix.target }}`
+2. **复制**：二进制放入 `src-tauri/cli-bin/`
+3. **打包**：`TAURI_CONFIG` 环境变量动态将 `cli-bin/oxt`（或 `oxt.exe`）注入 Tauri 资源列表
+4. **分发**：Tauri 将 CLI 二进制包含在最终的 `.app` / `.deb` / `.exe` 安装包中
+
+采用 `TAURI_CONFIG` 方式可以避免修改静态的 `tauri.conf.json`，本地 `pnpm tauri dev` 无需 CLI 二进制即可正常运行。
+
+### 支持的目标平台
+
+| 平台 | 构建目标 | 二进制名 |
+|---|---|---|
+| macOS（ARM） | `aarch64-apple-darwin` | `oxt` |
+| macOS（Intel） | `x86_64-apple-darwin` | `oxt` |
+| Linux（x64） | `x86_64-unknown-linux-gnu` | `oxt` |
+| Linux（ARM） | `aarch64-unknown-linux-gnu` | `oxt` |
+| Windows（x64） | `x86_64-pc-windows-msvc` | `oxt.exe` |
+| Windows（ARM） | `aarch64-pc-windows-msvc` | `oxt.exe` |
+
+### 版本同步
+
+CLI 版本通过 `pnpm version:bump` 与 OxideTerm 保持同步，该脚本会同步更新 `cli/Cargo.toml`、`package.json`、`src-tauri/Cargo.toml` 和 `src-tauri/tauri.conf.json`。
+
+## GUI 集成
+
+### 设置界面
+
+CLI 伴侣工具区块位于 设置 → 通用：
+
+- **状态徽章**：显示「已安装」、「未安装」或「未打包」
+- **安装按钮**：将内置 CLI 符号链接/复制到 `~/.local/bin/oxt`
+- **卸载按钮**：删除已安装的 CLI 二进制文件
+- **自动检测**：打开「通用」选项卡时自动刷新状态
+
+### Tauri 命令
+
+| IPC 命令 | 说明 |
+|---|---|
+| `cli_get_status` | 返回 `{ bundled: bool, installed: bool, install_path: string }` |
+| `cli_install` | 将内置资源中的 CLI 安装到安装路径 |
+| `cli_uninstall` | 删除已安装的 CLI 二进制文件 |
+
+### 资源解析顺序
+
+`find_bundled_cli()` 按以下顺序查找 CLI 二进制：
+
+1. Tauri 资源路径：`cli-bin/{binary_name}`（来自 `TAURI_CONFIG` 注入）
+2. 直接资源路径：`{binary_name}`（备用）
+3. 主程序同目录：`{exe_dir}/{binary_name}`（开发环境备用）
+
+## 服务端生命周期
+
+### 启动
+
+CLI 服务端在 OxideTerm 的 Tauri `setup` 回调中自动启动：
+
+```
+应用启动 → setup() → CliServer::start(app_handle) → 生成 accept 循环
+```
+
+启动失败不影响主程序：若 IPC 服务端绑定失败（例如另一个实例正在运行），GUI 照常运行，错误仅记录日志。
+
+### 关闭
+
+应用退出时，CLI 服务端优雅关闭：
+
+```
+应用退出 → server.shutdown() → oneshot 信号 → accept 循环退出 → socket 清理
+```
+
+关闭采用 `Mutex<Option<oneshot::Sender>>` 模式，确保单次信号的可靠传递。
+
+### 连接处理
+
+每个 CLI 连接在独立的 Tokio 任务中运行：
+
+```
+接受连接 → Semaphore 许可 → 生成任务 → 读取/分发/响应循环 → 释放许可
+```
+
+Semaphore 将并发连接数限制为 16，超出的连接会被立即拒绝。
+
+## Shell 补全
+
+`oxt` 通过 `clap_complete` 内置了 Shell 补全脚本生成功能，支持 bash、zsh、fish 和 PowerShell。
+
+### 安装补全
+
+**Bash**：
+```bash
+oxt completions bash > ~/.local/share/bash-completion/completions/oxt
+```
+
+**Zsh**：
+```bash
+# 确保 ~/.zfunc 在 fpath 中（在 .zshrc 中添加 fpath=(~/.zfunc $fpath)）
+oxt completions zsh > ~/.zfunc/_oxt
+```
+
+**Fish**：
+```bash
+oxt completions fish > ~/.config/fish/completions/oxt.fish
+```
+
+**PowerShell**：
+```powershell
+oxt completions powershell >> $PROFILE
+```
+
+安装后重新加载 Shell 即可使用 Tab 补全。
+
+## 未来规划
+
+后续版本可能新增的功能：
+
+- `oxt connect <name>` — 从命令行打开 SSH 会话
+- `oxt exec <name> <command>` — 在远程主机上执行命令
+- `oxt forward add/remove` — 从命令行管理端口转发
+- `oxt transfer <name> <local> <remote>` — SFTP 文件传输
+- `oxt config list/get/set` — 管理连接配置
+- 服务端主动推送通知（事件流）
+- 动态 Shell 补全（实时查询连接名、会话 ID）

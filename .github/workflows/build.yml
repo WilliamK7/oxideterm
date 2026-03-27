@@ -49,7 +49,9 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: |
+            ./src-tauri -> target
+            ./cli -> target
           # 为不同的编译目标使用不同的缓存（不包含 commit hash）
           key: ${{ matrix.platform }}-${{ matrix.target }}
           # 编译失败时不保存损坏的缓存
@@ -123,12 +125,29 @@ jobs:
           echo "$NOTES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      - name: Build CLI companion
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd cli
+          cargo build --release --target ${{ matrix.target }}
+          mkdir -p ../src-tauri/cli-bin
+          if [[ "${{ matrix.platform }}" == *"windows"* ]]; then
+            cp "target/${{ matrix.target }}/release/oxt.exe" ../src-tauri/cli-bin/oxt.exe
+            echo 'TAURI_CLI_RESOURCE=cli-bin/oxt.exe' >> $GITHUB_ENV
+          else
+            cp "target/${{ matrix.target }}/release/oxt" ../src-tauri/cli-bin/oxt
+            echo 'TAURI_CLI_RESOURCE=cli-bin/oxt' >> $GITHUB_ENV
+          fi
+          ls -la ../src-tauri/cli-bin/
+
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_CONFIG: '{"bundle":{"resources":["agents/oxideterm-agent-*-linux-musl","${{ env.TAURI_CLI_RESOURCE }}"]}}'
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'OxideTerm ${{ github.ref_name }}'

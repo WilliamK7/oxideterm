@@ -56,6 +56,10 @@ target/
 # Agent build artifacts (source compilation cache)
 agent/target/
 
+# CLI build artifacts
+cli/target/
+src-tauri/cli-bin/
+
 # Node
 # Note: package-lock.json should be committed for consistent builds
 yarn.lock

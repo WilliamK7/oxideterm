@@ -60,7 +60,15 @@
       "data_directory_reset": "Data directory reset to default. Restart the app to apply.",
       "data_directory_restart_notice": "Changing the data directory requires an app restart. Existing data is not automatically migrated.",
       "data_directory_conflict": "Existing Data Found",
-      "data_directory_conflict_detail": "The selected directory already contains OxideTerm data files: {{files}}. These files may be overwritten. Continue?"
+      "data_directory_conflict_detail": "The selected directory already contains OxideTerm data files: {{files}}. These files may be overwritten. Continue?",
+      "cli_companion": "CLI Companion",
+      "cli_tool": "CLI Tool",
+      "cli_tool_hint": "Install the oxt CLI to manage connections from your terminal",
+      "cli_installed": "Installed",
+      "cli_not_installed": "Not installed",
+      "cli_install": "Install",
+      "cli_uninstall": "Uninstall",
+      "cli_not_bundled": "CLI binary is not included in this build"
     },
     "terminal": {
       "title": "Terminal Settings",

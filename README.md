@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.20.3-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.21.0-blue" alt="Version">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue" alt="Platform">
   <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial-blueviolet" alt="License">
   <img src="https://img.shields.io/badge/rust-1.75+-orange" alt="Rust">
@@ -320,6 +320,28 @@ Frontend adopts a **Multi-Store** pattern (16 stores) to handle drastically diff
 
 Despite different state sources, rendering logic is unified through `TerminalView` and `IdeView` components.
 
+### 🖥️ CLI Companion — `oxt`
+
+A standalone command-line tool that communicates with the running OxideTerm GUI via IPC:
+
+- **Protocol**: JSON-RPC 2.0 over Unix Domain Socket (macOS/Linux) or Named Pipe (Windows)
+- **Zero dependency on GUI code**: separate Rust binary (~1 MB), connects to the IPC server started by OxideTerm
+- **Commands**: `oxt status`, `oxt list connections`, `oxt list sessions`, `oxt ping`
+- **Output modes**: human-readable tables (auto-detected) or `--json` for scripting
+- **Bundled with GUI**: distributed inside the app package, installable to `~/.local/bin/` via Settings
+- **Security**: 16 concurrent connection limit, 1 MB request size cap, 60s idle timeout, owner-only socket permissions
+
+```bash
+$ oxt status
+OxideTerm v0.20.3 (PID 12345)
+  SSH connections: 3
+  Local terminals: 2
+  Active sessions: 5
+
+$ oxt list connections --json
+[{"name": "prod-server", "host": "10.0.1.5", "port": 22, ...}]
+```
+
 ---
 
 ## Tech Stack
@@ -342,6 +364,7 @@ Despite different state sources, rendering logic is unified through `TerminalVie
 | **WebSocket** | tokio-tungstenite 0.24 | Async WebSocket for terminal data plane |
 | **Protocol** | Wire Protocol v1 | Binary `[Type:1][Length:4][Payload:n]` over WebSocket |
 | **Plugins** | ESM Runtime | Frozen PluginContext + 24 UI Kit components |
+| **CLI** | oxide-cli | JSON-RPC 2.0 over Unix Socket / Named Pipe |
 
 ---
 
@@ -358,6 +381,7 @@ Despite different state sources, rendering logic is unified through `TerminalVie
 | **AI** | Inline panel + sidebar chat, streaming SSE, code insertion, 40+ tool use, MCP server integration, multi-source context, RAG knowledge base, OpenAI/Ollama/DeepSeek |
 | **Plugins** | Runtime ESM loading, 8 API namespaces, 24 UI Kit, sandboxed, circuit breaker |
 | **WSL Graphics** ⚠️ | Built-in VNC viewer (Experimental): Desktop mode (9 DEs) + App mode (single GUI app), WSLg detection, Xtigervnc + noVNC, reconnect, feature-gated |
+| **CLI** | `oxt` companion tool, JSON-RPC IPC, status/list/ping, human + JSON output, bundled install |
 | **Security** | .oxide encryption, OS keychain, `zeroize` memory, host key TOFU |
 | **i18n** | EN, 简体中文, 繁體中文, 日本語, FR, DE, ES, IT, 한국어, PT-BR, VI |
 
@@ -514,8 +538,16 @@ OxideTerm/
 │       ├── sftp/                   #   SFTP implementation
 │       ├── config/                 #   Vault, keychain, SSH config
 │       ├── oxide_file/             #   .oxide encryption (ChaCha20)
+│       ├── cli_server/             #   CLI IPC server (JSON-RPC)
 │       ├── commands/               #   24 Tauri IPC command modules
 │       └── state/                  #   Global state types
+│
+├── cli/                            # CLI companion — `oxide` binary
+│   └── src/
+│       ├── main.rs                 #   Clap CLI entry point
+│       ├── connect.rs              #   IPC client (Unix Socket / Named Pipe)
+│       ├── protocol.rs             #   JSON-RPC request/response types
+│       └── output.rs               #   Human / JSON output formatting
 │
 └── docs/                           # 27+ architecture & feature docs
 ```

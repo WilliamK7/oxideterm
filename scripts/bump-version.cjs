@@ -9,6 +9,7 @@
  * This script updates version numbers in:
  *   - package.json
  *   - src-tauri/Cargo.toml
+ *   - cli/Cargo.toml
  *   - src-tauri/tauri.conf.json
  *   - README.md and docs/readme/README.*.md (optional badges)
  *   - website/index.html (hero badge, figcaption, footer)
@@ -23,6 +24,7 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const FILES = {
   packageJson: path.join(ROOT_DIR, 'package.json'),
   cargoToml: path.join(ROOT_DIR, 'src-tauri', 'Cargo.toml'),
+  cliCargoToml: path.join(ROOT_DIR, 'cli', 'Cargo.toml'),
   tauriConf: path.join(ROOT_DIR, 'src-tauri', 'tauri.conf.json'),
   readme: path.join(ROOT_DIR, 'README.md'),
   readmeZhHans: path.join(ROOT_DIR, 'docs', 'readme', 'README.zh-Hans.md'),
@@ -74,6 +76,24 @@ function updateCargoToml(version) {
     }
   }
   fs.writeFileSync(FILES.cargoToml, lines.join('\n'));
+  return found;
+}
+
+function updateCliCargoToml(version) {
+  if (!fs.existsSync(FILES.cliCargoToml)) {
+    return false;
+  }
+  let content = fs.readFileSync(FILES.cliCargoToml, 'utf8');
+  const lines = content.split('\n');
+  let found = false;
+  for (let i = 0; i < lines.length; i++) {
+    if (!found && lines[i].match(/^version\s*=\s*"/)) {
+      lines[i] = `version = "${version}"`;
+      found = true;
+      break;
+    }
+  }
+  fs.writeFileSync(FILES.cliCargoToml, lines.join('\n'));
   return found;
 }
 
@@ -164,6 +184,14 @@ Options:
     updateCargoToml(version);
   }
   updates.push({ file: 'src-tauri/Cargo.toml', status: '✅' });
+
+  // Update CLI Cargo.toml
+  if (!dryRun) {
+    const updated = updateCliCargoToml(version);
+    updates.push({ file: 'cli/Cargo.toml', status: updated ? '✅' : '⏭️ (not found)' });
+  } else {
+    updates.push({ file: 'cli/Cargo.toml', status: '🔍' });
+  }
 
   // Update tauri.conf.json
   if (!dryRun) {

@@ -31,7 +31,7 @@ import {
     SelectLabel,
     SelectSeparator
 } from '../ui/select';
-import { Monitor, Key, Terminal as TerminalIcon, Shield, Plus, Trash2, FolderInput, Sparkles, Square, HardDrive, HelpCircle, Github, ExternalLink, Keyboard, RefreshCw, ImageIcon, X, Code2, WifiOff, Download, Upload, Network, ArrowLeftRight, Settings, Folder, ListTree, Rocket, Puzzle, Activity, Loader2, CheckCircle2, ArrowDownToLine, RotateCw, Wrench, FileText, Pen, FolderOpen, Search, GitBranch, Radio, CirclePlus, CircleStop, FolderSearch, FileCode, Info, MousePointer2, FlaskConical, BookOpen, SkipForward, ArrowRight } from 'lucide-react';
+import { Monitor, Key, Terminal as TerminalIcon, Shield, Plus, Trash2, FolderInput, Sparkles, Square, HardDrive, HelpCircle, Github, ExternalLink, Keyboard, RefreshCw, ImageIcon, X, Code2, WifiOff, Download, Upload, Network, ArrowLeftRight, Settings, Folder, ListTree, Rocket, Puzzle, Activity, Loader2, CheckCircle2, ArrowDownToLine, RotateCw, Wrench, FileText, Pen, FolderOpen, Search, GitBranch, Radio, CirclePlus, CircleStop, FolderSearch, FileCode, Info, MousePointer2, FlaskConical, BookOpen, SkipForward, ArrowRight, TerminalSquare } from 'lucide-react';
 import { api } from '../../lib/api';
 import { TOOL_GROUPS, WRITE_TOOLS, EXPERIMENTAL_TOOLS } from '../../lib/ai/tools';
 import { McpServersPanel } from './McpServersPanel';
@@ -1101,12 +1101,21 @@ export const SettingsView = () => {
     const [dataDirInfo, setDataDirInfo] = useState<DataDirInfo | null>(null);
     const [dataDirLoading, setDataDirLoading] = useState(false);
 
+    // CLI companion state
+    const [cliStatus, setCliStatus] = useState<{ bundled: boolean; installed: boolean; install_path: string | null; bundle_path: string | null } | null>(null);
+    const [cliLoading, setCliLoading] = useState(false);
+
     useEffect(() => {
         if (activeTab === 'general') {
             api.getDataDirectory()
                 .then(setDataDirInfo)
                 .catch((e) => {
                     console.error('Failed to load data directory info:', e);
+                });
+            api.cliGetStatus()
+                .then(setCliStatus)
+                .catch((e) => {
+                    console.error('Failed to load CLI status:', e);
                 });
         } else if (activeTab === 'ssh') {
             api.checkSshKeys()
@@ -1479,6 +1488,91 @@ export const SettingsView = () => {
                                     <p className="text-xs text-yellow-500">
                                         {t('settings_view.general.data_directory_restart_notice')}
                                     </p>
+                                </div>
+                            </div>
+
+                            {/* CLI Companion */}
+                            <div className="rounded-lg border border-theme-border bg-theme-bg-panel/50 p-5">
+                                <h4 className="text-sm font-medium text-theme-text mb-4 uppercase tracking-wider">
+                                    {t('settings_view.general.cli_companion')}
+                                </h4>
+                                <div className="space-y-4">
+                                    <div>
+                                        <Label className="text-theme-text">{t('settings_view.general.cli_tool')}</Label>
+                                        <p className="text-xs text-theme-text-muted mt-0.5">{t('settings_view.general.cli_tool_hint')}</p>
+                                    </div>
+
+                                    {cliStatus && (
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <TerminalSquare className="h-4 w-4 text-theme-text-muted" />
+                                                        <span className="text-sm text-theme-text font-mono">oxide</span>
+                                                        {cliStatus.installed ? (
+                                                            <span className="text-xs px-1.5 py-0.5 rounded bg-green-500/10 text-green-500">{t('settings_view.general.cli_installed')}</span>
+                                                        ) : (
+                                                            <span className="text-xs px-1.5 py-0.5 rounded bg-theme-bg-subtle text-theme-text-muted">{t('settings_view.general.cli_not_installed')}</span>
+                                                        )}
+                                                    </div>
+                                                    {cliStatus.install_path && (
+                                                        <code className="text-xs text-theme-text-muted font-mono">{cliStatus.install_path}</code>
+                                                    )}
+                                                </div>
+                                                {cliStatus.bundled && !cliStatus.installed && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        disabled={cliLoading}
+                                                        onClick={async () => {
+                                                            setCliLoading(true);
+                                                            try {
+                                                                const msg = await api.cliInstall();
+                                                                toastSuccess(msg);
+                                                                const status = await api.cliGetStatus();
+                                                                setCliStatus(status);
+                                                            } catch (e) {
+                                                                toastError(String(e));
+                                                            } finally {
+                                                                setCliLoading(false);
+                                                            }
+                                                        }}
+                                                    >
+                                                        {cliLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <ArrowDownToLine className="h-3 w-3 mr-1" />}
+                                                        {t('settings_view.general.cli_install')}
+                                                    </Button>
+                                                )}
+                                                {cliStatus.installed && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        disabled={cliLoading}
+                                                        onClick={async () => {
+                                                            setCliLoading(true);
+                                                            try {
+                                                                const msg = await api.cliUninstall();
+                                                                toastSuccess(msg);
+                                                                const status = await api.cliGetStatus();
+                                                                setCliStatus(status);
+                                                            } catch (e) {
+                                                                toastError(String(e));
+                                                            } finally {
+                                                                setCliLoading(false);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Trash2 className="h-3 w-3 mr-1" />
+                                                        {t('settings_view.general.cli_uninstall')}
+                                                    </Button>
+                                                )}
+                                            </div>
+                                            {!cliStatus.bundled && (
+                                                <p className="text-xs text-theme-text-muted">
+                                                    {t('settings_view.general.cli_not_bundled')}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

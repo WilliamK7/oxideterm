@@ -60,7 +60,15 @@
       "data_directory_reset": "데이터 디렉토리가 기본값으로 초기화되었습니다. 앱을 다시 시작하여 적용하세요.",
       "data_directory_restart_notice": "데이터 디렉토리를 변경하려면 앱을 다시 시작해야 합니다. 기존 데이터는 자동으로 마이그레이션되지 않습니다.",
       "data_directory_conflict": "기존 데이터 발견",
-      "data_directory_conflict_detail": "선택한 디렉토리에 이미 OxideTerm 데이터 파일이 있습니다: {{files}}. 이 파일들이 덮어쓰여질 수 있습니다. 계속하시겠습니까?"
+      "data_directory_conflict_detail": "선택한 디렉토리에 이미 OxideTerm 데이터 파일이 있습니다: {{files}}. 이 파일들이 덮어쓰여질 수 있습니다. 계속하시겠습니까?",
+      "cli_companion": "CLI 도구",
+      "cli_tool": "CLI 도구",
+      "cli_tool_hint": "oxt CLI를 설치하여 터미널에서 연결을 관리하세요",
+      "cli_installed": "설치됨",
+      "cli_not_installed": "미설치",
+      "cli_install": "설치",
+      "cli_uninstall": "제거",
+      "cli_not_bundled": "이 빌드에는 CLI 바이너리가 포함되어 있지 않습니다"
     },
     "terminal": {
       "title": "터미널 설정",
