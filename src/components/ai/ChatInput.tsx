@@ -45,6 +45,12 @@ export function ChatInput({ onSend, onStop, isLoading, disabled, externalValue, 
   const [acVisible, setAcVisible] = useState(false);
   const acRef = useRef<HTMLDivElement>(null);
 
+  // Auto-focus textarea when sidebar opens (component mounts only when sidebar is visible)
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => textareaRef.current?.focus());
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   // Sync with external value (from quick prompts)
   useEffect(() => {
     if (externalValue !== undefined && externalValue !== input) {

@@ -269,7 +269,31 @@ const FileList = ({
       onRename(selectedFiles[0]);
       return;
     }
-  }, [active, selected, files, isRemote, path, onNavigate, onPreview, onTransfer, onDelete, onRename, setSelected]);
+
+    // Arrow Up/Down: Navigate file list
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (files.length === 0) return;
+      const currentName = selectedFiles.length === 1 ? selectedFiles[0] : null;
+      const currentIndex = currentName ? files.findIndex(f => f.name === currentName) : -1;
+      let nextIndex: number;
+      if (e.key === 'ArrowDown') {
+        nextIndex = currentIndex < files.length - 1 ? currentIndex + 1 : 0;
+      } else {
+        nextIndex = currentIndex > 0 ? currentIndex - 1 : files.length - 1;
+      }
+      const nextFile = files[nextIndex];
+      setSelected(new Set([nextFile.name]));
+      setLastSelected(nextFile.name);
+      // Scroll the selected item into view
+      const container = listRef.current;
+      if (container) {
+        const row = container.querySelector(`[data-filename="${CSS.escape(nextFile.name)}"]`) as HTMLElement | null;
+        row?.scrollIntoView({ block: 'nearest' });
+      }
+      return;
+    }
+  }, [active, selected, files, isRemote, path, onNavigate, onPreview, onTransfer, onDelete, onRename, setSelected, setLastSelected]);
 
   // Context menu handler
   const handleContextMenu = (e: React.MouseEvent, file?: FileInfo) => {
@@ -463,6 +487,7 @@ const FileList = ({
           return (
             <div 
               key={file.name}
+              data-filename={file.name}
               draggable
               onDragStart={(e) => {
                   e.dataTransfer.setData('application/json', JSON.stringify({

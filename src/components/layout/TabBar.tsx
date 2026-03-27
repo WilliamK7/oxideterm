@@ -540,6 +540,15 @@ export const TabBar = () => {
     updateScrollOverflow();
   }, [tabs.length, updateScrollOverflow]);
 
+  // Scroll active tab into view when it changes
+  useEffect(() => {
+    if (!activeTabId) return;
+    const el = tabRefsMap.current.get(activeTabId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+    }
+  }, [activeTabId]);
+
   // Handle wheel event - convert vertical scroll to horizontal
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     const container = scrollContainerRef.current;
@@ -685,7 +694,7 @@ export const TabBar = () => {
         <div
           ref={scrollContainerRef}
           onWheel={handleWheel}
-          className="h-full overflow-x-auto scrollbar-thin"
+          className="h-full overflow-x-auto scrollbar-thin scroll-smooth"
         >
         {/* 最内层（渲染层）：inline-flex 让子元素一行排列，不换行 */}
         <div className="inline-flex h-full">
