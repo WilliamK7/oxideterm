@@ -54,6 +54,21 @@ OxideTerm es una **aplicación de terminal multiplataforma** que unifica shells 
 
 ---
 
+## Capturas de pantalla
+
+<table>
+<tr>
+<td align="center"><strong>Terminal SSH + OxideSens AI</strong><br/><br/><img src="../screenshots/terminal/SSHTERMINAL.png" alt="Terminal SSH con barra lateral OxideSens AI" /></td>
+<td align="center"><strong>Gestor de archivos SFTP</strong><br/><br/><img src="../screenshots/sftp/sftp.png" alt="Gestor de archivos SFTP de doble panel" /></td>
+</tr>
+<tr>
+<td align="center"><strong>IDE integrado (CodeMirror 6)</strong><br/><br/><img src="../screenshots/miniIDE/miniide.png" alt="Modo IDE integrado con CodeMirror 6" /></td>
+<td align="center"><strong>Redirección de puertos inteligente</strong><br/><br/><img src="../screenshots/PORTFORWARD/PORTFORWARD.png" alt="Redirección de puertos con auto-detección" /></td>
+</tr>
+</table>
+
+---
+
 ## Arquitectura de un vistazo
 
 ```

@@ -54,6 +54,21 @@ OxideTerm là một **ứng dụng terminal đa nền tảng** kết hợp shell
 
 ---
 
+## Ảnh chụp màn hình
+
+<table>
+<tr>
+<td align="center"><strong>Terminal SSH + OxideSens AI</strong><br/><br/><img src="../screenshots/terminal/SSHTERMINAL.png" alt="Terminal SSH với thanh bên OxideSens AI" /></td>
+<td align="center"><strong>Quản lý tệp SFTP</strong><br/><br/><img src="../screenshots/sftp/sftp.png" alt="Quản lý tệp SFTP hai bảng" /></td>
+</tr>
+<tr>
+<td align="center"><strong>IDE tích hợp (CodeMirror 6)</strong><br/><br/><img src="../screenshots/miniIDE/miniide.png" alt="Chế độ IDE tích hợp với CodeMirror 6" /></td>
+<td align="center"><strong>Chuyển tiếp cổng thông minh</strong><br/><br/><img src="../screenshots/PORTFORWARD/PORTFORWARD.png" alt="Chuyển tiếp cổng với tự động phát hiện" /></td>
+</tr>
+</table>
+
+---
+
 ## Tổng quan Kiến trúc
 
 ```

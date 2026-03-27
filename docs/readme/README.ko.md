@@ -54,6 +54,21 @@ OxideTerm은 로컬 셸, 원격 SSH 세션, 파일 관리, 코드 편집, OxideS
 
 ---
 
+## 스크린샷
+
+<table>
+<tr>
+<td align="center"><strong>SSH 터미널 + OxideSens AI</strong><br/><br/><img src="../screenshots/terminal/SSHTERMINAL.png" alt="OxideSens AI 사이드바가 있는 SSH 터미널" /></td>
+<td align="center"><strong>SFTP 파일 관리자</strong><br/><br/><img src="../screenshots/sftp/sftp.png" alt="SFTP 듀얼 패널 파일 관리자" /></td>
+</tr>
+<tr>
+<td align="center"><strong>내장 IDE (CodeMirror 6)</strong><br/><br/><img src="../screenshots/miniIDE/miniide.png" alt="CodeMirror 6 내장 IDE 모드" /></td>
+<td align="center"><strong>스마트 포트 포워딩</strong><br/><br/><img src="../screenshots/PORTFORWARD/PORTFORWARD.png" alt="자동 감지 기능이 있는 스마트 포트 포워딩" /></td>
+</tr>
+</table>
+
+---
+
 ## 아키텍처 개요
 
 ```
