@@ -12,12 +12,13 @@ export interface TransferItem {
   localPath: string;
   remotePath: string;
   direction: TransferDirection;
-  size: number;           // Total bytes
+  size: number;           // Total bytes (0 = indeterminate/streaming)
   transferred: number;    // Bytes transferred
   state: TransferState;
   error?: string;
   startTime: number;      // Unix timestamp ms
   endTime?: number;       // Unix timestamp ms
+  backendSpeed?: number;  // Speed reported by backend (bytes/sec)
 }
 
 interface TransferStore {
@@ -25,8 +26,8 @@ interface TransferStore {
   transfers: Map<string, TransferItem>;
   
   // Actions
-  addTransfer: (transfer: Omit<TransferItem, 'transferred' | 'state' | 'startTime'>) => string;
-  updateProgress: (id: string, transferred: number, total: number) => void;
+  addTransfer: (transfer: Omit<TransferItem, 'transferred' | 'state' | 'startTime' | 'backendSpeed'>) => string;
+  updateProgress: (id: string, transferred: number, total: number, speed?: number) => void;
   setTransferState: (id: string, state: TransferState, error?: string) => void;
   removeTransfer: (id: string) => void;
   clearCompleted: () => void;
@@ -65,7 +66,7 @@ export const useTransferStore = create<TransferStore>((set, get) => ({
     return id;
   },
   
-  updateProgress: (id, transferred, total) => {
+  updateProgress: (id, transferred, total, speed) => {
     set((state) => {
       const transfer = state.transfers.get(id);
       if (!transfer) return state;
@@ -73,10 +74,12 @@ export const useTransferStore = create<TransferStore>((set, get) => ({
       const newTransfers = new Map(state.transfers);
       
       // Determine new state: preserve 'paused' state, otherwise set to completed/active
+      // When total=0 (streaming/indeterminate, e.g. tar download), never mark completed here;
+      // completion is driven by the sftp:complete event instead.
       let newState: TransferState;
       if (transfer.state === 'paused') {
         newState = 'paused'; // Keep paused state
-      } else if (transferred >= total) {
+      } else if (total > 0 && transferred >= total) {
         newState = 'completed';
       } else {
         newState = 'active';
@@ -85,9 +88,11 @@ export const useTransferStore = create<TransferStore>((set, get) => ({
       newTransfers.set(id, {
         ...transfer,
         transferred,
-        size: total,
+        // Only update size when total is known; preserve original size for indeterminate transfers
+        size: total > 0 ? total : transfer.size,
         state: newState,
         endTime: newState === 'completed' ? Date.now() : undefined,
+        backendSpeed: speed,
       });
       return { transfers: newTransfers };
     });
@@ -297,9 +302,13 @@ export const formatSpeed = (bytesPerSecond: number): string => {
   return `${formatBytes(bytesPerSecond)}/s`;
 };
 
-// Helper function to calculate speed from transfer
+// Helper function to calculate speed from transfer (uses backend speed if available)
 export const calculateSpeed = (transfer: TransferItem): number => {
-  if (transfer.state !== 'active' || transfer.transferred === 0) return 0;
+  if (transfer.state !== 'active') return 0;
+  // Prefer backend-reported speed (more accurate, sliding window)
+  if (transfer.backendSpeed != null && transfer.backendSpeed > 0) return transfer.backendSpeed;
+  // Fallback to frontend calculation
+  if (transfer.transferred === 0) return 0;
   const elapsed = (Date.now() - transfer.startTime) / 1000; // seconds
   if (elapsed <= 0) return 0;
   return transfer.transferred / elapsed;

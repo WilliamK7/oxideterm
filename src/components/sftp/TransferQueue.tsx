@@ -67,6 +67,8 @@ export const TransferQueue = ({ nodeId }: { nodeId: string }) => {
     loadIncomplete();
   }, [nodeId, isConnectionReady, nodeState.readiness]);
 
+  const isIndeterminate = (item: TransferItem): boolean => item.size === 0 && item.state === 'active';
+
   const getProgress = (item: TransferItem): number => {
     if (item.size === 0) return 0;
     return Math.round((item.transferred / item.size) * 100);
@@ -256,10 +258,23 @@ export const TransferQueue = ({ nodeId }: { nodeId: string }) => {
                      {item.name}
                  </div>
                  <div className="flex-1 flex flex-col gap-1">
-                     <Progress value={getProgress(item)} className="h-1.5" />
+                     <Progress 
+                       value={isIndeterminate(item) ? undefined : getProgress(item)} 
+                       indeterminate={isIndeterminate(item)}
+                       className="h-1.5" 
+                     />
                      <div className="flex justify-between text-[10px] text-zinc-500">
-                       <span>{formatBytes(item.transferred)} / {formatBytes(item.size)}</span>
-                       <span>{getProgress(item)}%</span>
+                       {isIndeterminate(item) ? (
+                         <>
+                           <span>{formatBytes(item.transferred)}</span>
+                           <span>{formatSpeed(calculateSpeed(item))}</span>
+                         </>
+                       ) : (
+                         <>
+                           <span>{formatBytes(item.transferred)} / {formatBytes(item.size)}</span>
+                           <span>{getProgress(item)}%</span>
+                         </>
+                       )}
                      </div>
                  </div>
                  <div className={`w-24 text-right text-xs font-mono ${

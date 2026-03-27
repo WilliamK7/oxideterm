@@ -641,6 +641,14 @@ const SFTPMediaPreview: React.FC<{
   );
 };
 
+// Module-level cache for tar capability probes, keyed by nodeId.
+// Survives component remounts (e.g. reconnect) without re-probing.
+type TarCompressionKind = 'zstd' | 'gzip' | 'none';
+const tarSupportCache = new Map<string, boolean>();
+const tarCompressionCache = new Map<string, TarCompressionKind>();
+const tarProbePromises = new Map<string, Promise<boolean>>();
+const tarCompressionProbePromises = new Map<string, Promise<TarCompressionKind>>();
+
 export const SFTPView = ({ nodeId }: { nodeId: string }) => {
   const { t } = useTranslation();
   const bgActive = useTabBgActive('sftp');
@@ -669,24 +677,6 @@ export const SFTPView = ({ nodeId }: { nodeId: string }) => {
   const [initRetryTick, setInitRetryTick] = useState(0);
   const initializingRef = useRef(false);
   const guardErrorNotifiedRef = useRef(false);
-
-  // Tar capability cache: null = not probed, true/false = result
-  const tarSupportRef = useRef<boolean | null>(null);
-  const tarProbingRef = useRef(false);
-  const tarProbePromiseRef = useRef<Promise<boolean> | null>(null);
-
-  // Tar compression capability cache: null = not probed
-  type TarCompressionKind = 'zstd' | 'gzip' | 'none';
-  const tarCompressionRef = useRef<TarCompressionKind | null>(null);
-  const tarCompressionProbePromiseRef = useRef<Promise<TarCompressionKind> | null>(null);
-
-  useEffect(() => {
-    tarSupportRef.current = null;
-    tarProbingRef.current = false;
-    tarProbePromiseRef.current = null;
-    tarCompressionRef.current = null;
-    tarCompressionProbePromiseRef.current = null;
-  }, [nodeId]);
 
   // Path input state for editable path bars
   const [localPathInput, setLocalPathInput] = useState('');
@@ -891,7 +881,12 @@ export const SFTPView = ({ nodeId }: { nodeId: string }) => {
 
   // Register SFTP context for AI sidebar awareness
   useEffect(() => {
-    return () => { unregisterSftpContext(nodeId); };
+    return () => {
+      unregisterSftpContext(nodeId);
+      // Clean up module-level tar probe caches for this node
+      tarSupportCache.delete(nodeId);
+      tarCompressionCache.delete(nodeId);
+    };
   }, [nodeId]);
 
   useEffect(() => {
@@ -1210,25 +1205,28 @@ export const SFTPView = ({ nodeId }: { nodeId: string }) => {
       listen<TransferProgressEvent>(`sftp:progress:${nodeId}`, (event) => {
         if (!mounted) return; // 组件已卸载，忽略事件
         
-        const { remote_path, local_path, transferred_bytes, total_bytes } = event.payload;
-        // Find matching transfer by path (normalize paths for comparison)
+        const { id, remote_path, local_path, transferred_bytes, total_bytes, speed } = event.payload;
+        // Prefer matching by transfer_id for accuracy; fall back to path matching
         const transfers = getAllTransfers();
         const normalizePath = (p: string) => p.replace(/\/+/g, '/').replace(/\/$/, '');
-        const normalizedRemote = normalizePath(remote_path);
-        const normalizedLocal = normalizePath(local_path);
         
-        const match = transfers.find(t => {
-          const tRemote = normalizePath(t.remotePath);
-          const tLocal = normalizePath(t.localPath);
-          return tRemote === normalizedRemote || tLocal === normalizedLocal ||
-                 normalizedRemote.endsWith(tRemote) || tRemote.endsWith(normalizedRemote) ||
-                 normalizedLocal.endsWith(tLocal) || tLocal.endsWith(normalizedLocal);
-        });
+        let match = transfers.find(t => t.id === id);
+        
+        if (!match) {
+          // Fallback: match by exact normalized paths
+          const normalizedRemote = normalizePath(remote_path);
+          const normalizedLocal = normalizePath(local_path);
+          match = transfers.find(t => {
+            const tRemote = normalizePath(t.remotePath);
+            const tLocal = normalizePath(t.localPath);
+            return tRemote === normalizedRemote || tLocal === normalizedLocal;
+          });
+        }
         
         if (match) {
-          updateProgress(match.id, transferred_bytes, total_bytes);
+          updateProgress(match.id, transferred_bytes, total_bytes, speed);
         } else {
-          console.log('[SFTP Progress] No match found for:', { remote_path, local_path, transfers: transfers.map(t => ({ remotePath: t.remotePath, localPath: t.localPath })) });
+          console.log('[SFTP Progress] No match found for:', { id, remote_path, local_path, transfers: transfers.map(t => ({ id: t.id, remotePath: t.remotePath, localPath: t.localPath })) });
         }
       }).then((fn) => {
         if (mounted) {
@@ -1296,49 +1294,47 @@ export const SFTPView = ({ nodeId }: { nodeId: string }) => {
     tid: string,
     dir: 'upload' | 'download'
   ) => {
-    // Lazy-probe tar support (deduplicated for concurrent transfers)
-    if (tarSupportRef.current === null) {
-      if (!tarProbePromiseRef.current) {
-        tarProbingRef.current = true;
-        tarProbePromiseRef.current = nodeSftpTarProbe(nid)
+    // Lazy-probe tar support (deduplicated for concurrent transfers, cached per nodeId)
+    if (!tarSupportCache.has(nid)) {
+      if (!tarProbePromises.has(nid)) {
+        tarProbePromises.set(nid, nodeSftpTarProbe(nid)
           .then((supported) => {
-            tarSupportRef.current = supported;
+            tarSupportCache.set(nid, supported);
             return supported;
           })
           .catch(() => {
-            tarSupportRef.current = false;
+            tarSupportCache.set(nid, false);
             return false;
           })
           .finally(() => {
-            tarProbingRef.current = false;
-            tarProbePromiseRef.current = null;
-          });
+            tarProbePromises.delete(nid);
+          }));
       }
 
-      tarSupportRef.current = await tarProbePromiseRef.current;
+      await tarProbePromises.get(nid);
     }
 
-    if (tarSupportRef.current) {
-      // Lazy-probe best compression (deduplicated)
-      if (tarCompressionRef.current === null) {
-        if (!tarCompressionProbePromiseRef.current) {
-          tarCompressionProbePromiseRef.current = nodeSftpTarCompressionProbe(nid)
+    if (tarSupportCache.get(nid)) {
+      // Lazy-probe best compression (deduplicated, cached per nodeId)
+      if (!tarCompressionCache.has(nid)) {
+        if (!tarCompressionProbePromises.has(nid)) {
+          tarCompressionProbePromises.set(nid, nodeSftpTarCompressionProbe(nid)
             .then((comp) => {
-              tarCompressionRef.current = comp;
+              tarCompressionCache.set(nid, comp);
               return comp;
             })
             .catch(() => {
-              tarCompressionRef.current = 'none';
+              tarCompressionCache.set(nid, 'none');
               return 'none' as TarCompressionKind;
             })
             .finally(() => {
-              tarCompressionProbePromiseRef.current = null;
-            });
+              tarCompressionProbePromises.delete(nid);
+            }));
         }
-        tarCompressionRef.current = await tarCompressionProbePromiseRef.current;
+        await tarCompressionProbePromises.get(nid);
       }
 
-      const comp = tarCompressionRef.current;
+      const comp = tarCompressionCache.get(nid) ?? 'none';
       // Tar fast path (with compression)
       if (dir === 'upload') {
         await nodeSftpTarUpload(nid, localFile, remoteFile, tid, comp);
