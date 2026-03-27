@@ -382,7 +382,7 @@ const PlanView = memo(({ task, allowSkip }: { task: AgentTask; allowSkip?: boole
                 key={i}
                 className={cn(
                   'flex items-start gap-2 text-xs py-1',
-                  isSkipped && 'text-zinc-500 line-through',
+                  isSkipped && 'text-theme-text-muted line-through',
                   !isSkipped && done && 'text-theme-text-muted line-through',
                   !isSkipped && active && 'text-theme-text font-medium',
                   !isSkipped && !done && !active && 'text-theme-text-muted',
@@ -390,7 +390,7 @@ const PlanView = memo(({ task, allowSkip }: { task: AgentTask; allowSkip?: boole
               >
                 <span className="mt-0.5">
                   {isSkipped ? (
-                    <X className="w-3.5 h-3.5 text-zinc-500" />
+                    <X className="w-3.5 h-3.5 text-theme-text-muted" />
                   ) : done ? (
                     <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
                   ) : active ? (
@@ -403,7 +403,7 @@ const PlanView = memo(({ task, allowSkip }: { task: AgentTask; allowSkip?: boole
                 {canSkip && (
                   <button
                     onClick={() => skipPlanStep(i)}
-                    className="text-[10px] text-zinc-400 hover:text-zinc-300 flex-shrink-0"
+                    className="text-[10px] text-theme-text-muted hover:text-theme-text flex-shrink-0"
                     title={t('agent.plan.skip_step')}
                   >
                     {t('agent.plan.skip_step')}
@@ -447,8 +447,8 @@ const StepEntry = memo(({ step }: { step: AgentStep }) => {
         step.status === 'completed' && 'border-green-500/40',
         step.status === 'running' && 'border-theme-accent',
         step.status === 'error' && 'border-red-500/40',
-        step.status === 'skipped' && 'border-zinc-500/40',
-        step.status === 'pending' && 'border-zinc-700/40',
+        step.status === 'skipped' && 'border-theme-border',
+        step.status === 'pending' && 'border-theme-border/40',
       )}
     >
       <div className="flex items-center gap-2">
@@ -563,7 +563,7 @@ const ApprovalBar = memo(() => {
               size="sm"
               variant="ghost"
               onClick={() => skipApproval(approval.id)}
-              className="h-6 px-1.5 text-zinc-400 hover:text-zinc-300"
+              className="h-6 px-1.5 text-theme-text-muted hover:text-theme-text"
               title={t('agent.approval.skip')}
             >
               <span className="text-[10px]">{t('agent.approval.skip')}</span>

@@ -90,9 +90,9 @@ function WordPreview({ arrayBuffer, filename }: { arrayBuffer: ArrayBuffer; file
   if (isLegacyFormat) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <FileText className="h-12 w-12 text-zinc-500" />
-        <p className="text-zinc-400">{t('fileManager.officeLegacyWordNotSupported', 'Legacy Word format (.doc) not supported')}</p>
-        <p className="text-sm text-zinc-500">{t('fileManager.officeConvertToDocx', 'Please convert to .docx or download to view')}</p>
+        <FileText className="h-12 w-12 text-theme-text-muted" />
+        <p className="text-theme-text-muted">{t('fileManager.officeLegacyWordNotSupported', 'Legacy Word format (.doc) not supported')}</p>
+        <p className="text-sm text-theme-text-muted">{t('fileManager.officeConvertToDocx', 'Please convert to .docx or download to view')}</p>
       </div>
     );
   }
@@ -121,7 +121,7 @@ function WordPreview({ arrayBuffer, filename }: { arrayBuffer: ArrayBuffer; file
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64 text-zinc-400 gap-2">
+      <div className="flex items-center justify-center h-64 text-theme-text-muted gap-2">
         <Loader2 className="h-5 w-5 animate-spin" />
         {t('fileManager.officeLoadingWord', 'Loading Word document...')}
       </div>
@@ -131,9 +131,9 @@ function WordPreview({ arrayBuffer, filename }: { arrayBuffer: ArrayBuffer; file
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <FileText className="h-12 w-12 text-zinc-500" />
-        <p className="text-zinc-400">{t('fileManager.officeFailedLoadWord', 'Failed to load Word document')}</p>
-        <p className="text-sm text-zinc-500">{error}</p>
+        <FileText className="h-12 w-12 text-theme-text-muted" />
+        <p className="text-theme-text-muted">{t('fileManager.officeFailedLoadWord', 'Failed to load Word document')}</p>
+        <p className="text-sm text-theme-text-muted">{error}</p>
       </div>
     );
   }
@@ -183,7 +183,7 @@ function ExcelPreview({ arrayBuffer, filename }: { arrayBuffer: ArrayBuffer; fil
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64 text-zinc-400 gap-2">
+      <div className="flex items-center justify-center h-64 text-theme-text-muted gap-2">
         <Loader2 className="h-5 w-5 animate-spin" />
         {t('fileManager.officeLoadingSpreadsheet', 'Loading spreadsheet...')}
       </div>
@@ -193,10 +193,10 @@ function ExcelPreview({ arrayBuffer, filename }: { arrayBuffer: ArrayBuffer; fil
   if (error || !workbook || !xlsxModule) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <Table className="h-12 w-12 text-zinc-500" />
-        <p className="text-zinc-400">{t('fileManager.officeFailedLoadSpreadsheet', 'Failed to load spreadsheet')}</p>
-        {error && <p className="text-sm text-zinc-500">{error}</p>}
-        <p className="text-xs text-zinc-600 mt-2">{t('fileManager.officeFileLabel', { defaultValue: 'File: {{filename}}', filename })}</p>
+        <Table className="h-12 w-12 text-theme-text-muted" />
+        <p className="text-theme-text-muted">{t('fileManager.officeFailedLoadSpreadsheet', 'Failed to load spreadsheet')}</p>
+        {error && <p className="text-sm text-theme-text-muted">{error}</p>}
+        <p className="text-xs text-theme-text-muted mt-2">{t('fileManager.officeFileLabel', { defaultValue: 'File: {{filename}}', filename })}</p>
       </div>
     );
   }
@@ -231,7 +231,7 @@ function ExcelPreview({ arrayBuffer, filename }: { arrayBuffer: ArrayBuffer; fil
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               index === activeSheet
                 ? 'border-theme-accent text-theme-accent'
-                : 'border-transparent text-zinc-400 hover:text-zinc-300'
+                : 'border-transparent text-theme-text-muted hover:text-theme-text'
             }`}
           >
             {name}
@@ -261,9 +261,9 @@ function PowerPointPreview({ filename }: { filename: string }) {
 
   return (
     <div className="flex flex-col items-center justify-center h-64 gap-4">
-      <FileJson className="h-12 w-12 text-zinc-500" />
-      <p className="text-zinc-400">{t('fileManager.officeFormatNotSupported', { defaultValue: '{{format}} preview not supported', format: formatName })}</p>
-      <p className="text-sm text-zinc-500">{t('fileManager.officeDownloadToView', { defaultValue: 'Please download {{filename}} to view', filename })}</p>
+      <FileJson className="h-12 w-12 text-theme-text-muted" />
+      <p className="text-theme-text-muted">{t('fileManager.officeFormatNotSupported', { defaultValue: '{{format}} preview not supported', format: formatName })}</p>
+      <p className="text-sm text-theme-text-muted">{t('fileManager.officeDownloadToView', { defaultValue: 'Please download {{filename}} to view', filename })}</p>
     </div>
   );
 }
@@ -311,7 +311,7 @@ export const OfficePreview: React.FC<OfficePreviewProps> = ({
   if (loading) {
     return (
       <div className={className}>
-        <div className="flex items-center justify-center h-64 text-zinc-400">
+        <div className="flex items-center justify-center h-64 text-theme-text-muted">
           {t('fileManager.officeLoadingDocument', 'Loading document...')}
         </div>
       </div>
@@ -322,9 +322,9 @@ export const OfficePreview: React.FC<OfficePreviewProps> = ({
     return (
       <div className={className}>
         <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <FileText className="h-12 w-12 text-zinc-500" />
-          <p className="text-zinc-400">{t('fileManager.officeFailedLoadDocument', 'Failed to load document')}</p>
-          {error && <p className="text-sm text-zinc-500">{error}</p>}
+          <FileText className="h-12 w-12 text-theme-text-muted" />
+          <p className="text-theme-text-muted">{t('fileManager.officeFailedLoadDocument', 'Failed to load document')}</p>
+          {error && <p className="text-sm text-theme-text-muted">{error}</p>}
         </div>
       </div>
     );
@@ -334,9 +334,9 @@ export const OfficePreview: React.FC<OfficePreviewProps> = ({
     return (
       <div className={className}>
         <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <FileJson className="h-12 w-12 text-zinc-500" />
-          <p className="text-zinc-400">{t('fileManager.officeUnsupportedType', 'Unsupported Office document type')}</p>
-          <p className="text-sm text-zinc-500">{mimeType}</p>
+          <FileJson className="h-12 w-12 text-theme-text-muted" />
+          <p className="text-theme-text-muted">{t('fileManager.officeUnsupportedType', 'Unsupported Office document type')}</p>
+          <p className="text-sm text-theme-text-muted">{mimeType}</p>
         </div>
       </div>
     );

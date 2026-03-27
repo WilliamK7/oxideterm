@@ -22,7 +22,7 @@ export const FileOperationProgress: React.FC<FileOperationProgressProps> = ({ pr
     : 0;
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-50 bg-theme-bg-panel/95 backdrop-blur-sm border-t border-theme-border px-3 py-2 space-y-1">
+    <div className="absolute bottom-0 left-0 right-0 z-50 bg-theme-bg-elevated/95 backdrop-blur-sm border-t border-theme-border px-3 py-2 space-y-1">
       <div className="flex items-center justify-between text-xs text-theme-text-secondary">
         <span className="truncate max-w-[70%]">
           {progress.fileName

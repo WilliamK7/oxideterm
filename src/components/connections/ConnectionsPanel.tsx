@@ -35,9 +35,9 @@ const useFormatState = () => {
       case 'disconnecting':
         return { text: t('connections.state.disconnecting'), color: 'text-orange-400' };
       case 'disconnected':
-        return { text: t('connections.state.disconnected'), color: 'text-zinc-500' };
+        return { text: t('connections.state.disconnected'), color: 'text-theme-text-muted' };
       default:
-        return { text: String(state), color: 'text-zinc-400' };
+        return { text: String(state), color: 'text-theme-text-muted' };
     }
   };
 };
@@ -79,13 +79,13 @@ const ConnectionCard: React.FC<{
   return (
     <div className={cn(
       "border border-theme-border rounded-lg p-4 space-y-3",
-      "bg-theme-bg-panel hover:border-zinc-600 transition-colors",
+      "bg-theme-bg-panel hover:border-theme-border-strong transition-colors",
       isIdle && "border-amber-500/30"
     )}>
       {/* Header: Host Info and State */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
-          <Server className={cn("h-5 w-5", isActive ? "text-green-400" : isIdle ? "text-amber-400" : "text-zinc-500")} />
+          <Server className={cn("h-5 w-5", isActive ? "text-green-400" : isIdle ? "text-amber-400" : "text-theme-text-muted")} />
           <div>
             <div className="font-medium text-sm">
               {connection.username}@{connection.host}:{connection.port}
@@ -114,13 +114,13 @@ const ConnectionCard: React.FC<{
           {globalNeverTimeout || connection.keepAlive ? (
             <Shield className="h-4 w-4 text-green-400" />
           ) : (
-            <ShieldOff className="h-4 w-4 text-zinc-500" />
+            <ShieldOff className="h-4 w-4 text-theme-text-muted" />
           )}
         </Button>
       </div>
       
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-2 text-xs text-zinc-400">
+      <div className="grid grid-cols-3 gap-2 text-xs text-theme-text-muted">
         <div className="flex items-center gap-1">
           <Terminal className="h-3 w-3" />
           <span>{t('connections.panel.terminals', { count: connection.terminalIds.length })}</span>
@@ -136,7 +136,7 @@ const ConnectionCard: React.FC<{
       </div>
       
       {/* Time Info */}
-      <div className="flex items-center justify-between text-xs text-zinc-500">
+      <div className="flex items-center justify-between text-xs text-theme-text-muted">
         <div className="flex items-center gap-1">
           <Clock className="h-3 w-3" />
           <span>{t('connections.panel.created', { time: formatTime(connection.createdAt) })}</span>
@@ -211,8 +211,8 @@ export const ConnectionsPanel: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-theme-border bg-theme-bg-panel/50">
         <div>
-          <h2 className="text-xl font-semibold text-zinc-100">{t('connections.panel.title')}</h2>
-          <p className="text-sm text-zinc-500 mt-1">{t('connections.panel.description')}</p>
+          <h2 className="text-xl font-semibold text-theme-text-heading">{t('connections.panel.title')}</h2>
+          <p className="text-sm text-theme-text-muted mt-1">{t('connections.panel.description')}</p>
         </div>
         <Button
           variant="outline"
@@ -249,13 +249,13 @@ export const ConnectionsPanel: React.FC = () => {
       </div>
       
       {/* Footer Legend */}
-      <div className="px-6 py-4 border-t border-theme-border bg-theme-bg-panel/30 flex items-center gap-6 text-sm text-zinc-500">
+      <div className="px-6 py-4 border-t border-theme-border bg-theme-bg-panel/30 flex items-center gap-6 text-sm text-theme-text-muted">
         <div className="flex items-center gap-2">
           <Shield className="h-4 w-4 text-green-400" />
           <span>{t('connections.keep_alive.legend_enabled')}</span>
         </div>
         <div className="flex items-center gap-2">
-          <ShieldOff className="h-4 w-4 text-zinc-500" />
+          <ShieldOff className="h-4 w-4 text-theme-text-muted" />
           <span>{
             idleTimeoutSecs === 0
               ? t('connections.keep_alive.global_never_tooltip')

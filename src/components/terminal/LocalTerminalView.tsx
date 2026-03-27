@@ -1384,7 +1384,7 @@ export const LocalTerminalView: React.FC<LocalTerminalViewProps> = ({
 
       {/* Mouse mode indicator */}
       {mouseMode && isRunning && (
-        <div className="absolute bottom-2 right-2 bg-zinc-800/70 text-zinc-400 text-[11px] px-2 py-0.5 rounded pointer-events-none select-none">
+        <div className="absolute bottom-2 right-2 bg-theme-bg-hover/70 text-theme-text-muted text-[11px] px-2 py-0.5 rounded pointer-events-none select-none">
           {t('terminal.mouse_mode_hint')}
         </div>
       )}
@@ -1396,7 +1396,7 @@ export const LocalTerminalView: React.FC<LocalTerminalViewProps> = ({
 
       {/* Status overlay when not running */}
       {!isRunning && (
-        <div className="absolute bottom-4 right-4 bg-zinc-800/80 text-zinc-400 text-xs px-2 py-1 rounded">
+        <div className="absolute bottom-4 right-4 bg-theme-bg-hover/80 text-theme-text-muted text-xs px-2 py-1 rounded">
           {t('terminal.local.session_ended')}
         </div>
       )}

@@ -37,7 +37,7 @@ export function useFontSizeHUD() {
       <div className="pointer-events-none fixed inset-0 z-[9999] flex items-center justify-center">
         <div
           className={cn(
-            'rounded-sm border border-theme-border bg-theme-bg-panel/90 px-5 py-3 shadow-lg backdrop-blur-sm',
+            'rounded-sm border border-theme-border bg-theme-bg-elevated/90 px-5 py-3 shadow-lg backdrop-blur-sm',
             'animate-in fade-in zoom-in-95 duration-150',
             !visible && 'animate-out fade-out zoom-out-95 duration-200',
           )}

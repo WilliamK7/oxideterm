@@ -79,7 +79,7 @@ export const TerminalActions: React.FC<TerminalActionsProps> = ({
       className={cn(
         'absolute top-2 right-2 z-20',
         'flex items-center gap-0.5',
-        'bg-zinc-900/80 backdrop-blur-sm border border-zinc-700/50',
+        'bg-theme-bg-panel/80 backdrop-blur-sm border border-theme-border/50',
         'rounded-lg px-1.5 py-1 shadow-lg',
         'select-none pointer-events-auto',
         'opacity-0 transition-opacity duration-200',
@@ -92,7 +92,7 @@ export const TerminalActions: React.FC<TerminalActionsProps> = ({
         onClick={onStartRecording}
         className={cn(
           'p-1 rounded-md transition-colors',
-          'text-zinc-400 hover:text-red-400 hover:bg-zinc-700/60',
+          'text-theme-text-muted hover:text-red-400 hover:bg-theme-bg-hover/60',
         )}
         title={`${t('terminal.recording.start')}  ⌘⇧R`}
       >
@@ -100,14 +100,14 @@ export const TerminalActions: React.FC<TerminalActionsProps> = ({
       </button>
 
       {/* Separator */}
-      <div className="w-px h-3.5 bg-zinc-600/40 mx-0.5" />
+      <div className="w-px h-3.5 bg-theme-text-muted/40 mx-0.5" />
 
       {/* Open Cast File */}
       <button
         onClick={handleOpenCast}
         className={cn(
           'p-1 rounded-md transition-colors',
-          'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700/60',
+          'text-theme-text-muted hover:text-theme-text hover:bg-theme-bg-hover/60',
         )}
         title={t('terminal.recording.open_cast')}
       >

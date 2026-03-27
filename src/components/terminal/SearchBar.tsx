@@ -213,7 +213,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
   return (
     <div 
-      className="absolute top-4 right-4 z-50 w-96 bg-theme-bg-panel border border-theme-border rounded-sm shadow-2xl"
+      className="absolute top-4 right-4 z-50 w-96 bg-theme-bg-elevated border border-theme-border rounded-sm shadow-2xl"
       onKeyDown={handleKeyDown}
       onMouseDown={handleMouseDown}
     >

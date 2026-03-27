@@ -110,7 +110,7 @@ export const EditConnectionModal: React.FC<EditConnectionModalProps> = ({
       }
       onOpenChange(open);
     }}>
-      <DialogContent className="sm:max-w-[500px] bg-theme-bg-panel border-theme-border text-theme-text">
+      <DialogContent className="sm:max-w-[500px] bg-theme-bg-elevated border-theme-border text-theme-text">
         <DialogHeader>
           <DialogTitle className="text-theme-text">{t('modals.edit_connection.title', { name: connection.name })}</DialogTitle>
           <DialogDescription className="text-theme-text-muted">
@@ -185,9 +185,9 @@ export const EditConnectionModal: React.FC<EditConnectionModalProps> = ({
               </div>
             </>
           ) : (
-            <div className="text-sm text-zinc-400 pt-2 space-y-2">
+            <div className="text-sm text-theme-text-muted pt-2 space-y-2">
               <p>{t('modals.edit_connection.agent_desc')}</p>
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-theme-text-muted">
               {t('modals.edit_connection.agent_hint')}
               </p>
             </div>

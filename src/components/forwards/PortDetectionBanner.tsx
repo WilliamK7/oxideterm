@@ -78,14 +78,14 @@ export const PortDetectionBanner: React.FC<PortDetectionBannerProps> = ({
         >
           <div className="flex items-center gap-2 min-w-0">
             <Radio className="h-3.5 w-3.5 text-blue-400 shrink-0" />
-            <span className="text-zinc-300 truncate">
+            <span className="text-theme-text truncate">
               {t('forwards.detection.detected')}
               {' '}
               <span className="font-mono font-medium text-blue-300">
                 :{port.port}
               </span>
               {port.process_name && (
-                <span className="text-zinc-500 ml-1">
+                <span className="text-theme-text-muted ml-1">
                   ({port.process_name}
                   {port.pid ? ` #${port.pid}` : ''})
                 </span>
@@ -105,7 +105,7 @@ export const PortDetectionBanner: React.FC<PortDetectionBannerProps> = ({
             <Button
               size="sm"
               variant="ghost"
-              className="h-6 w-6 p-0 text-zinc-500 hover:text-zinc-400"
+              className="h-6 w-6 p-0 text-theme-text-muted hover:text-theme-text-muted"
               onClick={() => onDismiss(port.port)}
             >
               <X className="h-3 w-3" />

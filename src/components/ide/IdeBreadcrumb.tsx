@@ -156,7 +156,7 @@ function BreadcrumbSegment({
         {dropdownOpen && (
           <div
             ref={dropdownRef}
-            className="absolute top-full left-0 z-50 mt-0.5 bg-theme-bg-panel border border-theme-border rounded-md shadow-xl py-1 min-w-[180px] max-h-[240px] overflow-y-auto"
+            className="absolute top-full left-0 z-50 mt-0.5 bg-theme-bg-elevated border border-theme-border rounded-md shadow-xl py-1 min-w-[180px] max-h-[240px] overflow-y-auto"
           >
             {loading ? (
               <div className="px-3 py-2 text-xs text-theme-text-muted">Loading…</div>

@@ -159,7 +159,7 @@ const FileRow = React.memo<FileRowProps>(({
     }}
     onContextMenu={(e) => onContextMenu(e, file)}
     className={cn(
-      "flex items-center px-2 text-xs cursor-default select-none border-b border-transparent hover:bg-zinc-800",
+      "flex items-center px-2 text-xs cursor-default select-none border-b border-transparent hover:bg-theme-bg-hover",
       isSelected && "bg-theme-accent/20 text-theme-accent"
     )}
     style={{ height: FILE_ROW_HEIGHT }}
@@ -167,13 +167,13 @@ const FileRow = React.memo<FileRowProps>(({
     <div className="flex-1 flex items-center gap-2 min-w-0">
       {file.file_type === 'Directory'
         ? <Folder className="h-3.5 w-3.5 flex-shrink-0 text-blue-400" />
-        : <File className="h-3.5 w-3.5 flex-shrink-0 text-zinc-400" />}
+        : <File className="h-3.5 w-3.5 flex-shrink-0 text-theme-text-muted" />}
       <span className="truncate">{file.name}</span>
     </div>
-    <div className="w-20 text-right text-zinc-500">
+    <div className="w-20 text-right text-theme-text-muted">
       {file.file_type === 'Directory' ? '-' : formatFileSize(file.size)}
     </div>
-    <div className="w-24 text-right text-zinc-600">
+    <div className="w-24 text-right text-theme-text-muted">
       {file.modified ? new Date(file.modified * 1000).toLocaleDateString() : '-'}
     </div>
   </div>
@@ -361,12 +361,12 @@ export const FileList: React.FC<FileListProps> = ({
       {/* Header */}
       <div className={cn(
         "flex items-center gap-2 p-2 border-b transition-colors h-10",
-        active ? "bg-zinc-800/50 border-theme-accent/30" : "bg-theme-bg-panel border-theme-border"
+        active ? "bg-theme-bg-panel border-theme-accent/30" : "bg-theme-bg-panel border-theme-border"
       )}>
-        <span className="font-semibold text-xs text-zinc-400 uppercase tracking-wider min-w-12">{title}</span>
+        <span className="font-semibold text-xs text-theme-text-muted uppercase tracking-wider min-w-12">{title}</span>
         
         {/* Path bar */}
-        <div className="flex-1 flex items-center gap-1 bg-zinc-950 border border-theme-border px-2 py-0.5 rounded-sm overflow-hidden">
+        <div className="flex-1 flex items-center gap-1 bg-theme-bg-sunken border border-theme-border px-2 py-0.5 rounded-sm overflow-hidden">
           {isPathEditable && pathInputValue !== undefined ? (
             <input
               type="text"
@@ -382,7 +382,7 @@ export const FileList: React.FC<FileListProps> = ({
                 }
               }}
               onBlur={() => onPathInputChange?.(path)}
-              className="flex-1 bg-transparent text-zinc-300 text-xs outline-none"
+              className="flex-1 bg-transparent text-theme-text text-xs outline-none"
               placeholder={t('fileManager.pathPlaceholder')}
               autoFocus
             />
@@ -442,10 +442,10 @@ export const FileList: React.FC<FileListProps> = ({
       </div>
 
       {/* Column Headers with Sort */}
-      <div className="flex items-center px-2 py-1 bg-zinc-900 border-b border-theme-border text-xs text-zinc-500">
+      <div className="flex items-center px-2 py-1 bg-theme-bg-panel border-b border-theme-border text-xs text-theme-text-muted">
         <button 
           className={cn(
-            "flex-1 flex items-center gap-1 hover:text-zinc-300 transition-colors text-left",
+            "flex-1 flex items-center gap-1 hover:text-theme-text transition-colors text-left",
             sortField === 'name' && "text-theme-accent"
           )}
           onClick={() => onSortChange?.('name')}
@@ -457,7 +457,7 @@ export const FileList: React.FC<FileListProps> = ({
         </button>
         <button 
           className={cn(
-            "w-20 flex items-center justify-end gap-1 hover:text-zinc-300 transition-colors",
+            "w-20 flex items-center justify-end gap-1 hover:text-theme-text transition-colors",
             sortField === 'size' && "text-theme-accent"
           )}
           onClick={() => onSortChange?.('size')}
@@ -467,7 +467,7 @@ export const FileList: React.FC<FileListProps> = ({
         </button>
         <button 
           className={cn(
-            "w-24 flex items-center justify-end gap-1 hover:text-zinc-300 transition-colors",
+            "w-24 flex items-center justify-end gap-1 hover:text-theme-text transition-colors",
             sortField === 'modified' && "text-theme-accent"
           )}
           onClick={() => onSortChange?.('modified')}
@@ -479,19 +479,19 @@ export const FileList: React.FC<FileListProps> = ({
 
       {/* Filter Input */}
       {onFilterChange && (
-        <div className="flex items-center gap-2 px-2 py-1 bg-zinc-900/50 border-b border-theme-border">
-          <Search className="h-3 w-3 text-zinc-500" />
+        <div className="flex items-center gap-2 px-2 py-1 bg-theme-bg-panel border-b border-theme-border">
+          <Search className="h-3 w-3 text-theme-text-muted" />
           <input
             type="text"
             value={filter || ''}
             onChange={(e) => onFilterChange(e.target.value)}
             placeholder={t('fileManager.filterPlaceholder')}
-            className="flex-1 bg-transparent text-xs text-zinc-300 placeholder:text-zinc-600 outline-none"
+            className="flex-1 bg-transparent text-xs text-theme-text placeholder:text-theme-text-muted outline-none"
           />
           {filter && (
             <button 
               onClick={() => onFilterChange('')}
-              className="text-zinc-500 hover:text-zinc-300 text-xs"
+              className="text-theme-text-muted hover:text-theme-text text-xs"
             >
               ✕
             </button>
@@ -552,13 +552,13 @@ export const FileList: React.FC<FileListProps> = ({
       {contextMenu && (
         <div
           ref={contextMenuRef}
-          className="fixed z-50 bg-theme-bg-panel border border-theme-border rounded-sm shadow-lg py-1 min-w-[180px] max-h-[80vh] overflow-y-auto"
+          className="fixed z-50 bg-theme-bg-elevated border border-theme-border rounded-sm shadow-lg py-1 min-w-[180px] max-h-[80vh] overflow-y-auto"
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
           {/* Open (directories only — navigate into folder) */}
           {contextMenu.file && contextMenu.file.file_type === 'Directory' && (
             <button
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2 font-medium"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2 font-medium"
               onClick={() => {
                 onNavigate(`${path}/${contextMenu.file!.name}`);
                 setContextMenu(null);
@@ -572,7 +572,7 @@ export const FileList: React.FC<FileListProps> = ({
           {/* Open in External App (files only, local only) */}
           {contextMenu.file && contextMenu.file.file_type !== 'Directory' && !isRemote && onOpenExternal && (
             <button
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
               onClick={() => {
                 onOpenExternal(`${path}/${contextMenu.file!.name}`);
                 setContextMenu(null);
@@ -585,7 +585,7 @@ export const FileList: React.FC<FileListProps> = ({
           {/* Reveal in File Manager (local only) */}
           {contextMenu.file && !isRemote && onRevealInFileManager && (
             <button
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
               onClick={() => {
                 onRevealInFileManager(`${path}/${contextMenu.file!.name}`);
                 setContextMenu(null);
@@ -598,7 +598,7 @@ export const FileList: React.FC<FileListProps> = ({
           {/* Preview (only for files) */}
           {contextMenu.file && contextMenu.file.file_type !== 'Directory' && onPreview && (
             <button
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
               onClick={() => {
                 onPreview(contextMenu.file!);
                 setContextMenu(null);
@@ -613,7 +613,7 @@ export const FileList: React.FC<FileListProps> = ({
             <>
               <div className="border-t border-theme-border my-1" />
               <button
-                className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+                className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
                 onClick={() => {
                   onTransfer(Array.from(selected), isLocalPane ? 'upload' : 'download');
                   setContextMenu(null);
@@ -632,7 +632,7 @@ export const FileList: React.FC<FileListProps> = ({
 
           {onCut && selected.size > 0 && (
             <button
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
               onClick={() => { onCut(); setContextMenu(null); }}
             >
               <Scissors className="h-3 w-3" /> {t('fileManager.cut')}
@@ -641,7 +641,7 @@ export const FileList: React.FC<FileListProps> = ({
 
           {onCopy && selected.size > 0 && (
             <button
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
               onClick={() => { onCopy(); setContextMenu(null); }}
             >
               <Copy className="h-3 w-3" /> {t('fileManager.copy')}
@@ -650,7 +650,7 @@ export const FileList: React.FC<FileListProps> = ({
 
           {onPaste && hasClipboard && (
             <button
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
               onClick={() => { onPaste(); setContextMenu(null); }}
             >
               <ClipboardPaste className="h-3 w-3" /> {t('fileManager.paste')}
@@ -660,7 +660,7 @@ export const FileList: React.FC<FileListProps> = ({
           {/* Duplicate */}
           {onDuplicate && selected.size > 0 && (
             <button
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
               onClick={() => { onDuplicate(Array.from(selected)); setContextMenu(null); }}
             >
               <CopyPlus className="h-3 w-3" /> {t('fileManager.duplicate')}
@@ -674,7 +674,7 @@ export const FileList: React.FC<FileListProps> = ({
 
           {contextMenu.file && selected.size === 1 && onRename && (
             <button
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
               onClick={() => { onRename(contextMenu.file!.name); setContextMenu(null); }}
             >
               <Edit3 className="h-3 w-3" /> {t('fileManager.rename')}
@@ -683,7 +683,7 @@ export const FileList: React.FC<FileListProps> = ({
 
           {contextMenu.file && (
             <button
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
               onClick={() => {
                 const fullPath = `${path}/${contextMenu.file!.name}`;
                 navigator.clipboard.writeText(fullPath);
@@ -696,7 +696,7 @@ export const FileList: React.FC<FileListProps> = ({
 
           {contextMenu.file && (
             <button
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
               onClick={() => {
                 navigator.clipboard.writeText(contextMenu.file!.name);
                 setContextMenu(null);
@@ -713,7 +713,7 @@ export const FileList: React.FC<FileListProps> = ({
 
           {onCompress && selected.size > 0 && (
             <button
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
               onClick={() => { onCompress(); setContextMenu(null); }}
             >
               <Archive className="h-3 w-3" /> {t('fileManager.compress')}
@@ -722,7 +722,7 @@ export const FileList: React.FC<FileListProps> = ({
 
           {onExtract && selected.size === 1 && canExtract && (
             <button
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
               onClick={() => { onExtract(); setContextMenu(null); }}
             >
               <FolderArchive className="h-3 w-3" /> {t('fileManager.extract')}
@@ -734,7 +734,7 @@ export const FileList: React.FC<FileListProps> = ({
 
           {onNewFolder && (
             <button
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
               onClick={() => { onNewFolder(); setContextMenu(null); }}
             >
               <FolderPlus className="h-3 w-3" /> {t('fileManager.newFolder')}
@@ -743,7 +743,7 @@ export const FileList: React.FC<FileListProps> = ({
 
           {onNewFile && (
             <button
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
               onClick={() => { onNewFile(); setContextMenu(null); }}
             >
               <FilePlus className="h-3 w-3" /> {t('fileManager.newFile')}
@@ -751,14 +751,14 @@ export const FileList: React.FC<FileListProps> = ({
           )}
 
           <button
-            className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+            className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
             onClick={() => { onSelectAll(); setContextMenu(null); }}
           >
             <CheckSquare className="h-3 w-3" /> {t('fileManager.selectAll')}
           </button>
 
           <button
-            className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+            className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
             onClick={() => { onRefresh(); setContextMenu(null); }}
           >
             <RefreshCw className="h-3 w-3" /> {t('fileManager.refresh')}
@@ -769,7 +769,7 @@ export const FileList: React.FC<FileListProps> = ({
             <>
               <div className="border-t border-theme-border my-1" />
               <button
-                className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+                className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
                 onClick={() => { onProperties(contextMenu.file!); setContextMenu(null); }}
               >
                 <Info className="h-3 w-3" /> {t('fileManager.properties')}
@@ -782,7 +782,7 @@ export const FileList: React.FC<FileListProps> = ({
             <>
               <div className="border-t border-theme-border my-1" />
               <button
-                className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2 text-red-400"
+                className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2 text-red-400"
                 onClick={() => { onDelete(Array.from(selected)); setContextMenu(null); }}
               >
                 <Trash2 className="h-3 w-3" /> {t('fileManager.delete')}

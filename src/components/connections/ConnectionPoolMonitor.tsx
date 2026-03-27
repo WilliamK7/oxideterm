@@ -35,7 +35,7 @@ const colorClasses = {
   yellow: 'text-amber-500',
   red: 'text-red-500',
   blue: 'text-blue-500',
-  gray: 'text-gray-400',
+  gray: 'text-theme-text-muted',
 };
 
 const bgColorClasses = {
@@ -43,7 +43,7 @@ const bgColorClasses = {
   yellow: 'bg-amber-500/10',
   red: 'bg-red-500/10',
   blue: 'bg-blue-500/10',
-  gray: 'bg-gray-500/10',
+  gray: 'bg-theme-bg-hover/30',
 };
 
 function StatCard({ label, value, icon, color = 'gray', sublabel }: StatCardProps) {

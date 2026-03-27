@@ -326,17 +326,17 @@ export const CastPlayer: React.FC<CastPlayerProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col bg-zinc-950"
+      className="fixed inset-0 z-50 flex flex-col bg-theme-bg-sunken"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header bar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-zinc-900/80 border-b border-zinc-800">
+      <div className="flex items-center justify-between px-4 py-2 bg-theme-bg-panel/80 border-b border-theme-border">
         <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-zinc-200 truncate max-w-[400px]">
+          <span className="text-sm font-medium text-theme-text truncate max-w-[400px]">
             {fileName}
           </span>
           {header && (
-            <span className="text-xs text-zinc-500 font-mono">
+            <span className="text-xs text-theme-text-muted font-mono">
               {t('terminal.recording.player.dimensions', {
                 cols: header.width,
                 rows: header.height,
@@ -344,7 +344,7 @@ export const CastPlayer: React.FC<CastPlayerProps> = ({
             </span>
           )}
           {header?.title && (
-            <span className="text-xs text-zinc-400 italic truncate max-w-[300px]">
+            <span className="text-xs text-theme-text-muted italic truncate max-w-[300px]">
               {header.title}
             </span>
           )}
@@ -357,8 +357,8 @@ export const CastPlayer: React.FC<CastPlayerProps> = ({
             className={cn(
               'p-1.5 rounded transition-colors',
               showSearch
-                ? 'bg-zinc-700 text-zinc-200'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800',
+                ? 'bg-theme-bg-hover text-theme-text'
+                : 'text-theme-text-muted hover:text-theme-text hover:bg-theme-bg-hover',
             )}
             title={t('terminal.recording.player.search')}
           >
@@ -368,7 +368,7 @@ export const CastPlayer: React.FC<CastPlayerProps> = ({
           {/* Close */}
           <button
             onClick={onClose}
-            className="p-1.5 rounded text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+            className="p-1.5 rounded text-theme-text-muted hover:text-theme-text hover:bg-theme-bg-hover transition-colors"
             title={t('terminal.recording.player.close')}
           >
             <X className="h-4 w-4" />
@@ -378,19 +378,19 @@ export const CastPlayer: React.FC<CastPlayerProps> = ({
 
       {/* Search panel */}
       {showSearch && (
-        <div className="bg-zinc-900/60 border-b border-zinc-800 px-4 py-2">
+        <div className="bg-theme-bg-panel/60 border-b border-theme-border px-4 py-2">
           <div className="flex items-center gap-2 max-w-lg">
-            <Search className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+            <Search className="h-3.5 w-3.5 text-theme-text-muted shrink-0" />
             <input
               type="text"
               value={searchQuery}
               onChange={e => handleSearch(e.target.value)}
-              className="flex-1 bg-zinc-800/60 border border-zinc-700/50 rounded px-2 py-1 text-sm text-zinc-200 placeholder-zinc-500 outline-none focus:border-zinc-600"
+              className="flex-1 bg-theme-bg-hover/60 border border-theme-border/50 rounded px-2 py-1 text-sm text-theme-text placeholder-zinc-500 outline-none focus:border-theme-border-strong"
               placeholder={t('terminal.recording.player.search')}
               autoFocus
             />
             {searchResults.length > 0 && (
-              <span className="text-xs text-zinc-400 shrink-0">
+              <span className="text-xs text-theme-text-muted shrink-0">
                 {t('terminal.recording.player.matches', { count: searchResults.length })}
               </span>
             )}
@@ -402,13 +402,13 @@ export const CastPlayer: React.FC<CastPlayerProps> = ({
                 <button
                   key={i}
                   onClick={() => jumpToResult(result.time)}
-                  className="flex items-center gap-2 w-full text-left px-2 py-1 rounded text-xs hover:bg-zinc-800/60 transition-colors group"
+                  className="flex items-center gap-2 w-full text-left px-2 py-1 rounded text-xs hover:bg-theme-bg-hover/60 transition-colors group"
                 >
-                  <span className="text-zinc-500 font-mono shrink-0 w-12">
+                  <span className="text-theme-text-muted font-mono shrink-0 w-12">
                     {fmtTime(result.time)}
                   </span>
-                  <ChevronRight className="h-3 w-3 text-zinc-600 group-hover:text-zinc-400 shrink-0" />
-                  <span className="text-zinc-400 truncate font-mono text-[11px]">
+                  <ChevronRight className="h-3 w-3 text-theme-text-muted group-hover:text-theme-text-muted shrink-0" />
+                  <span className="text-theme-text-muted truncate font-mono text-[11px]">
                     {result.snippet}
                   </span>
                 </button>
@@ -416,7 +416,7 @@ export const CastPlayer: React.FC<CastPlayerProps> = ({
             </div>
           )}
           {searchQuery && searchResults.length === 0 && (
-            <div className="mt-1 text-xs text-zinc-500">
+            <div className="mt-1 text-xs text-theme-text-muted">
               {t('terminal.recording.player.no_results')}
             </div>
           )}
@@ -426,11 +426,11 @@ export const CastPlayer: React.FC<CastPlayerProps> = ({
       {/* Terminal area — centered with black borders (size-locked) */}
       <div
         ref={wrapperRef}
-        className="flex-1 relative overflow-hidden flex items-center justify-center bg-zinc-950"
+        className="flex-1 relative overflow-hidden flex items-center justify-center bg-theme-bg-sunken"
       >
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/80 z-10">
-            <div className="text-sm text-zinc-400">
+          <div className="absolute inset-0 flex items-center justify-center bg-theme-bg-sunken/80 z-10">
+            <div className="text-sm text-theme-text-muted">
               {t('terminal.recording.player.loading')}
             </div>
           </div>
@@ -447,11 +447,11 @@ export const CastPlayer: React.FC<CastPlayerProps> = ({
       </div>
 
       {/* Controls bar */}
-      <div className="bg-zinc-900/80 border-t border-zinc-800 px-4 py-2.5">
+      <div className="bg-theme-bg-panel/80 border-t border-theme-border px-4 py-2.5">
         {/* Seekbar */}
         <div
           ref={seekBarRef}
-          className="relative h-1.5 bg-zinc-800 rounded-full cursor-pointer mb-3 group"
+          className="relative h-1.5 bg-theme-bg-hover rounded-full cursor-pointer mb-3 group"
           onMouseDown={onSeekMouseDown}
         >
           {/* Progress fill */}
@@ -472,7 +472,7 @@ export const CastPlayer: React.FC<CastPlayerProps> = ({
             {/* Skip back 10s */}
             <button
               onClick={skipBack}
-              className="text-zinc-400 hover:text-zinc-200 transition-colors"
+              className="text-theme-text-muted hover:text-theme-text transition-colors"
               title="-10s"
             >
               <SkipBack className="h-4 w-4" />
@@ -481,7 +481,7 @@ export const CastPlayer: React.FC<CastPlayerProps> = ({
             {/* Play/Pause */}
             <button
               onClick={togglePlay}
-              className="h-8 w-8 flex items-center justify-center rounded-full bg-zinc-700 hover:bg-zinc-600 text-zinc-200 transition-colors"
+              className="h-8 w-8 flex items-center justify-center rounded-full bg-theme-bg-hover hover:bg-theme-text-muted text-theme-text transition-colors"
               title={playing
                 ? t('terminal.recording.player.pause')
                 : t('terminal.recording.player.play')
@@ -496,14 +496,14 @@ export const CastPlayer: React.FC<CastPlayerProps> = ({
             {/* Skip forward 10s */}
             <button
               onClick={skipForward}
-              className="text-zinc-400 hover:text-zinc-200 transition-colors"
+              className="text-theme-text-muted hover:text-theme-text transition-colors"
               title="+10s"
             >
               <SkipForward className="h-4 w-4" />
             </button>
 
             {/* Time display */}
-            <span className="text-xs font-mono text-zinc-400 ml-2">
+            <span className="text-xs font-mono text-theme-text-muted ml-2">
               {fmtTime(currentTime)} / {fmtTime(duration)}
             </span>
           </div>
@@ -515,8 +515,8 @@ export const CastPlayer: React.FC<CastPlayerProps> = ({
               className={cn(
                 'flex items-center gap-1 px-2 py-1 rounded text-xs font-mono transition-colors',
                 showSpeedMenu
-                  ? 'bg-zinc-700 text-zinc-200'
-                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800',
+                  ? 'bg-theme-bg-hover text-theme-text'
+                  : 'text-theme-text-muted hover:text-theme-text hover:bg-theme-bg-hover',
               )}
             >
               <Gauge className="h-3.5 w-3.5" />
@@ -524,7 +524,7 @@ export const CastPlayer: React.FC<CastPlayerProps> = ({
             </button>
 
             {showSpeedMenu && (
-              <div className="absolute bottom-full right-0 mb-1 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl py-1 min-w-[80px]">
+              <div className="absolute bottom-full right-0 mb-1 bg-theme-bg-hover border border-theme-border rounded-lg shadow-xl py-1 min-w-[80px]">
                 {PLAYBACK_SPEEDS.map(s => (
                   <button
                     key={s}
@@ -532,8 +532,8 @@ export const CastPlayer: React.FC<CastPlayerProps> = ({
                     className={cn(
                       'w-full text-left px-3 py-1.5 text-xs font-mono transition-colors',
                       s === speed
-                        ? 'bg-zinc-700 text-zinc-200'
-                        : 'text-zinc-400 hover:bg-zinc-700/50 hover:text-zinc-200',
+                        ? 'bg-theme-bg-hover text-theme-text'
+                        : 'text-theme-text-muted hover:bg-theme-bg-hover/50 hover:text-theme-text',
                     )}
                   >
                     {s}×

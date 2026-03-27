@@ -83,7 +83,7 @@ export function FpsOverlay({ getStats }: Props) {
       className={cn(
         'absolute top-2 left-2 z-20',
         'flex items-center gap-1.5',
-        'bg-zinc-950/85 border border-zinc-700/50 rounded',
+        'bg-theme-bg-sunken/85 border border-theme-border/50 rounded',
         'px-2 py-0.5',
         'pointer-events-none select-none',
         'font-mono text-[10px] leading-5',
@@ -95,17 +95,17 @@ export function FpsOverlay({ getStats }: Props) {
         {TIER_LABEL[display.tier]}
       </span>
 
-      <span className="text-zinc-600">|</span>
+      <span className="text-theme-text-muted">|</span>
 
       {/* FPS: display refresh rate (normal/boost) or flush rate (idle) */}
-      <span className="text-zinc-200">{display.fps}</span>
-      <span className="text-zinc-500">fps</span>
+      <span className="text-theme-text">{display.fps}</span>
+      <span className="text-theme-text-muted">fps</span>
 
-      <span className="text-zinc-700">·</span>
+      <span className="text-theme-text-muted">·</span>
 
       {/* WPS: writes per second */}
-      <span className="text-zinc-400">{display.wps}</span>
-      <span className="text-zinc-600">wps</span>
+      <span className="text-theme-text-muted">{display.wps}</span>
+      <span className="text-theme-text-muted">wps</span>
     </div>
   );
 }

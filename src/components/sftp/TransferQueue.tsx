@@ -146,7 +146,7 @@ export const TransferQueue = ({ nodeId }: { nodeId: string }) => {
     <div className="h-48 bg-theme-bg border-t border-theme-border flex flex-col">
       <div className="flex items-center justify-between px-2 py-1 bg-theme-bg-panel border-b border-theme-border">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+          <span className="text-xs font-semibold text-theme-text-muted uppercase tracking-wide">
             {t('sftp.queue.title')} {activeCount > 0 ? t('sftp.queue.active_count', { count: activeCount }) : ''}
           </span>
           {hasIncomplete && (
@@ -175,24 +175,24 @@ export const TransferQueue = ({ nodeId }: { nodeId: string }) => {
 
       {/* Incomplete Transfers Section */}
       {showIncomplete && hasIncomplete && (
-        <div className="border-b border-theme-border bg-zinc-900/30">
-          <div className="px-2 py-1 text-[10px] text-zinc-500 uppercase tracking-wide">
+        <div className="border-b border-theme-border bg-theme-bg-panel/50">
+          <div className="px-2 py-1 text-[10px] text-theme-text-muted uppercase tracking-wide">
             {t('sftp.queue.incomplete_title')}
           </div>
           <div className="max-h-32 overflow-y-auto p-2 space-y-1">
             {incompleteTransfers.map(transfer => (
               <div
                 key={transfer.transfer_id}
-                className="flex items-center gap-2 text-xs p-2 bg-zinc-900/50 rounded-sm border border-yellow-500/30 hover:border-yellow-500/50"
+                className="flex items-center gap-2 text-xs p-2 bg-theme-bg-panel/80 rounded-sm border border-yellow-500/30 hover:border-yellow-500/50"
               >
                 <div className="w-4 text-center text-yellow-500 font-bold">
                   {transfer.transfer_type === 'Upload' ? '↑' : '↓'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="truncate text-zinc-300" title={transfer.source_path}>
+                  <div className="truncate text-theme-text" title={transfer.source_path}>
                     {transfer.source_path.split('/').pop()}
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] text-zinc-500">
+                  <div className="flex items-center gap-2 text-[10px] text-theme-text-muted">
                     <span>{transfer.transfer_type}</span>
                     <span>•</span>
                     <span>{Math.round(transfer.progress_percent)}%</span>
@@ -205,7 +205,7 @@ export const TransferQueue = ({ nodeId }: { nodeId: string }) => {
                     </div>
                   )}
                 </div>
-                <div className="text-right text-[10px] text-zinc-500">
+                <div className="text-right text-[10px] text-theme-text-muted">
                   {transfer.status === 'Paused' && t('sftp.queue.status_paused')}
                   {transfer.status === 'Failed' && t('sftp.queue.status_error')}
                 </div>
@@ -227,7 +227,7 @@ export const TransferQueue = ({ nodeId }: { nodeId: string }) => {
               </div>
             ))}
             {loadingIncomplete && (
-              <div className="flex items-center justify-center py-2 text-xs text-zinc-500">
+              <div className="flex items-center justify-center py-2 text-xs text-theme-text-muted">
                 <RefreshCw className="h-3 w-3 mr-2 animate-spin" />
                 {t('sftp.queue.loading')}
               </div>
@@ -238,23 +238,23 @@ export const TransferQueue = ({ nodeId }: { nodeId: string }) => {
 
       <div className="flex-1 overflow-y-auto p-2 space-y-2">
          {items.length === 0 ? (
-           <div className="flex items-center justify-center h-full text-sm text-zinc-500">
+           <div className="flex items-center justify-center h-full text-sm text-theme-text-muted">
              {t('sftp.queue.empty')}
            </div>
          ) : (
            items.map(item => (
              <div 
                key={item.id} 
-               className={`flex items-center gap-3 text-sm p-2 bg-zinc-900/50 rounded-sm border ${
+               className={`flex items-center gap-3 text-sm p-2 bg-theme-bg-panel/80 rounded-sm border ${
                  item.state === 'error' ? 'border-red-500/50' : 
                  item.state === 'cancelled' ? 'border-yellow-500/30' :
                  'border-transparent hover:border-theme-border'
                }`}
              >
-                 <div className="w-4 text-center text-zinc-500 font-bold">
+                 <div className="w-4 text-center text-theme-text-muted font-bold">
                      {item.direction === 'upload' ? '↑' : '↓'}
                  </div>
-                 <div className="w-48 truncate text-zinc-300" title={item.name}>
+                 <div className="w-48 truncate text-theme-text" title={item.name}>
                      {item.name}
                  </div>
                  <div className="flex-1 flex flex-col gap-1">
@@ -263,7 +263,7 @@ export const TransferQueue = ({ nodeId }: { nodeId: string }) => {
                        indeterminate={isIndeterminate(item)}
                        className="h-1.5" 
                      />
-                     <div className="flex justify-between text-[10px] text-zinc-500">
+                     <div className="flex justify-between text-[10px] text-theme-text-muted">
                        {isIndeterminate(item) ? (
                          <>
                            <span>{formatBytes(item.transferred)}</span>
@@ -280,7 +280,7 @@ export const TransferQueue = ({ nodeId }: { nodeId: string }) => {
                  <div className={`w-24 text-right text-xs font-mono ${
                    item.state === 'error' ? 'text-red-400' : 
                    item.state === 'cancelled' ? 'text-yellow-500' :
-                   'text-zinc-500'
+                   'text-theme-text-muted'
                  }`}>
                      {getStatusText(item)}
                  </div>

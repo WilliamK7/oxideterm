@@ -130,7 +130,7 @@ export const SavePathAsPresetDialog: React.FC<SavePathAsPresetDialogProps> = ({
         <div className="p-4 space-y-4">
           {/* Path preview */}
           <div className="bg-black/20 rounded-lg p-3">
-            <div className="text-xs text-gray-400 mb-2">{t('modals.save_preset.connection_path')}</div>
+            <div className="text-xs text-theme-text-muted mb-2">{t('modals.save_preset.connection_path')}</div>
             <div className="flex flex-wrap items-center gap-1">
               {pathNodes.map((node, index) => (
                 <React.Fragment key={node.id}>
@@ -138,14 +138,14 @@ export const SavePathAsPresetDialog: React.FC<SavePathAsPresetDialogProps> = ({
                     className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
                       index === pathNodes.length - 1 
                         ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' 
-                        : 'bg-white/5 text-gray-300'
+                        : 'bg-white/5 text-theme-text'
                     }`}
                   >
                     <Server className="w-3 h-3" />
                     <span>{node.displayName || `${node.username}@${node.host}`}</span>
                   </div>
                   {index < pathNodes.length - 1 && (
-                    <ArrowRight className="w-3 h-3 text-gray-500" />
+                    <ArrowRight className="w-3 h-3 text-theme-text-muted" />
                   )}
                 </React.Fragment>
               ))}
@@ -154,7 +154,7 @@ export const SavePathAsPresetDialog: React.FC<SavePathAsPresetDialogProps> = ({
 
           {/* Name input */}
           <div>
-            <label className="block text-sm text-gray-400 mb-1">{t('modals.save_preset.connection_name')}</label>
+            <label className="block text-sm text-theme-text-muted mb-1">{t('modals.save_preset.connection_name')}</label>
             <input
               type="text"
               value={name}
@@ -166,7 +166,7 @@ export const SavePathAsPresetDialog: React.FC<SavePathAsPresetDialogProps> = ({
           </div>
 
           {/* Notes */}
-          <div className="text-xs text-gray-500 bg-yellow-500/10 border border-yellow-500/20 rounded-md p-3">
+          <div className="text-xs text-theme-text-muted bg-yellow-500/10 border border-yellow-500/20 rounded-md p-3">
             <p className="mb-1">{t('modals.save_preset.notes_title')}</p>
             <ul className="list-disc list-inside space-y-0.5">
               <li>{t('modals.save_preset.notes_1')}</li>
@@ -188,7 +188,7 @@ export const SavePathAsPresetDialog: React.FC<SavePathAsPresetDialogProps> = ({
         <div className="flex justify-end gap-2 px-4 py-3 border-t border-white/10 bg-black/10">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+            className="px-4 py-2 text-sm text-theme-text-muted hover:text-white hover:bg-white/10 rounded transition-colors"
           >
             {t('modals.save_preset.cancel')}
           </button>

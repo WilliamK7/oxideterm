@@ -175,7 +175,7 @@ export const AddRootNodeDialog: React.FC<AddRootNodeDialogProps> = ({
               </TabsList>
               
               <TabsContent value="agent" className="mt-3">
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-theme-text-muted">
                   {t('modals.root_node.agent_desc')}
                 </p>
               </TabsContent>

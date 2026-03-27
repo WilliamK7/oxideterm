@@ -88,19 +88,19 @@ export const HostKeyConfirmDialog = ({
 
         <div className="space-y-3">
           <div className="space-y-1">
-            <Label className="text-zinc-400 text-xs">
+            <Label className="text-theme-text-muted text-xs">
               {t('modals.host_key.key_type_label')}
             </Label>
-            <div className="font-mono text-sm text-zinc-200 bg-zinc-800/50 px-3 py-2 rounded">
+            <div className="font-mono text-sm text-theme-text bg-theme-bg-hover/50 px-3 py-2 rounded">
               {status.keyType}
             </div>
           </div>
 
           <div className="space-y-1">
-            <Label className="text-zinc-400 text-xs">
+            <Label className="text-theme-text-muted text-xs">
               {t('modals.host_key.fingerprint_label')}
             </Label>
-            <div className="font-mono text-sm text-green-400 bg-zinc-800/50 px-3 py-2 rounded break-all select-all">
+            <div className="font-mono text-sm text-green-400 bg-theme-bg-hover/50 px-3 py-2 rounded break-all select-all">
               {status.fingerprint}
             </div>
           </div>
@@ -122,28 +122,28 @@ export const HostKeyConfirmDialog = ({
 
         <div className="space-y-3">
           <div className="space-y-1">
-            <Label className="text-zinc-400 text-xs">
+            <Label className="text-theme-text-muted text-xs">
               {t('modals.host_key.key_type_label')}
             </Label>
-            <div className="font-mono text-sm text-zinc-200 bg-zinc-800/50 px-3 py-2 rounded">
+            <div className="font-mono text-sm text-theme-text bg-theme-bg-hover/50 px-3 py-2 rounded">
               {status.keyType}
             </div>
           </div>
 
           <div className="space-y-1">
-            <Label className="text-zinc-400 text-xs">
+            <Label className="text-theme-text-muted text-xs">
               {t('modals.host_key.expected_fingerprint')}
             </Label>
-            <div className="font-mono text-sm text-zinc-400 bg-zinc-800/50 px-3 py-2 rounded break-all line-through">
+            <div className="font-mono text-sm text-theme-text-muted bg-theme-bg-hover/50 px-3 py-2 rounded break-all line-through">
               {status.expectedFingerprint}
             </div>
           </div>
 
           <div className="space-y-1">
-            <Label className="text-zinc-400 text-xs">
+            <Label className="text-theme-text-muted text-xs">
               {t('modals.host_key.actual_fingerprint')}
             </Label>
-            <div className="font-mono text-sm text-red-400 bg-zinc-800/50 px-3 py-2 rounded break-all select-all">
+            <div className="font-mono text-sm text-red-400 bg-theme-bg-hover/50 px-3 py-2 rounded break-all select-all">
               {status.actualFingerprint}
             </div>
           </div>
@@ -168,9 +168,9 @@ export const HostKeyConfirmDialog = ({
   const renderErrorContent = () => {
     if (status.status !== 'error') return null;
     return (
-      <div className="flex items-start gap-3 p-3 rounded-md bg-zinc-800/50 border border-zinc-700">
-        <AlertTriangle className="w-5 h-5 text-zinc-400 flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-zinc-300">
+      <div className="flex items-start gap-3 p-3 rounded-md bg-theme-bg-hover/50 border border-theme-border">
+        <AlertTriangle className="w-5 h-5 text-theme-text-muted flex-shrink-0 mt-0.5" />
+        <div className="text-sm text-theme-text">
           {status.message}
         </div>
       </div>
@@ -187,7 +187,7 @@ export const HostKeyConfirmDialog = ({
             ) : isUnknown ? (
               <Key className="w-5 h-5 text-amber-500" />
             ) : (
-              <AlertTriangle className="w-5 h-5 text-zinc-400" />
+              <AlertTriangle className="w-5 h-5 text-theme-text-muted" />
             )}
             {isChanged
               ? t('modals.host_key.title_changed')
@@ -196,7 +196,7 @@ export const HostKeyConfirmDialog = ({
               : t('modals.host_key.title_error')}
           </DialogTitle>
           <DialogDescription>
-            <span className="font-mono text-zinc-300">
+            <span className="font-mono text-theme-text">
               {host}:{port}
             </span>
           </DialogDescription>

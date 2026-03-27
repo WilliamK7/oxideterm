@@ -254,7 +254,7 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
 
         {/* Quick Actions */}
         <div className="space-y-2">
-           <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wide">{t('forwards.quick.title')}</h3>
+           <h3 className="text-sm font-medium text-theme-text-muted uppercase tracking-wide">{t('forwards.quick.title')}</h3>
            <div className="flex gap-2">
              <Button variant="secondary" className="gap-2" onClick={() => handleCreateQuick('jupyter')} disabled={!nodeReady}>
                 <span className="w-2 h-2 rounded-full bg-orange-500" /> {t('forwards.quick.jupyter')}
@@ -273,7 +273,7 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
         {/* Active Forwards Table */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wide">{t('forwards.table.title')}</h3>
+            <h3 className="text-sm font-medium text-theme-text-muted uppercase tracking-wide">{t('forwards.table.title')}</h3>
             <div className="flex gap-2">
                 <Button size="sm" variant="ghost" onClick={fetchForwards} disabled={loading}>
                     <RefreshCcw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
@@ -291,7 +291,7 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
 
           <div className="border border-theme-border rounded-sm overflow-hidden min-h-[100px] bg-theme-bg-panel/50">
              <table className="w-full text-sm text-left">
-               <thead className="bg-theme-bg-panel text-zinc-500 border-b border-theme-border">
+               <thead className="bg-theme-bg-panel text-theme-text-muted border-b border-theme-border">
                  <tr>
                    <th className="px-4 py-2 font-medium">{t('forwards.table.type')}</th>
                    <th className="px-4 py-2 font-medium">{t('forwards.table.local_address')}</th>
@@ -300,7 +300,7 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
                    <th className="px-4 py-2 font-medium text-right">{t('forwards.table.actions')}</th>
                  </tr>
                </thead>
-               <tbody className="divide-y divide-oxide-border bg-zinc-950/50">
+               <tbody className="divide-y divide-oxide-border bg-theme-bg-sunken">
                  {forwards.length === 0 ? (
                      <tr>
                          <td colSpan={5} className="px-4 py-12 text-center">
@@ -321,7 +321,7 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
                      </tr>
                  ) : (
                      forwards.map(fw => (
-                  <tr key={fw.id} className="group hover:bg-zinc-900 transition-colors">
+                  <tr key={fw.id} className="group hover:bg-theme-bg-hover transition-colors">
                     <td className="px-4 py-2">
                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium 
                          ${fw.forward_type === 'local' ? 'bg-blue-900/30 text-blue-400' : 
@@ -330,7 +330,7 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
                          {fw.forward_type}
                        </span>
                     </td>
-                    <td className="px-4 py-2 font-mono text-zinc-300">
+                    <td className="px-4 py-2 font-mono text-theme-text">
                         {fw.forward_type !== 'remote' && fw.status === 'active' ? (
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -354,24 +354,24 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
                           fw.forward_type === 'remote' ? `${fw.target_host}:${fw.target_port}` : `${fw.bind_address}:${fw.bind_port}`
                         )}
                     </td>
-                    <td className="px-4 py-2 font-mono text-zinc-300">
+                    <td className="px-4 py-2 font-mono text-theme-text">
                         {fw.forward_type === 'remote' ? `${fw.bind_address}:${fw.bind_port}` : `${fw.target_host}:${fw.target_port}`}
                     </td>
                     <td className="px-4 py-2">
                       <div className="flex items-center gap-1.5">
                         <div className={`w-2 h-2 rounded-full 
                           ${fw.status === 'active' ? 'bg-green-500' : 
-                            fw.status === 'stopped' ? 'bg-zinc-500' : 
+                            fw.status === 'stopped' ? 'bg-theme-text-muted' : 
                             fw.status === 'suspended' ? 'bg-orange-500 animate-pulse' : 'bg-red-500'}`} />
-                        <span className={`capitalize ${fw.status === 'suspended' ? 'text-orange-400' : 'text-zinc-400'}`}>
+                        <span className={`capitalize ${fw.status === 'suspended' ? 'text-orange-400' : 'text-theme-text-muted'}`}>
                           {fw.status === 'suspended' ? t('forwards.status.suspended') : fw.status}
                         </span>
                         {/* Show stats for active forwards */}
                         {fw.status === 'active' && forwardStats[fw.id] && (
-                          <span className="ml-2 text-xs text-zinc-500 flex items-center gap-1">
+                          <span className="ml-2 text-xs text-theme-text-muted flex items-center gap-1">
                             <Activity className="h-3 w-3" />
                             {forwardStats[fw.id].active_connections}/{forwardStats[fw.id].connection_count}
-                            <span className="text-zinc-600">|</span>
+                            <span className="text-theme-text-muted">|</span>
                             ↑{formatBytes(forwardStats[fw.id].bytes_sent)} 
                             ↓{formatBytes(forwardStats[fw.id].bytes_received)}
                           </span>
@@ -393,7 +393,7 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
                               <Button 
                                 size="icon" 
                                 variant="ghost" 
-                                className="h-7 w-7 text-zinc-400 hover:text-yellow-400"
+                                className="h-7 w-7 text-theme-text-muted hover:text-yellow-400"
                                 onClick={() => api.nodeStopForward(nodeId, fw.id).then(fetchForwards)}
                               >
                                 <Square className="h-3 w-3 fill-current" />
@@ -414,7 +414,7 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
                                 <Button 
                                   size="icon" 
                                   variant="ghost" 
-                                  className="h-7 w-7 text-zinc-400 hover:text-green-400"
+                                  className="h-7 w-7 text-theme-text-muted hover:text-green-400"
                                   onClick={() => api.nodeRestartForward(nodeId, fw.id).then(fetchForwards)}
                                 >
                                   <Play className="h-3 w-3 fill-current" />
@@ -427,7 +427,7 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
                                 <Button 
                                   size="icon" 
                                   variant="ghost" 
-                                  className="h-7 w-7 text-zinc-400 hover:text-blue-400"
+                                  className="h-7 w-7 text-theme-text-muted hover:text-blue-400"
                                   onClick={() => {
                                     setEditingForward(fw);
                                     // 使用独立的编辑状态，不影响创建表单
@@ -451,7 +451,7 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
                             <Button 
                               size="icon" 
                               variant="ghost" 
-                              className="h-7 w-7 text-zinc-400 hover:text-red-400"
+                              className="h-7 w-7 text-theme-text-muted hover:text-red-400"
                               onClick={async () => {
                                 const confirmed = await confirm({
                                   title: t('forwards.actions.confirm_delete_title'),
@@ -481,7 +481,7 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
         {showNewForm && (
             <div className="border border-theme-border rounded-sm bg-theme-bg-panel/30 p-4 space-y-4 animate-in fade-in slide-in-from-top-2">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-zinc-300">{t('forwards.form.new_title')}</h3>
+                    <h3 className="text-sm font-medium text-theme-text">{t('forwards.form.new_title')}</h3>
                     <Button variant="ghost" size="sm" onClick={() => setShowNewForm(false)}>{t('forwards.form.cancel')}</Button>
                 </div>
                 
@@ -500,7 +500,7 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
                     </div>
                 </RadioGroup>
 
-                <div className="flex items-center gap-4 p-4 bg-zinc-950/50 rounded-sm border border-theme-border/50">
+                <div className="flex items-center gap-4 p-4 bg-theme-bg-sunken rounded-sm border border-theme-border/50">
                     {/* Left Side (Source) */}
                     <div className="flex-1 space-y-2">
                         <Label className="text-xs">{forwardType === 'remote' ? t('forwards.form.remote_server') : t('forwards.form.local_client')}</Label>
@@ -521,13 +521,13 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
                     </div>
 
                     {/* Arrow */}
-                    <div className="pt-6 text-zinc-500">
+                    <div className="pt-6 text-theme-text-muted">
                         <ArrowRight className="h-5 w-5" />
                     </div>
 
                     {/* Right Side (Target) */}
                     {forwardType === 'dynamic' ? (
-                        <div className="flex-1 pt-6 text-sm text-zinc-500 italic text-center">
+                        <div className="flex-1 pt-6 text-sm text-theme-text-muted italic text-center">
                             {t('forwards.form.socks5_mode')}
                         </div>
                     ) : (
@@ -561,7 +561,7 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
                         />
                         <Label 
                             htmlFor="skip-health" 
-                            className="text-xs text-zinc-400 cursor-pointer"
+                            className="text-xs text-theme-text-muted cursor-pointer"
                         >
                             {t('forwards.form.skip_check')}
                         </Label>
@@ -573,7 +573,7 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
                         <div className="flex items-start gap-2">
                             <span className="text-red-400 text-xs font-medium">⚠ Error</span>
                         </div>
-                        <div className="text-xs text-zinc-300 whitespace-pre-wrap font-mono">
+                        <div className="text-xs text-theme-text whitespace-pre-wrap font-mono">
                             {createError}
                         </div>
                     </div>
@@ -581,7 +581,7 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
 
                 <div className="flex justify-end gap-2">
                     {isCreating && (
-                        <div className="flex items-center gap-2 text-xs text-zinc-400 mr-auto">
+                        <div className="flex items-center gap-2 text-xs text-theme-text-muted mr-auto">
                             <Loader2 className="h-3 w-3 animate-spin" />
                             {skipHealthCheck ? t('forwards.form.creating') : t('forwards.form.checking_port')}
                         </div>
@@ -598,7 +598,7 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                 <div className="bg-theme-bg-panel border border-theme-border rounded-lg p-6 w-[500px] space-y-4 animate-in fade-in zoom-in-95">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-medium text-zinc-300">{t('forwards.form.edit_title')}</h3>
+                        <h3 className="text-sm font-medium text-theme-text">{t('forwards.form.edit_title')}</h3>
                         <Button 
                             variant="ghost" 
                             size="icon"
@@ -609,13 +609,13 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
                         </Button>
                     </div>
                     
-                    <div className="text-xs text-zinc-500">
-                        {t('forwards.form.type')}: <span className="text-zinc-400 capitalize">{editingForward.forward_type}</span>
+                    <div className="text-xs text-theme-text-muted">
+                        {t('forwards.form.type')}: <span className="text-theme-text-muted capitalize">{editingForward.forward_type}</span>
                         <span className="mx-2">|</span>
-                        ID: <span className="text-zinc-400 font-mono">{editingForward.id.slice(0, 8)}...</span>
+                        ID: <span className="text-theme-text-muted font-mono">{editingForward.id.slice(0, 8)}...</span>
                     </div>
 
-                    <div className="flex items-center gap-4 p-4 bg-zinc-950/50 rounded-sm border border-theme-border/50">
+                    <div className="flex items-center gap-4 p-4 bg-theme-bg-sunken rounded-sm border border-theme-border/50">
                         <div className="flex-1 space-y-2">
                             <Label className="text-xs">{t('forwards.form.bind_address')}</Label>
                             <div className="flex gap-2">
@@ -634,7 +634,7 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
                             </div>
                         </div>
 
-                        <div className="pt-6 text-zinc-500">
+                        <div className="pt-6 text-theme-text-muted">
                             <ArrowRight className="h-5 w-5" />
                         </div>
 
@@ -695,15 +695,15 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Radio className="h-4 w-4 text-emerald-400" />
-            <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wide">{t('forwards.detection.remotePorts')}</h3>
+            <h3 className="text-sm font-medium text-theme-text-muted uppercase tracking-wide">{t('forwards.detection.remotePorts')}</h3>
             {allPorts.length > 0 && (
-              <span className="text-xs text-zinc-500">({allPorts.filter(p => p.port !== 22).length})</span>
+              <span className="text-xs text-theme-text-muted">({allPorts.filter(p => p.port !== 22).length})</span>
             )}
           </div>
 
           <div className="border border-theme-border rounded-sm overflow-hidden bg-theme-bg-panel/50">
             <table className="w-full text-sm text-left">
-              <thead className="bg-theme-bg-panel text-zinc-500 border-b border-theme-border">
+              <thead className="bg-theme-bg-panel text-theme-text-muted border-b border-theme-border">
                 <tr>
                   <th className="px-4 py-2 font-medium">{t('forwards.detection.port')}</th>
                   <th className="px-4 py-2 font-medium">{t('forwards.detection.bindAddr')}</th>
@@ -711,26 +711,26 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
                   <th className="px-4 py-2 font-medium text-right">{t('forwards.detection.action')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-oxide-border bg-zinc-950/50">
+              <tbody className="divide-y divide-oxide-border bg-theme-bg-sunken">
                 {allPorts.filter(p => p.port !== 22).length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-6 text-center text-zinc-500 text-xs">
+                    <td colSpan={4} className="px-4 py-6 text-center text-theme-text-muted text-xs">
                       {t('forwards.detection.noPorts')}
                     </td>
                   </tr>
                 ) : (
                   allPorts.filter(p => p.port !== 22).map(p => (
-                    <tr key={p.port} className="group hover:bg-zinc-900 transition-colors">
+                    <tr key={p.port} className="group hover:bg-theme-bg-hover transition-colors">
                       <td className="px-4 py-2">
                         <span className="font-mono text-emerald-400 font-medium">{p.port}</span>
                       </td>
                       <td className="px-4 py-2">
-                        <span className="font-mono text-zinc-400 text-xs">{p.bind_addr || '0.0.0.0'}</span>
+                        <span className="font-mono text-theme-text-muted text-xs">{p.bind_addr || '0.0.0.0'}</span>
                       </td>
                       <td className="px-4 py-2">
-                        <span className="text-zinc-400 text-xs">
+                        <span className="text-theme-text-muted text-xs">
                           {p.process_name || '—'}
-                          {p.pid ? <span className="text-zinc-600 ml-1">({p.pid})</span> : null}
+                          {p.pid ? <span className="text-theme-text-muted ml-1">({p.pid})</span> : null}
                         </span>
                       </td>
                       <td className="px-4 py-2 text-right">
@@ -743,7 +743,7 @@ export const ForwardsView = ({ nodeId }: { nodeId: string }) => {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-6 text-xs gap-1 text-zinc-400 hover:text-emerald-400"
+                            className="h-6 text-xs gap-1 text-theme-text-muted hover:text-emerald-400"
                             onClick={async () => {
                               try {
                                 await api.nodeCreateForward({

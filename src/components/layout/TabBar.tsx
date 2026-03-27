@@ -84,7 +84,7 @@ const ConnectionDot = ({ state }: { state: string }) => {
       break;
     case 'disconnected':
     case 'disconnecting':
-      colorClass = 'bg-zinc-500';
+      colorClass = 'bg-theme-text-muted';
       break;
     default:
       // error state (object)
@@ -399,7 +399,7 @@ const ReconnectIndicator = ({
       {/* Hover popover with timeline */}
       {showTimeline && (
         <div
-          className="absolute top-full right-0 mt-1 z-50 bg-theme-bg-panel border border-theme-border rounded-lg shadow-xl"
+          className="absolute top-full right-0 mt-1 z-50 bg-theme-bg-elevated border border-theme-border rounded-lg shadow-xl"
           onClick={(e) => e.stopPropagation()}
         >
           <ReconnectTimeline job={job} />

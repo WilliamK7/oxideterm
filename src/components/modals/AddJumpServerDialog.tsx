@@ -131,7 +131,7 @@ export const AddJumpServerDialog: React.FC<AddJumpServerDialogProps> = ({
               </TabsList>
 
               <TabsContent value="default_key">
-          <div className="text-sm text-zinc-500 pt-2">
+          <div className="text-sm text-theme-text-muted pt-2">
             {t('modals.jump_server.default_key_desc')}
           </div>
               </TabsContent>
@@ -173,9 +173,9 @@ export const AddJumpServerDialog: React.FC<AddJumpServerDialogProps> = ({
               </TabsContent>
 
               <TabsContent value="agent">
-          <div className="text-sm text-zinc-400 pt-2 space-y-2">
+          <div className="text-sm text-theme-text-muted pt-2 space-y-2">
             <p>{t('modals.jump_server.agent_desc')}</p>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-theme-text-muted">
               {t('modals.jump_server.agent_hint')}
             </p>
           </div>

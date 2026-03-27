@@ -38,7 +38,7 @@ function generateId(): string {
 function StatusBadge({ status }: { status: McpServerStatus }) {
   const { t } = useTranslation();
   const styles: Record<McpServerStatus, string> = {
-    disconnected: 'bg-zinc-500/20 text-zinc-400',
+    disconnected: 'bg-theme-text-muted/20 text-theme-text-muted',
     connecting: 'bg-yellow-500/20 text-yellow-400',
     connected: 'bg-emerald-500/20 text-emerald-400',
     error: 'bg-red-500/20 text-red-400',
@@ -136,7 +136,7 @@ export function McpServersPanel() {
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-medium text-theme-text">{t('settings_view.mcp.title')}</h3>
+            <h3 className="text-lg font-medium text-theme-text-heading">{t('settings_view.mcp.title')}</h3>
             <p className="text-sm text-theme-text-muted mt-1">{t('settings_view.mcp.description')}</p>
           </div>
           <Button

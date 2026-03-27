@@ -88,10 +88,10 @@ export const FontPreview: React.FC<FontPreviewProps> = ({
 
   if (fontError) {
     return (
-      <div className={cn('flex flex-col items-center justify-center py-16 text-zinc-500', className)}>
+      <div className={cn('flex flex-col items-center justify-center py-16 text-theme-text-muted', className)}>
         <Type className="h-12 w-12 mb-4 opacity-50" />
         <p className="text-sm">{t('fileManager.fontLoadError', 'Failed to load font')}</p>
-        <p className="text-xs text-zinc-600 mt-1">{fontError}</p>
+        <p className="text-xs text-theme-text-muted mt-1">{fontError}</p>
       </div>
     );
   }
@@ -99,7 +99,7 @@ export const FontPreview: React.FC<FontPreviewProps> = ({
   if (!fontLoaded) {
     return (
       <div className={cn('flex items-center justify-center py-16', className)}>
-        <div className="animate-pulse text-zinc-500">{t('fileManager.loadingFont', 'Loading font...')}</div>
+        <div className="animate-pulse text-theme-text-muted">{t('fileManager.loadingFont', 'Loading font...')}</div>
       </div>
     );
   }
@@ -107,7 +107,7 @@ export const FontPreview: React.FC<FontPreviewProps> = ({
   return (
     <div className={cn('flex flex-col h-full', className)}>
       {/* Controls */}
-      <div className="flex items-center gap-4 px-4 py-3 border-b border-theme-border bg-zinc-900/50">
+      <div className="flex items-center gap-4 px-4 py-3 border-b border-theme-border bg-theme-bg-panel/80">
         {/* Font size control */}
         <div className="flex items-center gap-2">
           <Button 
@@ -118,7 +118,7 @@ export const FontPreview: React.FC<FontPreviewProps> = ({
           >
             <Minus className="h-3.5 w-3.5" />
           </Button>
-          <span className="text-xs text-zinc-400 w-12 text-center">{fontSize}px</span>
+          <span className="text-xs text-theme-text-muted w-12 text-center">{fontSize}px</span>
           <Button 
             size="icon" 
             variant="ghost" 
@@ -157,7 +157,7 @@ export const FontPreview: React.FC<FontPreviewProps> = ({
       </div>
 
       {/* Preview area */}
-      <div className="flex-1 overflow-auto p-6 bg-zinc-950">
+      <div className="flex-1 overflow-auto p-6 bg-theme-bg-sunken">
         <div 
           className="space-y-8"
           style={{ fontFamily: `"${fontFamilyName}", sans-serif` }}
@@ -165,11 +165,11 @@ export const FontPreview: React.FC<FontPreviewProps> = ({
           {/* Custom text (if provided) */}
           {customText && (
             <div className="space-y-2">
-              <h4 className="text-xs text-zinc-500 uppercase tracking-wider font-sans">
+              <h4 className="text-xs text-theme-text-muted uppercase tracking-wider font-sans">
                 {t('fileManager.customText', 'Custom Text')}
               </h4>
               <p 
-                className="text-zinc-100 whitespace-pre-wrap break-words"
+                className="text-theme-text whitespace-pre-wrap break-words"
                 style={{ fontSize: `${fontSize}px`, lineHeight: 1.4 }}
               >
                 {customText}
@@ -179,11 +179,11 @@ export const FontPreview: React.FC<FontPreviewProps> = ({
 
           {/* Alphabet */}
           <div className="space-y-2">
-            <h4 className="text-xs text-zinc-500 uppercase tracking-wider font-sans">
+            <h4 className="text-xs text-theme-text-muted uppercase tracking-wider font-sans">
               {t('fileManager.fontAlphabet', 'Alphabet')}
             </h4>
             <p 
-              className="text-zinc-100 whitespace-pre-wrap"
+              className="text-theme-text whitespace-pre-wrap"
               style={{ fontSize: `${fontSize}px`, lineHeight: 1.4 }}
             >
               {SAMPLE_TEXTS.alphabet}
@@ -192,17 +192,17 @@ export const FontPreview: React.FC<FontPreviewProps> = ({
 
           {/* Numbers & Symbols */}
           <div className="space-y-2">
-            <h4 className="text-xs text-zinc-500 uppercase tracking-wider font-sans">
+            <h4 className="text-xs text-theme-text-muted uppercase tracking-wider font-sans">
               {t('fileManager.fontNumbers', 'Numbers & Symbols')}
             </h4>
             <p 
-              className="text-zinc-100"
+              className="text-theme-text"
               style={{ fontSize: `${fontSize}px`, lineHeight: 1.4 }}
             >
               {SAMPLE_TEXTS.numbers}
             </p>
             <p 
-              className="text-zinc-100"
+              className="text-theme-text"
               style={{ fontSize: `${Math.max(fontSize * 0.75, 12)}px`, lineHeight: 1.4 }}
             >
               {SAMPLE_TEXTS.symbols}
@@ -211,11 +211,11 @@ export const FontPreview: React.FC<FontPreviewProps> = ({
 
           {/* Pangrams */}
           <div className="space-y-2">
-            <h4 className="text-xs text-zinc-500 uppercase tracking-wider font-sans">
+            <h4 className="text-xs text-theme-text-muted uppercase tracking-wider font-sans">
               {t('fileManager.fontPangram', 'Pangram')}
             </h4>
             <p 
-              className="text-zinc-100"
+              className="text-theme-text"
               style={{ fontSize: `${fontSize}px`, lineHeight: 1.4 }}
             >
               {SAMPLE_TEXTS.pangram_en}
@@ -224,17 +224,17 @@ export const FontPreview: React.FC<FontPreviewProps> = ({
 
           {/* CJK Characters */}
           <div className="space-y-2">
-            <h4 className="text-xs text-zinc-500 uppercase tracking-wider font-sans">
+            <h4 className="text-xs text-theme-text-muted uppercase tracking-wider font-sans">
               {t('fileManager.fontCJK', 'CJK Characters')}
             </h4>
             <p 
-              className="text-zinc-100"
+              className="text-theme-text"
               style={{ fontSize: `${fontSize}px`, lineHeight: 1.6 }}
             >
               {SAMPLE_TEXTS.pangram_zh}
             </p>
             <p 
-              className="text-zinc-300"
+              className="text-theme-text"
               style={{ fontSize: `${Math.max(fontSize * 0.75, 14)}px`, lineHeight: 1.6 }}
             >
               {SAMPLE_TEXTS.pangram_ja}
@@ -243,11 +243,11 @@ export const FontPreview: React.FC<FontPreviewProps> = ({
 
           {/* Nerd Font Icons */}
           <div className="space-y-2">
-            <h4 className="text-xs text-zinc-500 uppercase tracking-wider font-sans">
+            <h4 className="text-xs text-theme-text-muted uppercase tracking-wider font-sans">
               {t('fileManager.fontNerdIcons', 'Nerd Font Icons')}
             </h4>
             <p 
-              className="text-zinc-100"
+              className="text-theme-text"
               style={{ fontSize: `${fontSize}px`, lineHeight: 1.4, letterSpacing: '0.15em' }}
             >
               {SAMPLE_TEXTS.nerdFont}
@@ -256,11 +256,11 @@ export const FontPreview: React.FC<FontPreviewProps> = ({
 
           {/* Code Sample */}
           <div className="space-y-2">
-            <h4 className="text-xs text-zinc-500 uppercase tracking-wider font-sans">
+            <h4 className="text-xs text-theme-text-muted uppercase tracking-wider font-sans">
               {t('fileManager.fontCode', 'Code Sample')}
             </h4>
             <pre 
-              className="text-zinc-100 bg-zinc-900 p-4 rounded-lg overflow-x-auto"
+              className="text-theme-text bg-theme-bg-panel p-4 rounded-lg overflow-x-auto"
               style={{ fontSize: `${Math.max(fontSize * 0.75, 12)}px`, lineHeight: 1.6 }}
             >
               {SAMPLE_TEXTS.code}
@@ -269,11 +269,11 @@ export const FontPreview: React.FC<FontPreviewProps> = ({
 
           {/* Ligatures */}
           <div className="space-y-2">
-            <h4 className="text-xs text-zinc-500 uppercase tracking-wider font-sans">
+            <h4 className="text-xs text-theme-text-muted uppercase tracking-wider font-sans">
               {t('fileManager.fontLigatures', 'Ligatures')}
             </h4>
             <p 
-              className="text-zinc-100"
+              className="text-theme-text"
               style={{ 
                 fontSize: `${fontSize}px`, 
                 lineHeight: 1.4,
@@ -286,15 +286,15 @@ export const FontPreview: React.FC<FontPreviewProps> = ({
 
           {/* All sizes preview */}
           <div className="space-y-2">
-            <h4 className="text-xs text-zinc-500 uppercase tracking-wider font-sans">
+            <h4 className="text-xs text-theme-text-muted uppercase tracking-wider font-sans">
               {t('fileManager.fontAllSizes', 'Size Comparison')}
             </h4>
             <div className="space-y-1">
               {FONT_SIZES.map(size => (
                 <div key={size} className="flex items-baseline gap-3">
-                  <span className="text-xs text-zinc-600 w-8 text-right font-sans">{size}</span>
+                  <span className="text-xs text-theme-text-muted w-8 text-right font-sans">{size}</span>
                   <span 
-                    className="text-zinc-200"
+                    className="text-theme-text"
                     style={{ fontSize: `${size}px` }}
                   >
                     {filename.replace(/\.[^.]+$/, '')} Ag

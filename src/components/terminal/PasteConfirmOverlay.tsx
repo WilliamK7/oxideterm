@@ -82,7 +82,7 @@ return (
         ref={overlayRef}
         className="absolute inset-0 flex items-center justify-center z-50 bg-black/20"
     >
-        <div className="bg-zinc-900/95 backdrop-blur-sm border border-yellow-500/50 rounded-lg shadow-xl p-4 max-w-md animate-in fade-in zoom-in-95 duration-150">
+        <div className="bg-theme-bg-panel/95 backdrop-blur-sm border border-yellow-500/50 rounded-lg shadow-xl p-4 max-w-md animate-in fade-in zoom-in-95 duration-150">
             {/* Header */}
             <div className="flex items-center gap-2 mb-3">
                 <AlertTriangle className="h-4 w-4 text-yellow-500 shrink-0" />
@@ -92,32 +92,32 @@ return (
             </div>
             
             {/* Preview */}
-            <div className="bg-zinc-950 rounded border border-zinc-700 p-2 mb-3 max-h-32 overflow-hidden">
-                <pre className="text-xs text-zinc-400 font-mono whitespace-pre-wrap break-all">
+            <div className="bg-theme-bg-sunken rounded border border-theme-border p-2 mb-3 max-h-32 overflow-hidden">
+                <pre className="text-xs text-theme-text-muted font-mono whitespace-pre-wrap break-all">
                     {previewLines.map((line, i) => (
                         <div key={i} className="truncate">
                             {line || '\u00A0'}
                         </div>
                     ))}
                     {remainingLines > 0 && (
-                        <div className="text-zinc-500 italic">{t('terminal.paste.more_lines', { count: remainingLines })}</div>
+                        <div className="text-theme-text-muted italic">{t('terminal.paste.more_lines', { count: remainingLines })}</div>
                     )}
                 </pre>
             </div>
             
             {/* Actions */}
             <div className="flex items-center justify-between gap-4">
-                <span className="text-xs text-zinc-500">
-                    <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400 text-[10px]">Enter</kbd>
+                <span className="text-xs text-theme-text-muted">
+                    <kbd className="px-1.5 py-0.5 bg-theme-bg-hover rounded text-theme-text-muted text-[10px]">Enter</kbd>
                     {' '}{t('terminal.paste.confirm')}
                     <span className="mx-2">·</span>
-                    <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400 text-[10px]">Esc</kbd>
+                    <kbd className="px-1.5 py-0.5 bg-theme-bg-hover rounded text-theme-text-muted text-[10px]">Esc</kbd>
                     {' '}{t('terminal.paste.cancel')}
                 </span>
                 <div className="flex gap-2">
                     <button
                         onClick={onCancel}
-                        className="px-3 py-1 text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+                        className="px-3 py-1 text-xs text-theme-text-muted hover:text-theme-text transition-colors"
                     >
                         {t('terminal.paste.cancel')}
                     </button>

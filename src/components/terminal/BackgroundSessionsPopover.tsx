@@ -27,7 +27,7 @@ export const BackgroundSessionsPopover: React.FC<{
   const sessions = Array.from(backgroundSessions.values());
 
   return (
-    <div className="w-64 bg-theme-bg-panel border border-theme-border rounded-lg shadow-lg overflow-hidden">
+    <div className="w-64 bg-theme-bg-elevated border border-theme-border rounded-lg shadow-lg overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-theme-border">
         <span className="text-xs font-medium text-theme-text-muted">

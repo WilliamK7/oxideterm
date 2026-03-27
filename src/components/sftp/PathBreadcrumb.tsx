@@ -65,23 +65,23 @@ export const PathBreadcrumb: React.FC<PathBreadcrumbProps> = ({
   
   return (
     <div className={cn(
-      "flex items-center gap-0.5 text-sm overflow-x-auto scrollbar-thin scrollbar-thumb-zinc-700",
+      "flex items-center gap-0.5 text-sm overflow-x-auto scrollbar-thin scrollbar-thumb-theme-border",
       className
     )}>
       {segments.map((segment, index) => (
         <React.Fragment key={index}>
           {index > 0 && (
-            <ChevronRight className="h-3.5 w-3.5 text-zinc-600 flex-shrink-0" />
+            <ChevronRight className="h-3.5 w-3.5 text-theme-text-muted flex-shrink-0" />
           )}
           <button
             onClick={() => onNavigate(segment.fullPath)}
             className={cn(
-              "flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-zinc-700/50 transition-colors",
-              "text-zinc-300 hover:text-white whitespace-nowrap",
-              index === segments.length - 1 && "text-white font-medium bg-zinc-700/30"
+              "flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-theme-bg-hover/50 transition-colors",
+              "text-theme-text hover:text-white whitespace-nowrap",
+              index === segments.length - 1 && "text-white font-medium bg-theme-bg-hover/30"
             )}
           >
-            {index === 0 && <RootIcon className="h-3.5 w-3.5 text-zinc-400" />}
+            {index === 0 && <RootIcon className="h-3.5 w-3.5 text-theme-text-muted" />}
             <span className="max-w-[120px] truncate">{segment.name}</span>
           </button>
         </React.Fragment>

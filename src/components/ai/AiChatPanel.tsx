@@ -285,7 +285,7 @@ export function AiChatPanel() {
             {showMenu && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
-                <div className="absolute right-0 top-full mt-0.5 w-40 py-0.5 bg-theme-bg-panel border border-theme-border shadow-lg z-20">
+                <div className="absolute right-0 top-full mt-0.5 w-40 py-0.5 bg-theme-bg-elevated border border-theme-border shadow-lg z-20">
                   <button
                     onClick={handleOpenSettings}
                     className="w-full flex items-center gap-2 px-3 py-1.5 text-[12px] text-theme-text-muted hover:text-theme-text hover:bg-theme-border/10"
@@ -311,7 +311,7 @@ export function AiChatPanel() {
       {showConversations && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setShowConversations(false)} />
-          <div className="absolute left-2 right-2 top-[36px] max-h-64 overflow-y-auto bg-theme-bg-panel border border-theme-border shadow-lg z-20">
+          <div className="absolute left-2 right-2 top-[36px] max-h-64 overflow-y-auto bg-theme-bg-elevated border border-theme-border shadow-lg z-20">
             {conversations.length === 0 ? (
               <div className="p-4 text-center text-sm text-theme-text-muted">
                 {t('ai.chat.no_conversations')}

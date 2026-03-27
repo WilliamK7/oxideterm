@@ -99,7 +99,7 @@ export const LocalShellLauncher: React.FC<LocalShellLauncherProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] bg-theme-bg-panel border-theme-border">
+      <DialogContent className="sm:max-w-[480px] bg-theme-bg-elevated border-theme-border">
         <DialogHeader>
           <DialogTitle className="text-theme-text">{t('local_shell.title')}</DialogTitle>
           <DialogDescription className="text-theme-text-muted">

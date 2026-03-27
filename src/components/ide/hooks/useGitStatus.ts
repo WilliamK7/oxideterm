@@ -400,8 +400,8 @@ export const GIT_STATUS_COLORS: Record<GitFileStatus, string> = {
   added: 'text-green-500',
   deleted: 'text-red-500',
   renamed: 'text-blue-500',
-  untracked: 'text-zinc-500',
-  ignored: 'text-zinc-600',
+  untracked: 'text-theme-text-muted',
+  ignored: 'text-theme-text-muted',
   conflict: 'text-red-600',
 };
 

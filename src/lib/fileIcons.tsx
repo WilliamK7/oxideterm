@@ -320,7 +320,7 @@ const FILE_COLORS: Record<string, string> = {
   zsh: 'text-green-500',
 
   // Lock - 灰色
-  lock: 'text-zinc-500',
+  lock: 'text-theme-text-muted',
 };
 
 // 特殊文件名的颜色

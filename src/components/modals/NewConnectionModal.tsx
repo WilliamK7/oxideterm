@@ -373,19 +373,19 @@ export const NewConnectionModal = () => {
               <div className="bg-theme-bg border-l-4 border-theme-border rounded p-3 mb-4">
                 <div className="space-y-2">
                   <p className="text-sm">
-                    <span className="font-medium text-zinc-700 dark:text-zinc-300">ⓘ {t('modals.new_connection.proxy_chain.configured')}</span>
+                    <span className="font-medium text-theme-text-muted dark:text-theme-text">ⓘ {t('modals.new_connection.proxy_chain.configured')}</span>
                   </p>
-                  <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                  <div className="text-xs text-theme-text-muted dark:text-theme-text-muted">
                     {proxyServers.map((server, idx) => (
                       <div key={server.id} className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-zinc-400" />
+                        <div className="w-2 h-2 rounded-full bg-theme-text-muted" />
                         <span className="flex-1 truncate">
                           <span className="font-mono">{idx + 1}.</span>
                           <span className="ml-2">{server.username}@{server.host}:{server.port}</span>
                           {server.auth_type === 'key' || server.auth_type === 'default_key' ? (
-                            <Key className="inline-block h-3.5 w-3.5 text-zinc-500 ml-1" />
+                            <Key className="inline-block h-3.5 w-3.5 text-theme-text-muted ml-1" />
                           ) : (
-                            <Lock className="inline-block h-3.5 w-3.5 text-zinc-500 ml-1" />
+                            <Lock className="inline-block h-3.5 w-3.5 text-theme-text-muted ml-1" />
                           )}
                         </span>
                       </div>
@@ -474,21 +474,21 @@ export const NewConnectionModal = () => {
                 </TabsContent>
                 
                 <TabsContent value="default_key">
-                  <div className="text-sm text-zinc-500 pt-2">
+                  <div className="text-sm text-theme-text-muted pt-2">
                   {t('modals.new_connection.default_key_desc')}
                   </div>
                 </TabsContent>
                 
                 <TabsContent value="agent">
-                  <div className="text-sm text-zinc-400 pt-2 space-y-2">
+                  <div className="text-sm text-theme-text-muted pt-2 space-y-2">
                   <p>{t('modals.new_connection.agent_desc')}</p>
                   <div className="flex items-center gap-2 text-xs">
-                    <span className={`inline-block w-2 h-2 rounded-full ${agentAvailable === true ? 'bg-green-500' : agentAvailable === false ? 'bg-red-500' : 'bg-zinc-500 animate-pulse'}`} />
-                    <span className={agentAvailable === true ? 'text-green-400' : agentAvailable === false ? 'text-red-400' : 'text-zinc-500'}>
+                    <span className={`inline-block w-2 h-2 rounded-full ${agentAvailable === true ? 'bg-green-500' : agentAvailable === false ? 'bg-red-500' : 'bg-theme-text-muted animate-pulse'}`} />
+                    <span className={agentAvailable === true ? 'text-green-400' : agentAvailable === false ? 'text-red-400' : 'text-theme-text-muted'}>
                       {agentAvailable === true ? t('modals.new_connection.agent_detected') : agentAvailable === false ? t('modals.new_connection.agent_not_detected') : '...'}
                     </span>
                   </div>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-theme-text-muted">
                     {t('modals.new_connection.agent_hint')}
                   </p>
                   </div>
@@ -519,7 +519,7 @@ export const NewConnectionModal = () => {
                         />
                         <Button variant="outline" onClick={handleBrowseCert}>{t('modals.new_connection.browse')}</Button>
                       </div>
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-xs text-theme-text-muted">
                         {t('modals.new_connection.certificate_hint')}
                       </p>
                     </div>
@@ -537,9 +537,9 @@ export const NewConnectionModal = () => {
                 </TabsContent>
 
                 <TabsContent value="keyboard_interactive">
-                  <div className="text-sm text-zinc-400 pt-2 space-y-2">
+                  <div className="text-sm text-theme-text-muted pt-2 space-y-2">
                     <p>{t('modals.new_connection.twofa_desc')}</p>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-xs text-theme-text-muted">
                       {t('modals.new_connection.twofa_hint')}
                     </p>
                     <p className="text-xs text-yellow-600">
@@ -561,7 +561,7 @@ export const NewConnectionModal = () => {
                     <SelectItem key={g} value={g}>{g}</SelectItem>
                   ))}
                   {groups.length === 0 && (
-                    <SelectItem value="_help" disabled className="text-zinc-500">{t('modals.new_connection.create_groups_hint')}</SelectItem>
+                    <SelectItem value="_help" disabled className="text-theme-text-muted">{t('modals.new_connection.create_groups_hint')}</SelectItem>
                   )}
                 </SelectContent>
               </Select>
@@ -608,7 +608,7 @@ export const NewConnectionModal = () => {
             {proxyChainExpanded ? (
               <div className="space-y-2 max-h-[250px] overflow-y-auto">
                 {proxyServers.length === 0 ? (
-                  <div className="text-center text-zinc-500 py-6">
+                  <div className="text-center text-theme-text-muted py-6">
                     {t('modals.new_connection.proxy_chain.empty')}
                   </div>
                 ) : (
@@ -617,13 +617,13 @@ export const NewConnectionModal = () => {
                       <div key={server.id} className="relative">
                         <div className="absolute left-1/2 top-0 bottom-0 w-0.5 -translate-x-1/2">
                           {index > 0 && (
-                            <div className="absolute top-1/2 -translate-y-1/2 w-8 h-0.5 bg-zinc-600" />
+                            <div className="absolute top-1/2 -translate-y-1/2 w-8 h-0.5 bg-theme-text-muted" />
                           )}
-                          <div className="absolute top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-theme-bg border-2 border-zinc-600 flex items-center justify-center">
+                          <div className="absolute top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-theme-bg border-2 border-theme-border-strong flex items-center justify-center">
                             {server.auth_type === 'key' || server.auth_type === 'default_key' ? (
-                              <Key className="h-4 w-4 text-zinc-400" />
+                              <Key className="h-4 w-4 text-theme-text-muted" />
                             ) : (
-                              <Lock className="h-4 w-4 text-zinc-400" />
+                              <Lock className="h-4 w-4 text-theme-text-muted" />
                             )}
                           </div>
                         </div>
@@ -631,7 +631,7 @@ export const NewConnectionModal = () => {
                         <div className="flex items-start gap-6 pl-12">
                           <div className="flex-1 border border border-theme-border rounded-lg p-3 space-y-2">
                             <div className="flex items-center justify-between">
-                              <div className="text-sm font-medium text-zinc-600">
+                              <div className="text-sm font-medium text-theme-text-muted">
                                 {index + 1}. {t('modals.new_connection.proxy_chain.jump_server')}
                               </div>
                               <Button
@@ -640,24 +640,24 @@ export const NewConnectionModal = () => {
                                 onClick={() => handleRemoveJumpServer(index)}
                                 className="h-6 w-6 p-0"
                               >
-                                <Trash2 className="h-3.5 w-3.5 text-zinc-400 hover:text-red-500" />
+                                <Trash2 className="h-3.5 w-3.5 text-theme-text-muted hover:text-red-500" />
                               </Button>
                             </div>
                             <div className="space-y-1">
                               <div className="text-sm">
-                                <span className="text-zinc-500">{t('modals.new_connection.proxy_chain.host')}:</span>
+                                <span className="text-theme-text-muted">{t('modals.new_connection.proxy_chain.host')}:</span>
                                 <span className="font-medium ml-2">{server.host}</span>
                               </div>
                               <div className="text-sm">
-                                <span className="text-zinc-500">{t('modals.new_connection.proxy_chain.port')}:</span>
+                                <span className="text-theme-text-muted">{t('modals.new_connection.proxy_chain.port')}:</span>
                                 <span className="font-medium ml-2">{server.port}</span>
                               </div>
                               <div className="text-sm">
-                                <span className="text-zinc-500">{t('modals.new_connection.proxy_chain.username')}:</span>
+                                <span className="text-theme-text-muted">{t('modals.new_connection.proxy_chain.username')}:</span>
                                 <span className="font-medium ml-2">{server.username}</span>
                               </div>
                               <div className="text-sm">
-                                <span className="text-zinc-500">{t('modals.new_connection.proxy_chain.auth')}:</span>
+                                <span className="text-theme-text-muted">{t('modals.new_connection.proxy_chain.auth')}:</span>
                                 <span className="font-medium ml-2">
                                   {server.auth_type === 'key' ? t('modals.new_connection.auth_key') :
                                    server.auth_type === 'default_key' ? t('modals.new_connection.auth_default_key') :
@@ -673,7 +673,7 @@ export const NewConnectionModal = () => {
                 )}
               </div>
             ) : (
-              <div className="text-center text-zinc-500 py-6">
+              <div className="text-center text-theme-text-muted py-6">
                 {proxyServers.length === 0 ? (
                   t('modals.new_connection.proxy_chain.empty')
                 ) : (

@@ -208,9 +208,9 @@ export function OxideExportModal({ isOpen, onClose }: OxideExportModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] bg-theme-bg-panel border-theme-border text-theme-text p-0 gap-0 overflow-hidden flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[85vh] bg-theme-bg-elevated border-theme-border text-theme-text p-0 gap-0 overflow-hidden flex flex-col">
         <DialogHeader className="flex flex-row items-center justify-between border-b border-theme-border px-6 py-4 flex-shrink-0">
-          <DialogTitle className="text-xl font-semibold text-theme-text">{t('modals.export.title')}</DialogTitle>
+          <DialogTitle className="text-xl font-semibold text-theme-text-heading">{t('modals.export.title')}</DialogTitle>
           <DialogClose className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
             <X className="h-4 w-4" />
             <span className="sr-only">{t('modals.export.close')}</span>

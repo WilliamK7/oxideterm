@@ -26,10 +26,10 @@ const toastVariants = cva(
   {
     variants: {
       variant: {
-        default: "border-theme-border bg-theme-bg-panel text-oxide-text",
-        success: "border-green-500/50 bg-green-950 text-green-100",
-        error: "border-red-500/50 bg-red-950 text-red-100",
-        warning: "border-yellow-500/50 bg-yellow-950 text-yellow-100",
+        default: "border-theme-border bg-theme-bg-elevated text-oxide-text",
+        success: "border-theme-success/50 bg-theme-success/10 text-theme-success",
+        error: "border-theme-error/50 bg-theme-error/10 text-theme-error",
+        warning: "border-theme-warning/50 bg-theme-warning/10 text-theme-warning",
       },
     },
     defaultVariants: {
@@ -60,7 +60,7 @@ const ToastAction = React.forwardRef<
   <ToastPrimitives.Action
     ref={ref}
     className={cn(
-      "inline-flex h-8 shrink-0 items-center justify-center rounded-sm border border-theme-border bg-transparent px-3 text-sm font-medium transition-colors hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-theme-accent disabled:pointer-events-none disabled:opacity-50",
+      "inline-flex h-8 shrink-0 items-center justify-center rounded-sm border border-theme-border bg-transparent px-3 text-sm font-medium transition-colors hover:bg-theme-bg-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-theme-accent disabled:pointer-events-none disabled:opacity-50",
       className
     )}
     {...props}
@@ -75,7 +75,7 @@ const ToastClose = React.forwardRef<
   <ToastPrimitives.Close
     ref={ref}
     className={cn(
-      "absolute right-2 top-2 rounded-sm p-1 text-zinc-400 opacity-0 transition-opacity hover:text-zinc-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-theme-accent group-hover:opacity-100",
+      "absolute right-2 top-2 rounded-sm p-1 text-theme-text-muted opacity-0 transition-opacity hover:text-theme-text focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-theme-accent group-hover:opacity-100",
       className
     )}
     toast-close=""

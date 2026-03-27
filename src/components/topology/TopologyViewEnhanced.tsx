@@ -293,7 +293,7 @@ const NodeActionMenu: React.FC<{
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 bg-theme-bg-panel/95 backdrop-blur-lg border border-theme-border rounded-lg shadow-2xl overflow-hidden min-w-[180px] topo-menu-enter"
+      className="fixed z-50 bg-theme-bg-elevated/95 backdrop-blur-lg border border-theme-border rounded-lg shadow-2xl overflow-hidden min-w-[180px] topo-menu-enter"
       style={{ left: x, top: y }}
     >
       {/* Header */}
@@ -475,7 +475,7 @@ export const TopologyViewEnhanced: React.FC<TopologyViewEnhancedProps> = ({
   // Empty state
   if (nodes.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-zinc-500">
+      <div className="flex items-center justify-center h-full text-theme-text-muted">
         <div className="text-center">
           <div className="text-4xl mb-4 opacity-20">❄️</div>
           <p className="text-sm font-mono tracking-widest uppercase">{t('topology.view.no_matrix')}</p>

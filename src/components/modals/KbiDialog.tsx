@@ -209,7 +209,7 @@ export const KbiDialog = ({ onSuccess, onFailure }: KbiDialogProps) => {
           </DialogTitle>
           <DialogDescription>
             {currentPrompt?.name && (
-              <span className="font-medium text-zinc-300">{currentPrompt.name}</span>
+              <span className="font-medium text-theme-text">{currentPrompt.name}</span>
             )}
             {currentPrompt?.instructions && (
               <span className="block mt-1">{currentPrompt.instructions}</span>
@@ -225,7 +225,7 @@ export const KbiDialog = ({ onSuccess, onFailure }: KbiDialogProps) => {
           className={`flex items-center gap-2 text-xs px-3 py-2 rounded ${
             timeLeft <= 15
               ? 'bg-red-950/50 text-red-400 border border-red-900/50'
-              : 'bg-zinc-800/50 text-zinc-400'
+              : 'bg-theme-bg-hover/50 text-theme-text-muted'
           }`}
         >
           <Clock className="h-3.5 w-3.5" />

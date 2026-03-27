@@ -224,7 +224,7 @@ export const ModelSelector = ({ onOpenSettings }: ModelSelectorProps) => {
       </button>
 
       {open && (
-        <div className="absolute left-0 bottom-full mb-0.5 w-64 bg-theme-bg-panel border border-theme-border shadow-lg z-50 overflow-hidden">
+        <div className="absolute left-0 bottom-full mb-0.5 w-64 bg-theme-bg-elevated border border-theme-border shadow-lg z-50 overflow-hidden">
           <div className="max-h-80 overflow-y-auto py-1">
             {aiSettings.providers
               .filter((p) => p.enabled)

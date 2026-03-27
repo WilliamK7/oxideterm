@@ -45,7 +45,7 @@ const AuthBadge = ({ authType }: { authType: string }) => {
       );
     default:
       return (
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-500/20 text-zinc-300">
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-theme-text-muted/20 text-theme-text">
           <ShieldQuestion className="h-3 w-3" /> {authType}
         </span>
       );

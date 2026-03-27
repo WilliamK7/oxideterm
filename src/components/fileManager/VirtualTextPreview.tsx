@@ -331,7 +331,7 @@ export const VirtualTextPreview: React.FC<VirtualTextPreviewProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`overflow-y-scroll overflow-x-auto bg-zinc-950 min-h-0 scrollbar-visible ${className || ''}`}
+      className={`overflow-y-scroll overflow-x-auto bg-theme-bg-sunken min-h-0 scrollbar-visible ${className || ''}`}
       onScroll={onScroll}
       style={{
         fontFamily: getFontFamilyCSS(fontFamily),
@@ -357,11 +357,11 @@ export const VirtualTextPreview: React.FC<VirtualTextPreviewProps> = ({
         </div>
 
         {loading && (
-          <div className="text-xs text-zinc-500 py-2">{t('fileManager.loadingMore', 'Loading...')}</div>
+          <div className="text-xs text-theme-text-muted py-2">{t('fileManager.loadingMore', 'Loading...')}</div>
         )}
 
         {!loading && eof && lineCount === 0 && (
-          <div className="text-xs text-zinc-500 py-2">{t('fileManager.emptyFile', 'Empty file')}</div>
+          <div className="text-xs text-theme-text-muted py-2">{t('fileManager.emptyFile', 'Empty file')}</div>
         )}
       </div>
     </div>

@@ -54,7 +54,7 @@ export const TerminalPane = React.memo<TerminalPaneProps>(({
           ? 'ring-2 ring-[#FF6B35] ring-opacity-80'
           : isBroadcastTarget
             ? 'ring-2 ring-orange-400/60'
-            : 'ring-1 ring-zinc-700/50 hover:ring-zinc-600/70'
+            : 'ring-1 ring-theme-border hover:ring-theme-border-strong'
       )}
       onClick={handleFocus}
     >
@@ -98,7 +98,7 @@ export const TerminalPane = React.memo<TerminalPaneProps>(({
             'absolute right-1 top-1 z-10',
             'h-5 w-5 rounded-sm',
             'flex items-center justify-center',
-            'bg-zinc-800/80 text-zinc-400 hover:bg-red-600/80 hover:text-white',
+            'bg-theme-bg-hover/80 text-theme-text-muted hover:bg-red-600/80 hover:text-white',
             'opacity-0 transition-opacity group-hover:opacity-100',
             // Always visible when active for discoverability
             isActive && 'opacity-70'

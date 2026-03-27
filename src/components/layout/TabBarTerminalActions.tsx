@@ -415,7 +415,7 @@ export const TabBarTerminalActions: React.FC<TabBarTerminalActionsProps> = ({
           {/* Stop */}
           <button
             onClick={handleStop}
-            className="p-1 rounded-sm text-zinc-400 hover:text-red-400 hover:bg-theme-bg-hover transition-colors"
+            className="p-1 rounded-sm text-theme-text-muted hover:text-red-400 hover:bg-theme-bg-hover transition-colors"
             title={t('terminal.recording.stop')}
           >
             <Square className="h-3 w-3 fill-current" />
@@ -424,7 +424,7 @@ export const TabBarTerminalActions: React.FC<TabBarTerminalActionsProps> = ({
           {/* Discard */}
           <button
             onClick={handleDiscard}
-            className="p-1 rounded-sm text-zinc-400 hover:text-zinc-200 hover:bg-theme-bg-hover transition-colors"
+            className="p-1 rounded-sm text-theme-text-muted hover:text-theme-text hover:bg-theme-bg-hover transition-colors"
             title={t('terminal.recording.discard')}
           >
             <Trash2 className="h-3 w-3" />

@@ -64,8 +64,8 @@ const AppIcon: React.FC<{
             draggable={false}
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-b from-zinc-600 to-zinc-700 flex items-center justify-center">
-            <AppWindow className="h-7 w-7 text-zinc-400" />
+          <div className="w-full h-full bg-gradient-to-b from-theme-bg-hover to-theme-bg-panel flex items-center justify-center">
+            <AppWindow className="h-7 w-7 text-theme-text-muted" />
           </div>
         )}
       </div>
@@ -105,7 +105,7 @@ const WslDistroRow: React.FC<{
     </div>
     <div className={cn(
       "w-2 h-2 rounded-full shrink-0",
-      distro.is_running ? "bg-green-500" : "bg-zinc-600",
+      distro.is_running ? "bg-green-500" : "bg-theme-text-muted",
     )} />
     <ExternalLink className="h-3.5 w-3.5 text-theme-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
   </div>
@@ -303,7 +303,7 @@ export const LauncherView: React.FC = () => {
 
         {/* App grid */}
         <div
-          className="flex-1 overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-zinc-700/50 scrollbar-track-transparent"
+          className="flex-1 overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-theme-border scrollbar-track-transparent"
           style={{ willChange: 'scroll-position', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {loading && apps.length === 0 ? (
@@ -388,7 +388,7 @@ export const LauncherView: React.FC = () => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto min-h-0 p-4 space-y-2 scrollbar-thin scrollbar-thumb-zinc-700">
+        <div className="flex-1 overflow-y-auto min-h-0 p-4 space-y-2 scrollbar-thin scrollbar-thumb-theme-border">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-full gap-3">
               <Loader2 className="h-8 w-8 text-theme-accent animate-spin" />

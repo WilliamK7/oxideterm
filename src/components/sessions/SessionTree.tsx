@@ -178,7 +178,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
   depth,
   isLast = false,
   showLine = true,
-  lineColor: _lineColor = 'border-zinc-700',
+  lineColor: _lineColor = 'border-theme-border',
   children,
 }) => {
   const paddingLeft = depth * INDENT_SIZE;
@@ -432,12 +432,12 @@ const SessionNode = React.memo<SessionNodeProps>(({
 
         {/* 端口 */}
         {node.port !== 22 && (
-          <span className="text-xs text-zinc-500 mr-2">:{node.port}</span>
+          <span className="text-xs text-theme-text-muted mr-2">:{node.port}</span>
         )}
 
         {/* 终端数量 */}
         {hasTerminals && (
-          <span className="text-xs text-zinc-500 mr-2 flex items-center gap-0.5">
+          <span className="text-xs text-theme-text-muted mr-2 flex items-center gap-0.5">
             <Terminal className="w-3 h-3" />
             {terminalIds.length}
           </span>
@@ -841,10 +841,10 @@ export const SessionTree: React.FC<SessionTreeProps> = ({
 
   if (nodes.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-32 text-zinc-500 text-sm text-center px-4">
+      <div className="flex flex-col items-center justify-center h-32 text-theme-text-muted text-sm text-center px-4">
         <Server className="w-8 h-8 mb-2 opacity-30 shrink-0" />
         <p>{t('sessions.tree.no_sessions')}</p>
-        <p className="text-xs mt-1 text-zinc-600">{t('sessions.tree.click_to_add')}</p>
+        <p className="text-xs mt-1 text-theme-text-muted">{t('sessions.tree.click_to_add')}</p>
       </div>
     );
   }

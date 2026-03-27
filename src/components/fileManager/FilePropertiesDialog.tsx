@@ -60,7 +60,7 @@ const permColor: Record<string, string> = {
   r: 'text-emerald-400',
   w: 'text-amber-400',
   x: 'text-sky-400',
-  '-': 'text-zinc-600',
+  '-': 'text-theme-text-muted',
 };
 
 const ColoredPermissions: React.FC<{ mode: number }> = ({ mode }) => {
@@ -92,11 +92,11 @@ const PropertyRow: React.FC<{
   mono?: boolean;
 }> = ({ label, value, mono }) => (
   <div className="flex items-start gap-3 py-1.5">
-    <span className="text-zinc-500 text-xs shrink-0 min-w-[6.5rem] max-w-[8rem] text-right select-none break-keep">
+    <span className="text-theme-text-muted text-xs shrink-0 min-w-[6.5rem] max-w-[8rem] text-right select-none break-keep">
       {label}
     </span>
     <span
-      className={`text-zinc-200 text-xs break-all min-w-0 flex-1 select-text ${mono ? 'font-mono' : ''}`}
+      className={`text-theme-text text-xs break-all min-w-0 flex-1 select-text ${mono ? 'font-mono' : ''}`}
     >
       {value}
     </span>
@@ -146,7 +146,7 @@ export const FilePropertiesDialog: React.FC<FilePropertiesDialogProps> = ({
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileIcon className="h-4 w-4 text-zinc-400 shrink-0" />
+            <FileIcon className="h-4 w-4 text-theme-text-muted shrink-0" />
             <span className="truncate">{file.name}</span>
           </DialogTitle>
           <DialogDescription className="sr-only">
@@ -156,7 +156,7 @@ export const FilePropertiesDialog: React.FC<FilePropertiesDialogProps> = ({
 
         <div className="px-4 py-3 space-y-0.5">
           {loading ? (
-            <div className="flex items-center justify-center py-8 text-zinc-500 text-xs">
+            <div className="flex items-center justify-center py-8 text-theme-text-muted text-xs">
               {t('fileManager.loadingMore')}
             </div>
           ) : metadata ? (
@@ -172,7 +172,7 @@ export const FilePropertiesDialog: React.FC<FilePropertiesDialogProps> = ({
                   <span>
                     {formatFileSize(metadata.size)}
                     {metadata.size >= 1024 && (
-                      <span className="text-zinc-600 ml-1">
+                      <span className="text-theme-text-muted ml-1">
                         ({formatExactBytes(metadata.size, t, locale)})
                       </span>
                     )}
@@ -214,7 +214,7 @@ export const FilePropertiesDialog: React.FC<FilePropertiesDialogProps> = ({
                   value={
                     <span>
                       <ColoredPermissions mode={metadata.mode} />
-                      <span className="text-zinc-500 ml-1.5">
+                      <span className="text-theme-text-muted ml-1.5">
                         ({formatOctalPermissions(metadata.mode)})
                       </span>
                     </span>
@@ -258,7 +258,7 @@ export const FilePropertiesDialog: React.FC<FilePropertiesDialogProps> = ({
                     <PropertyRow
                       label={t('fileManager.propContents')}
                       value={
-                        <span className="text-zinc-500 flex items-center gap-1.5">
+                        <span className="text-theme-text-muted flex items-center gap-1.5">
                           <Loader2 className="h-3 w-3 animate-spin" />
                           {t('fileManager.propScanning')}
                         </span>
@@ -279,7 +279,7 @@ export const FilePropertiesDialog: React.FC<FilePropertiesDialogProps> = ({
                           <span>
                             {formatFileSize(dirStats.totalSize)}
                             {dirStats.totalSize >= 1024 && (
-                              <span className="text-zinc-600 ml-1">
+                              <span className="text-theme-text-muted ml-1">
                                 ({formatExactBytes(dirStats.totalSize, t, locale)})
                               </span>
                             )}
@@ -302,7 +302,7 @@ export const FilePropertiesDialog: React.FC<FilePropertiesDialogProps> = ({
                     </>
                   ) : (
                     <div className="flex items-start gap-3 py-1.5">
-                      <span className="text-zinc-500 text-xs shrink-0 w-28 text-right select-none">
+                      <span className="text-theme-text-muted text-xs shrink-0 w-28 text-right select-none">
                         {t('fileManager.propChecksum')}
                       </span>
                       <button
@@ -328,7 +328,7 @@ export const FilePropertiesDialog: React.FC<FilePropertiesDialogProps> = ({
               )}
             </>
           ) : (
-            <div className="flex items-center justify-center py-8 text-zinc-500 text-xs">
+            <div className="flex items-center justify-center py-8 text-theme-text-muted text-xs">
               {t('fileManager.error')}
             </div>
           )}
@@ -337,7 +337,7 @@ export const FilePropertiesDialog: React.FC<FilePropertiesDialogProps> = ({
         {/* Close button */}
         <div className="px-4 py-2.5 border-t border-theme-border bg-theme-bg-panel flex justify-end">
           <button
-            className="px-3 py-1 text-xs rounded bg-zinc-700 hover:bg-zinc-600 text-zinc-200 transition-colors"
+            className="px-3 py-1 text-xs rounded bg-theme-bg-hover hover:bg-theme-text-muted text-theme-text transition-colors"
             onClick={onClose}
           >
             OK

@@ -307,11 +307,11 @@ export const AppLayout = () => {
                       <div className={`h-full w-full p-8 overflow-auto ${monitorBgActive ? '' : 'bg-theme-bg'}`} data-bg-active={monitorBgActive || undefined}>
                         <div className="max-w-5xl mx-auto space-y-8">
                           <div>
-                            <h2 className="text-2xl font-bold mb-6 text-zinc-200">{t('layout.connection_monitor.title')}</h2>
+                            <h2 className="text-2xl font-bold mb-6 text-theme-text">{t('layout.connection_monitor.title')}</h2>
                             <ConnectionPoolMonitor />
                           </div>
                           <div>
-                            <h2 className="text-xl font-bold mb-4 text-zinc-200">{t('sidebar.panels.system_health')}</h2>
+                            <h2 className="text-xl font-bold mb-4 text-theme-text">{t('sidebar.panels.system_health')}</h2>
                             <SystemHealthPanel />
                           </div>
                         </div>
@@ -424,7 +424,7 @@ export const AppLayout = () => {
 
       {/* Zen mode hint overlay */}
       {showZenHint && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-md bg-theme-bg-panel/90 border border-theme-border text-sm text-theme-text-muted backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-md bg-theme-bg-elevated/90 border border-theme-border text-sm text-theme-text-muted backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
           {isMac ? t('zen_mode.hint') : t('zen_mode.hint_other')}
         </div>
       )}

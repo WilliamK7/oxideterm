@@ -162,7 +162,7 @@ function TabItem({ tab, isActive, onActivate, onClose, onTogglePin }: TabItemPro
         <>
           <div className="fixed inset-0 z-50" onClick={closeContextMenu} />
           <div
-            className="fixed z-50 bg-theme-bg-panel border border-theme-border rounded-md shadow-xl py-1 min-w-[140px]"
+            className="fixed z-50 bg-theme-bg-elevated border border-theme-border rounded-md shadow-xl py-1 min-w-[140px]"
             style={{ left: contextMenuPos.x, top: contextMenuPos.y }}
           >
             <button

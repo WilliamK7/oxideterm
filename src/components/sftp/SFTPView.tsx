@@ -333,11 +333,11 @@ const FileList = ({
       {/* Header */}
       <div className={cn(
         "flex items-center gap-2 p-2 border-b transition-colors h-10",
-        active ? "bg-zinc-800/50 border-oxide-accent/30" : "bg-theme-bg-panel border-theme-border"
+        active ? "bg-theme-bg-hover/50 border-oxide-accent/30" : "bg-theme-bg-panel border-theme-border"
       )}>
-        <span className="font-semibold text-xs text-zinc-400 uppercase tracking-wider min-w-12">{title}</span>
+        <span className="font-semibold text-xs text-theme-text-muted uppercase tracking-wider min-w-12">{title}</span>
         {/* Path bar - breadcrumb navigation or editable input */}
-        <div className="flex-1 flex items-center gap-1 bg-zinc-950 border border-theme-border px-2 py-0.5 rounded-sm overflow-hidden">
+        <div className="flex-1 flex items-center gap-1 bg-theme-bg-sunken border border-theme-border px-2 py-0.5 rounded-sm overflow-hidden">
           {isPathEditable && pathInputValue !== undefined ? (
             <input
               type="text"
@@ -353,7 +353,7 @@ const FileList = ({
                 }
               }}
               onBlur={() => onPathInputChange?.(path)}
-              className="flex-1 bg-transparent text-zinc-300 text-xs outline-none"
+              className="flex-1 bg-transparent text-theme-text text-xs outline-none"
               placeholder={t('sftp.file_list.path_placeholder')}
               autoFocus
             />
@@ -407,10 +407,10 @@ const FileList = ({
       </div>
 
       {/* Column Headers with Sort */}
-      <div className="flex items-center px-2 py-1 bg-zinc-900 border-b border-theme-border text-xs text-zinc-500">
+      <div className="flex items-center px-2 py-1 bg-theme-bg-panel border-b border-theme-border text-xs text-theme-text-muted">
         <button 
           className={cn(
-            "flex-1 flex items-center gap-1 hover:text-zinc-300 transition-colors text-left",
+            "flex-1 flex items-center gap-1 hover:text-theme-text transition-colors text-left",
             sortField === 'name' && "text-theme-accent"
           )}
           onClick={() => onSortChange?.('name')}
@@ -422,7 +422,7 @@ const FileList = ({
         </button>
         <button 
           className={cn(
-            "w-20 flex items-center justify-end gap-1 hover:text-zinc-300 transition-colors",
+            "w-20 flex items-center justify-end gap-1 hover:text-theme-text transition-colors",
             sortField === 'size' && "text-theme-accent"
           )}
           onClick={() => onSortChange?.('size')}
@@ -432,7 +432,7 @@ const FileList = ({
         </button>
         <button 
           className={cn(
-            "w-24 flex items-center justify-end gap-1 hover:text-zinc-300 transition-colors",
+            "w-24 flex items-center justify-end gap-1 hover:text-theme-text transition-colors",
             sortField === 'modified' && "text-theme-accent"
           )}
           onClick={() => onSortChange?.('modified')}
@@ -444,19 +444,19 @@ const FileList = ({
 
       {/* Filter Input */}
       {onFilterChange && (
-        <div className="flex items-center gap-2 px-2 py-1 bg-zinc-900/50 border-b border-theme-border">
-          <Search className="h-3 w-3 text-zinc-500" />
+        <div className="flex items-center gap-2 px-2 py-1 bg-theme-bg-panel/80 border-b border-theme-border">
+          <Search className="h-3 w-3 text-theme-text-muted" />
           <input
             type="text"
             value={filter || ''}
             onChange={(e) => onFilterChange(e.target.value)}
             placeholder={t('sftp.file_list.filter_placeholder')}
-            className="flex-1 bg-transparent text-xs text-zinc-300 placeholder:text-zinc-600 outline-none"
+            className="flex-1 bg-transparent text-xs text-theme-text placeholder:text-theme-text-muted outline-none"
           />
           {filter && (
             <button 
               onClick={() => onFilterChange('')}
-              className="text-zinc-500 hover:text-zinc-300 text-xs"
+              className="text-theme-text-muted hover:text-theme-text text-xs"
             >
               ✕
             </button>
@@ -473,12 +473,12 @@ const FileList = ({
         onKeyDown={handleKeyDown}
       >
         {loading ? (
-          <div className="flex items-center justify-center py-12 text-zinc-500">
+          <div className="flex items-center justify-center py-12 text-theme-text-muted">
             <Loader2 className="h-5 w-5 animate-spin mr-2" />
             <span className="text-xs">{t('sftp.file_list.loading')}</span>
           </div>
         ) : files.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-zinc-500">
+          <div className="flex flex-col items-center justify-center py-12 text-theme-text-muted">
             <FolderOpen className="h-8 w-8 mb-2 opacity-40" />
             <span className="text-xs">{t('sftp.file_list.empty')}</span>
           </div>
@@ -511,18 +511,18 @@ const FileList = ({
               }}
               onContextMenu={(e) => handleContextMenu(e, file)}
               className={cn(
-                "flex items-center px-2 py-1 text-xs cursor-default select-none border-b border-transparent hover:bg-zinc-800",
+                "flex items-center px-2 py-1 text-xs cursor-default select-none border-b border-transparent hover:bg-theme-bg-hover",
                 isSelected && "bg-theme-accent/20 text-theme-accent"
               )}
             >
               <div className="flex-1 flex items-center gap-2 min-w-0">
-                {file.file_type === 'Directory' ? <Folder className="h-3.5 w-3.5 flex-shrink-0 text-blue-400" /> : <File className="h-3.5 w-3.5 flex-shrink-0 text-zinc-400" />}
+                {file.file_type === 'Directory' ? <Folder className="h-3.5 w-3.5 flex-shrink-0 text-blue-400" /> : <File className="h-3.5 w-3.5 flex-shrink-0 text-theme-text-muted" />}
                 <span className="truncate">{file.name}</span>
               </div>
-              <div className="w-20 text-right text-zinc-500">
+              <div className="w-20 text-right text-theme-text-muted">
                 {file.file_type === 'Directory' ? '-' : formatFileSize(file.size)}
               </div>
-              <div className="w-24 text-right text-zinc-600">
+              <div className="w-24 text-right text-theme-text-muted">
                 {file.modified ? new Date(file.modified * 1000).toLocaleDateString() : '-'}
               </div>
             </div>
@@ -533,13 +533,13 @@ const FileList = ({
       {/* Context Menu — rendered via Portal to escape contain:layout containment */}
       {contextMenu && createPortal(
         <div 
-          className="fixed z-50 bg-theme-bg-panel border border-theme-border rounded-sm shadow-lg py-1 min-w-[180px]"
+          className="fixed z-50 bg-theme-bg-elevated border border-theme-border rounded-sm shadow-lg py-1 min-w-[180px]"
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
           {/* Transfer */}
           {onTransfer && selected.size > 0 && (
             <button 
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
               onClick={() => {
                 onTransfer(Array.from(selected), isLocalPane ? 'upload' : 'download');
                 setContextMenu(null);
@@ -553,7 +553,7 @@ const FileList = ({
           {/* Preview (only for files) */}
           {contextMenu.file && contextMenu.file.file_type !== 'Directory' && onPreview && (
             <button 
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
               onClick={() => {
                 onPreview(contextMenu.file!);
                 setContextMenu(null);
@@ -566,7 +566,7 @@ const FileList = ({
           {/* Rename */}
           {contextMenu.file && selected.size === 1 && onRename && (
             <button 
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
               onClick={() => {
                 onRename(contextMenu.file!.name);
                 setContextMenu(null);
@@ -579,7 +579,7 @@ const FileList = ({
           {/* Copy Path */}
           {contextMenu.file && (
             <button 
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
               onClick={() => {
                 const fullPath = `${path}/${contextMenu.file!.name}`;
                 navigator.clipboard.writeText(fullPath);
@@ -593,7 +593,7 @@ const FileList = ({
           {/* Delete */}
           {selected.size > 0 && onDelete && (
             <button 
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2 text-red-400"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2 text-red-400"
               onClick={() => {
                 onDelete(Array.from(selected));
                 setContextMenu(null);
@@ -608,7 +608,7 @@ const FileList = ({
           {/* New Folder */}
           {onNewFolder && (
             <button 
-              className="w-full px-3 py-1.5 text-left text-xs hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-theme-bg-hover flex items-center gap-2"
               onClick={() => {
                 onNewFolder();
                 setContextMenu(null);
@@ -660,7 +660,7 @@ const SFTPMediaPreview: React.FC<{
   return (
     <div className="flex flex-col items-center justify-center h-full p-4 gap-4">
       <div className="text-6xl">🎵</div>
-      <div className="text-zinc-400">{name}</div>
+      <div className="text-theme-text-muted">{name}</div>
       <audio ref={ref} controls className="w-full max-w-md" src={src}>
         {fallbackText}
       </audio>
@@ -2042,7 +2042,7 @@ export const SFTPView = ({ nodeId }: { nodeId: string }) => {
                     <DialogTitle className="text-sm font-mono flex items-center gap-2">
                         {previewFile?.name}
                         {previewFile?.type === 'hex' && previewFile.hexTotalSize && (
-                            <span className="text-xs text-zinc-500">
+                            <span className="text-xs text-theme-text-muted">
                                 ({formatFileSize(previewFile.hexTotalSize)})
                             </span>
                         )}
@@ -2064,11 +2064,11 @@ export const SFTPView = ({ nodeId }: { nodeId: string }) => {
             </DialogHeader>
             
             {/* Preview Content Area */}
-            <div className={`flex-1 bg-zinc-950 ${previewFile?.type === 'pdf' ? 'flex flex-col min-h-0' : 'overflow-auto'}`}>
+            <div className={`flex-1 bg-theme-bg-sunken ${previewFile?.type === 'pdf' ? 'flex flex-col min-h-0' : 'overflow-auto'}`}>
                 {/* Loading State */}
                 {previewLoading && (
                     <div className="flex items-center justify-center h-full">
-                        <RefreshCw className="h-6 w-6 animate-spin text-zinc-400" />
+                        <RefreshCw className="h-6 w-6 animate-spin text-theme-text-muted" />
                     </div>
                 )}
                 
@@ -2126,7 +2126,7 @@ export const SFTPView = ({ nodeId }: { nodeId: string }) => {
                 {/* Hex Preview */}
                 {!previewLoading && previewFile?.type === 'hex' && (
                     <div className="p-4">
-                        <div className="text-xs text-zinc-500 mb-2 flex items-center gap-2">
+                        <div className="text-xs text-theme-text-muted mb-2 flex items-center gap-2">
                             <span>{t('sftp.preview.hex_view')}</span>
                             <span>•</span>
                             <span>{t('sftp.preview.showing_first', { size: formatFileSize((previewFile.hexOffset || 0) + 16384) })}</span>
@@ -2137,7 +2137,7 @@ export const SFTPView = ({ nodeId }: { nodeId: string }) => {
                                 </>
                             )}
                         </div>
-                        <pre className="font-mono text-xs text-zinc-300 whitespace-pre overflow-x-auto leading-5">
+                        <pre className="font-mono text-xs text-theme-text whitespace-pre overflow-x-auto leading-5">
                             {previewFile.data}
                         </pre>
                         {previewFile.hexHasMore && (
@@ -2166,13 +2166,13 @@ export const SFTPView = ({ nodeId }: { nodeId: string }) => {
                 {!previewLoading && previewFile?.type === 'too-large' && (
                     <div className="flex flex-col items-center justify-center h-full p-8 gap-4">
                         <div className="text-6xl">📦</div>
-                        <div className="text-zinc-300 text-lg">{t('sftp.preview.too_large')}</div>
-                        <div className="text-zinc-500 text-sm text-center">
+                        <div className="text-theme-text text-lg">{t('sftp.preview.too_large')}</div>
+                        <div className="text-theme-text-muted text-sm text-center">
                             <p>{t('sftp.preview.file_size', { size: formatFileSize(previewFile.fileSize || 0) })}</p>
                             <p>{t('sftp.preview.preview_limit', { size: formatFileSize(previewFile.maxSize || 0) })}</p>
                         </div>
                         {previewFile.recommendDownload && (
-                            <p className="text-zinc-400 text-sm">{t('sftp.preview.recommend_download')}</p>
+                            <p className="text-theme-text-muted text-sm">{t('sftp.preview.recommend_download')}</p>
                         )}
                     </div>
                 )}
@@ -2181,8 +2181,8 @@ export const SFTPView = ({ nodeId }: { nodeId: string }) => {
                 {!previewLoading && previewFile?.type === 'unsupported' && (
                     <div className="flex flex-col items-center justify-center h-full p-8 gap-4">
                         <div className="text-6xl">❓</div>
-                        <div className="text-zinc-300 text-lg">{t('sftp.preview.unsupported')}</div>
-                        <div className="text-zinc-500 text-sm text-center">
+                        <div className="text-theme-text text-lg">{t('sftp.preview.unsupported')}</div>
+                        <div className="text-theme-text-muted text-sm text-center">
                             <p>{t('sftp.preview.type', { type: previewFile.mimeType })}</p>
                             {previewFile.reason && <p className="mt-2">{previewFile.reason}</p>}
                         </div>
@@ -2191,7 +2191,7 @@ export const SFTPView = ({ nodeId }: { nodeId: string }) => {
             </div>
             
             <DialogFooter className="p-2 border-t border-theme-border bg-theme-bg-panel justify-between sm:justify-between">
-                <div className="text-xs text-zinc-500 self-center px-2 truncate max-w-md">
+                <div className="text-xs text-theme-text-muted self-center px-2 truncate max-w-md">
                     {previewFile?.path}
                 </div>
                 <div className="flex gap-2">
@@ -2296,7 +2296,7 @@ export const SFTPView = ({ nodeId }: { nodeId: string }) => {
               {t('sftp.dialogs.delete_confirm', { count: deleteConfirm?.files.length || 0 })}
             </DialogDescription>
           </DialogHeader>
-          <div className="max-h-32 overflow-auto text-xs text-zinc-400 bg-zinc-950 p-2 rounded">
+          <div className="max-h-32 overflow-auto text-xs text-theme-text-muted bg-theme-bg-sunken p-2 rounded">
             {deleteConfirm?.files.map(f => <div key={f}>{f}</div>)}
           </div>
           <DialogFooter>

@@ -722,7 +722,7 @@ export const LocalFileManager: React.FC<LocalFileManagerProps> = ({ className })
     <div className={cn("flex h-full", bgActive ? '' : 'bg-theme-bg', className)} data-bg-active={bgActive || undefined}>
       {/* Sidebar - Bookmarks */}
       <div className={cn(
-        "border-r border-theme-border bg-zinc-900/30 transition-all duration-200 flex flex-col",
+        "border-r border-theme-border bg-theme-bg-panel/50 transition-all duration-200 flex flex-col",
         sidebarOpen ? "w-52" : "w-10"
       )}>
         {/* Sidebar toggle */}
@@ -779,7 +779,7 @@ export const LocalFileManager: React.FC<LocalFileManagerProps> = ({ className })
       <div className="flex-1 flex flex-col min-w-0 relative">
         {/* Toolbar */}
         <div className="flex items-center gap-2 p-2 bg-theme-bg-panel border-b border-theme-border">
-          <span className="text-sm font-medium text-zinc-300">{t('fileManager.title')}</span>
+          <span className="text-sm font-medium text-theme-text">{t('fileManager.title')}</span>
           <div className="flex-1" />
           
           {/* Bookmark toggle for current path */}
@@ -1120,7 +1120,7 @@ export const LocalFileManager: React.FC<LocalFileManagerProps> = ({ className })
               {t('fileManager.confirmDeleteDesc', { count: deleteConfirm?.length || 0 })}
             </DialogDescription>
           </DialogHeader>
-          <div className="max-h-40 overflow-y-auto text-sm text-zinc-400">
+          <div className="max-h-40 overflow-y-auto text-sm text-theme-text-muted">
             {deleteConfirm?.map(name => (
               <div key={name} className="py-1">{name}</div>
             ))}

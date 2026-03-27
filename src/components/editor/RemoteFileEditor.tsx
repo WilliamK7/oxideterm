@@ -545,14 +545,14 @@ export function RemoteFileEditor({
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
       <DialogContent 
-        className="max-w-6xl w-[90vw] h-[85vh] !flex !flex-col p-0 gap-0 bg-zinc-900 overflow-hidden"
+        className="max-w-6xl w-[90vw] h-[85vh] !flex !flex-col p-0 gap-0 bg-theme-bg-panel overflow-hidden"
         aria-describedby={undefined}
       >
         {/* 标题栏 */}
-        <DialogHeader className="flex-shrink-0 px-4 py-2 border-b border-zinc-700/50 bg-zinc-800/80">
+        <DialogHeader className="flex-shrink-0 px-4 py-2 border-b border-theme-border/50 bg-theme-bg-hover/80">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2 text-sm font-medium">
-              <span className="text-zinc-200">{fileName}</span>
+              <span className="text-theme-text">{fileName}</span>
               {isDirty && (
                 <span
                   className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"
@@ -572,11 +572,11 @@ export function RemoteFileEditor({
                 size="sm"
                 onClick={handleSave}
                 disabled={!isDirty || isSaving}
-                className="h-7 px-3 text-xs hover:bg-zinc-700/50"
+                className="h-7 px-3 text-xs hover:bg-theme-bg-hover/50"
               >
                 <Save className="w-3.5 h-3.5 mr-1.5" />
                 {isSaving ? t('editor.saving') : t('editor.save')}
-                <kbd className="ml-2 text-[10px] text-zinc-500 bg-zinc-700/50 px-1 rounded">
+                <kbd className="ml-2 text-[10px] text-theme-text-muted bg-theme-bg-hover/50 px-1 rounded">
                   ⌘S
                 </kbd>
               </Button>
@@ -584,7 +584,7 @@ export function RemoteFileEditor({
                 variant="ghost"
                 size="sm"
                 onClick={handleClose}
-                className="h-7 w-7 p-0 hover:bg-zinc-700/50"
+                className="h-7 w-7 p-0 hover:bg-theme-bg-hover/50"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -596,8 +596,8 @@ export function RemoteFileEditor({
         <div className="flex-1 min-h-0 overflow-hidden relative">
           {/* Loading 状态 */}
           {!editorReady && (
-            <div className="absolute inset-0 flex items-center justify-center bg-zinc-900">
-              <Loader2 className="w-6 h-6 animate-spin text-zinc-500" />
+            <div className="absolute inset-0 flex items-center justify-center bg-theme-bg-panel">
+              <Loader2 className="w-6 h-6 animate-spin text-theme-text-muted" />
             </div>
           )}
           <div
@@ -607,16 +607,16 @@ export function RemoteFileEditor({
         </div>
 
         {/* 状态栏 */}
-        <div className="flex-shrink-0 px-4 py-1.5 border-t border-zinc-700/50 bg-zinc-800/80 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-4 text-zinc-400">
+        <div className="flex-shrink-0 px-4 py-1.5 border-t border-theme-border/50 bg-theme-bg-hover/80 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-4 text-theme-text-muted">
             <span>
               {t('editor.line')} {cursorInfo.line}, {t('editor.column')} {cursorInfo.col}
             </span>
-            <span className="px-1.5 py-0.5 bg-zinc-700/50 rounded text-zinc-300">
+            <span className="px-1.5 py-0.5 bg-theme-bg-hover/50 rounded text-theme-text">
               {getLanguageDisplayName(normalizedLang)}
             </span>
             <span 
-              className="px-1.5 py-0.5 bg-zinc-700/50 rounded text-zinc-300 cursor-default"
+              className="px-1.5 py-0.5 bg-theme-bg-hover/50 rounded text-theme-text cursor-default"
               title={t('editor.encoding_detected', { encoding: currentEncoding })}
             >
               {currentEncoding}
@@ -650,11 +650,11 @@ export function RemoteFileEditor({
               </span>
             )}
             {lastSavedMtime && !saveError && (
-              <span className="text-zinc-500">
+              <span className="text-theme-text-muted">
                 {t('editor.last_saved')}: {new Date(lastSavedMtime * 1000).toLocaleTimeString()}
               </span>
             )}
-            <span className="text-zinc-500 max-w-[300px] truncate" title={filePath}>
+            <span className="text-theme-text-muted max-w-[300px] truncate" title={filePath}>
               {filePath}
             </span>
           </div>

@@ -280,7 +280,7 @@ export const QuickLook: React.FC<QuickLookProps> = ({
         }}
       >
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-theme-border bg-zinc-900/50">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-theme-border bg-theme-bg-panel/80">
           {/* Navigation buttons (left side) */}
           {canNavigate && (
             <div className="flex items-center gap-1 mr-2">
@@ -293,7 +293,7 @@ export const QuickLook: React.FC<QuickLookProps> = ({
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-xs text-zinc-500 min-w-[3rem] text-center">
+              <span className="text-xs text-theme-text-muted min-w-[3rem] text-center">
                 {actualIndex + 1} / {previewableFiles.length}
               </span>
               <Button 
@@ -310,8 +310,8 @@ export const QuickLook: React.FC<QuickLookProps> = ({
 
           {getPreviewIcon(preview.type)}
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-medium text-zinc-200 truncate">{preview.name}</h3>
-            <p className="text-xs text-zinc-500 truncate">{preview.path}</p>
+            <h3 className="text-sm font-medium text-theme-text truncate">{preview.name}</h3>
+            <p className="text-xs text-theme-text-muted truncate">{preview.path}</p>
           </div>
           
           {/* Actions */}
@@ -322,7 +322,7 @@ export const QuickLook: React.FC<QuickLookProps> = ({
                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setImageZoom(z => Math.max(z - 0.25, 0.25))} title={t('fileManager.zoomOut')}>
                   <ZoomOut className="h-3.5 w-3.5" />
                 </Button>
-                <span className="text-xs text-zinc-500 w-12 text-center">{Math.round(imageZoom * 100)}%</span>
+                <span className="text-xs text-theme-text-muted w-12 text-center">{Math.round(imageZoom * 100)}%</span>
                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setImageZoom(z => Math.min(z + 0.25, 3))} title={t('fileManager.zoomIn')}>
                   <ZoomIn className="h-3.5 w-3.5" />
                 </Button>
@@ -339,7 +339,7 @@ export const QuickLook: React.FC<QuickLookProps> = ({
                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPdfZoom(z => Math.max(z - 0.25, 0.25))} title={t('fileManager.zoomOut')}>
                   <ZoomOut className="h-3.5 w-3.5" />
                 </Button>
-                <span className="text-xs text-zinc-500 w-12 text-center">{Math.round(pdfZoom * 100)}%</span>
+                <span className="text-xs text-theme-text-muted w-12 text-center">{Math.round(pdfZoom * 100)}%</span>
                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPdfZoom(z => Math.min(z + 0.25, 3))} title={t('fileManager.zoomIn')}>
                   <ZoomIn className="h-3.5 w-3.5" />
                 </Button>
@@ -359,7 +359,7 @@ export const QuickLook: React.FC<QuickLookProps> = ({
               <Button
                 size="icon"
                 variant="ghost"
-                className={cn("h-7 w-7", mdViewMode === 'source' && "bg-zinc-800")}
+                className={cn("h-7 w-7", mdViewMode === 'source' && "bg-theme-bg-hover")}
                 onClick={() => setMdViewMode(m => m === 'render' ? 'source' : 'render')}
                 title={mdViewMode === 'render'
                   ? t('fileManager.viewSource', 'View Source (u)')
@@ -373,7 +373,7 @@ export const QuickLook: React.FC<QuickLookProps> = ({
             <Button 
               size="icon" 
               variant="ghost" 
-              className={cn("h-7 w-7", showMetadata && "bg-zinc-800")} 
+              className={cn("h-7 w-7", showMetadata && "bg-theme-bg-hover")} 
               onClick={() => setShowMetadata(s => !s)} 
               title={t('fileManager.toggleInfo', 'Toggle Info (i)')}
             >
@@ -395,7 +395,7 @@ export const QuickLook: React.FC<QuickLookProps> = ({
         </div>
 
         {/* Content - use flex to ensure child fills entire area */}
-        <div className="flex-1 overflow-auto min-h-0 flex flex-col bg-zinc-950">
+        <div className="flex-1 overflow-auto min-h-0 flex flex-col bg-theme-bg-sunken">
           {/* Image Preview */}
           {preview.type === 'image' && (
             <ImageViewer
@@ -529,7 +529,7 @@ export const QuickLook: React.FC<QuickLookProps> = ({
 
           {/* Unsupported */}
           {preview.type === 'unsupported' && (
-            <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
+            <div className="flex flex-col items-center justify-center py-16 text-theme-text-muted">
               <FileQuestion className="h-12 w-12 mb-4 opacity-50" />
               <p className="text-sm">{preview.reason || t('fileManager.unsupportedFormat')}</p>
               {onOpenExternal && (
@@ -547,11 +547,11 @@ export const QuickLook: React.FC<QuickLookProps> = ({
 
           {/* Too Large */}
           {preview.type === 'too-large' && (
-            <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
+            <div className="flex flex-col items-center justify-center py-16 text-theme-text-muted">
               <FileQuestion className="h-12 w-12 mb-4 opacity-50" />
               <p className="text-sm">{t('fileManager.fileTooLarge')}</p>
               {preview.fileSize && (
-                <p className="text-xs text-zinc-600 mt-1">
+                <p className="text-xs text-theme-text-muted mt-1">
                   {t('fileManager.fileSize')}: {(preview.fileSize / 1024 / 1024).toFixed(2)} MB
                 </p>
               )}
@@ -566,20 +566,20 @@ export const QuickLook: React.FC<QuickLookProps> = ({
 
         {/* Metadata Panel */}
         {showMetadata && preview.metadata && (
-          <div className="px-4 py-3 border-t border-theme-border bg-zinc-900/50">
+          <div className="px-4 py-3 border-t border-theme-border bg-theme-bg-panel/80">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2 text-xs">
               {/* Size */}
               <div className="flex items-center gap-2">
-                <HardDrive className="h-3.5 w-3.5 text-zinc-500" />
-                <span className="text-zinc-500">{t('fileManager.size')}:</span>
-                <span className="text-zinc-300">{formatFileSize(preview.metadata.size)}</span>
+                <HardDrive className="h-3.5 w-3.5 text-theme-text-muted" />
+                <span className="text-theme-text-muted">{t('fileManager.size')}:</span>
+                <span className="text-theme-text">{formatFileSize(preview.metadata.size)}</span>
               </div>
               
               {/* Modified */}
               <div className="flex items-center gap-2">
-                <Clock className="h-3.5 w-3.5 text-zinc-500" />
-                <span className="text-zinc-500">{t('fileManager.modified')}:</span>
-                <span className="text-zinc-300" title={formatTimestamp(preview.metadata.modified)}>
+                <Clock className="h-3.5 w-3.5 text-theme-text-muted" />
+                <span className="text-theme-text-muted">{t('fileManager.modified')}:</span>
+                <span className="text-theme-text" title={formatTimestamp(preview.metadata.modified)}>
                   {formatRelativeTime(preview.metadata.modified)}
                 </span>
               </div>
@@ -587,9 +587,9 @@ export const QuickLook: React.FC<QuickLookProps> = ({
               {/* Created (if available) */}
               {preview.metadata.created && (
                 <div className="flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5 text-zinc-500" />
-                  <span className="text-zinc-500">{t('fileManager.created', 'Created')}:</span>
-                  <span className="text-zinc-300" title={formatTimestamp(preview.metadata.created)}>
+                  <Clock className="h-3.5 w-3.5 text-theme-text-muted" />
+                  <span className="text-theme-text-muted">{t('fileManager.created', 'Created')}:</span>
+                  <span className="text-theme-text" title={formatTimestamp(preview.metadata.created)}>
                     {formatRelativeTime(preview.metadata.created)}
                   </span>
                 </div>
@@ -598,17 +598,17 @@ export const QuickLook: React.FC<QuickLookProps> = ({
               {/* Permissions (Unix) or Readonly (Windows) */}
               {preview.metadata.mode !== undefined ? (
                 <div className="flex items-center gap-2">
-                  <Shield className="h-3.5 w-3.5 text-zinc-500" />
-                  <span className="text-zinc-500">{t('fileManager.permissions', 'Permissions')}:</span>
-                  <span className="text-zinc-300 font-mono">
+                  <Shield className="h-3.5 w-3.5 text-theme-text-muted" />
+                  <span className="text-theme-text-muted">{t('fileManager.permissions', 'Permissions')}:</span>
+                  <span className="text-theme-text font-mono">
                     {formatUnixPermissions(preview.metadata.mode)}
                   </span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <Shield className="h-3.5 w-3.5 text-zinc-500" />
-                  <span className="text-zinc-500">{t('fileManager.permissions', 'Permissions')}:</span>
-                  <span className="text-zinc-300">
+                  <Shield className="h-3.5 w-3.5 text-theme-text-muted" />
+                  <span className="text-theme-text-muted">{t('fileManager.permissions', 'Permissions')}:</span>
+                  <span className="text-theme-text">
                     {preview.metadata.readonly ? t('fileManager.readonly', 'Read-only') : t('fileManager.readwrite', 'Read/Write')}
                   </span>
                 </div>
@@ -617,9 +617,9 @@ export const QuickLook: React.FC<QuickLookProps> = ({
               {/* MIME Type */}
               {preview.metadata.mimeType && (
                 <div className="flex items-center gap-2">
-                  <FileText className="h-3.5 w-3.5 text-zinc-500" />
-                  <span className="text-zinc-500">{t('fileManager.type', 'Type')}:</span>
-                  <span className="text-zinc-300 truncate" title={preview.metadata.mimeType}>
+                  <FileText className="h-3.5 w-3.5 text-theme-text-muted" />
+                  <span className="text-theme-text-muted">{t('fileManager.type', 'Type')}:</span>
+                  <span className="text-theme-text truncate" title={preview.metadata.mimeType}>
                     {preview.metadata.mimeType}
                   </span>
                 </div>
@@ -636,7 +636,7 @@ export const QuickLook: React.FC<QuickLookProps> = ({
         )}
 
         {/* Footer hint */}
-        <div className="px-4 py-2 border-t border-theme-border bg-zinc-900/30 text-xs text-zinc-600">
+        <div className="px-4 py-2 border-t border-theme-border bg-theme-bg-panel/50 text-xs text-theme-text-muted">
           {canNavigate ? (
             <span>{t('fileManager.quickLookHintNav', 'Press ← → to navigate, Space or Esc to close, i to toggle info')}</span>
           ) : (

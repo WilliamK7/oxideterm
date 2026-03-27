@@ -159,7 +159,7 @@ export const ToolIndicator = ({ activeTabType, hasAnySSHSession }: ToolIndicator
 
       {/* Popover */}
       {open && (
-        <div className="absolute left-0 bottom-full mb-0.5 w-72 bg-theme-bg-panel border border-theme-border shadow-lg z-50 overflow-hidden">
+        <div className="absolute left-0 bottom-full mb-0.5 w-72 bg-theme-bg-elevated border border-theme-border shadow-lg z-50 overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-3 py-1.5 border-b border-theme-border/30">
             <span className="text-[10px] font-bold tracking-wider uppercase text-theme-text-muted">

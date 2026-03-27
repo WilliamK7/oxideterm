@@ -69,7 +69,7 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
       className={cn(
         'absolute top-2 right-2 z-20',
         'flex items-center gap-1.5',
-        'bg-zinc-900/90 backdrop-blur-sm border border-zinc-700/60',
+        'bg-theme-bg-panel/90 backdrop-blur-sm border border-theme-border/60',
         'rounded-lg px-2.5 py-1.5 shadow-lg',
         'select-none pointer-events-auto',
         'transition-all duration-200',
@@ -99,19 +99,19 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
       </div>
 
       {/* Elapsed time */}
-      <span className="text-[11px] font-mono text-zinc-400 ml-1">
+      <span className="text-[11px] font-mono text-theme-text-muted ml-1">
         {formatElapsed(meta.elapsed)}
       </span>
 
       {/* Separator */}
-      <div className="w-px h-3.5 bg-zinc-600/50" />
+      <div className="w-px h-3.5 bg-theme-text-muted/50" />
 
       {/* Pause/Resume button */}
       <button
         onClick={handlePauseResume}
         className={cn(
-          'p-0.5 rounded hover:bg-zinc-700/60 transition-colors',
-          'text-zinc-400 hover:text-zinc-200',
+          'p-0.5 rounded hover:bg-theme-bg-hover/60 transition-colors',
+          'text-theme-text-muted hover:text-theme-text',
         )}
         title={isPaused
           ? t('terminal.recording.resume')
@@ -128,8 +128,8 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
       <button
         onClick={handleStop}
         className={cn(
-          'p-0.5 rounded hover:bg-zinc-700/60 transition-colors',
-          'text-zinc-400 hover:text-red-400',
+          'p-0.5 rounded hover:bg-theme-bg-hover/60 transition-colors',
+          'text-theme-text-muted hover:text-red-400',
         )}
         title={t('terminal.recording.stop')}
       >
@@ -140,8 +140,8 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
       <button
         onClick={handleDiscard}
         className={cn(
-          'p-0.5 rounded hover:bg-zinc-700/60 transition-colors',
-          'text-zinc-500 hover:text-zinc-300 text-[10px] leading-none',
+          'p-0.5 rounded hover:bg-theme-bg-hover/60 transition-colors',
+          'text-theme-text-muted hover:text-theme-text text-[10px] leading-none',
         )}
         title={t('terminal.recording.discard')}
       >

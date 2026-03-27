@@ -174,7 +174,7 @@ export function CodeEditorSearchBar({ view, isOpen, onClose }: CodeEditorSearchB
                 // 容器：贴边悬浮
                 "absolute top-0 right-4 z-50",
                 // 外观
-                "bg-theme-bg-panel border border-theme-border rounded-b-lg shadow-lg",
+                "bg-theme-bg-elevated border border-theme-border rounded-b-lg shadow-lg",
                 // 布局
                 "flex flex-col gap-1.5 p-2",
                 // 动画

@@ -264,7 +264,7 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
           <div className="text-center px-6 max-w-sm">
             <div className="text-3xl mb-3">⚠️</div>
             <div className="text-sm text-red-400 mb-1">Audio Load Error</div>
-            <div className="text-xs text-zinc-500">{loadError}</div>
+            <div className="text-xs text-theme-text-muted">{loadError}</div>
           </div>
         </div>
       )}
@@ -292,7 +292,7 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
               }}
             />
             {/* Disk gradient */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-zinc-800 via-zinc-900 to-black opacity-90" />
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-theme-bg-hover via-theme-bg-panel to-black opacity-90" />
             {/* Light reflection */}
             <div className="absolute inset-0 rounded-full"
               style={{
@@ -420,7 +420,7 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
       <div
         className={cn(
           "transition-all duration-300 overflow-hidden border-l border-theme-border",
-          "bg-zinc-900/50 flex flex-col",
+          "bg-theme-bg-panel/80 flex flex-col",
           showMeta ? "w-56" : "w-0 border-l-0",
         )}
       >
@@ -439,7 +439,7 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3 scrollbar-thin scrollbar-thumb-zinc-700">
+        <div className="flex-1 overflow-y-auto p-3 scrollbar-thin scrollbar-thumb-theme-border">
           {showLyrics && meta?.lyrics ? (
             /* ── Lyrics view ────────────────────────────────────────── */
             <div className="text-[11px] font-mono text-theme-text leading-5 whitespace-pre-wrap break-words">
@@ -495,6 +495,6 @@ const MetaRow: React.FC<{ label: string; value: string }> = ({ label, value }) =
   <div className="flex text-[10px] leading-4 font-mono hover:bg-theme-bg-hover/50 px-1 -mx-1 rounded-sm transition-colors">
     <span className="text-theme-accent/50 mr-1">{'>'}</span>
     <span className="text-theme-text-muted w-[72px] shrink-0">{label}</span>
-    <span className="text-zinc-300 truncate">{value}</span>
+    <span className="text-theme-text truncate">{value}</span>
   </div>
 );

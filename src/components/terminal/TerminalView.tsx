@@ -2156,7 +2156,7 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
        {/* Input Lock Overlay - shown during reconnection */}
        {inputLocked && (
          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-10">
-           <div className="bg-zinc-900/95 border border-zinc-700 rounded-lg px-6 py-4 flex flex-col items-center gap-3 shadow-xl">
+           <div className="bg-theme-bg-panel/95 border border-theme-border rounded-lg px-6 py-4 flex flex-col items-center gap-3 shadow-xl">
              <div className="flex items-center gap-2 text-amber-400">
                {connectionStatus === 'reconnecting' ? (
                  <Loader2 className="h-5 w-5 animate-spin" />
@@ -2168,7 +2168,7 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
                  {connectionStatus === 'reconnecting' && t('terminal.standby.reconnecting')}
                </span>
              </div>
-             <div className="text-xs text-zinc-400 text-center">
+             <div className="text-xs text-theme-text-muted text-center">
                {t('terminal.standby.input_locked')}
              </div>
            </div>
@@ -2178,9 +2178,9 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
        {/* Disconnected Overlay - shown when connection is permanently lost */}
        {!inputLocked && connectionStatus === 'disconnected' && (
          <div className="absolute inset-x-0 bottom-0 z-10 flex justify-center pb-6 pointer-events-none">
-           <div className="pointer-events-auto bg-zinc-900/95 border border-zinc-700 rounded-lg px-5 py-3 flex items-center gap-3 shadow-xl">
+           <div className="pointer-events-auto bg-theme-bg-panel/95 border border-theme-border rounded-lg px-5 py-3 flex items-center gap-3 shadow-xl">
              <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
-             <span className="text-sm text-zinc-300">{t('terminal.disconnected.message')}</span>
+             <span className="text-sm text-theme-text">{t('terminal.disconnected.message')}</span>
              {nodeId && (
                <button
                  onClick={() => useReconnectOrchestratorStore.getState().scheduleReconnect(nodeId)}
@@ -2241,7 +2241,7 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
 
        {/* Mouse mode indicator */}
        {mouseMode && (
-         <div className="absolute bottom-2 right-2 bg-zinc-800/70 text-zinc-400 text-[11px] px-2 py-0.5 rounded pointer-events-none select-none">
+         <div className="absolute bottom-2 right-2 bg-theme-bg-hover/70 text-theme-text-muted text-[11px] px-2 py-0.5 rounded pointer-events-none select-none">
            {t('terminal.mouse_mode_hint')}
          </div>
        )}

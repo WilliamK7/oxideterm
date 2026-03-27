@@ -95,7 +95,7 @@ export const BookmarksPanel: React.FC<BookmarksPanelProps> = ({
     <div className="flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-theme-border">
-        <div className="flex items-center gap-2 text-xs font-medium text-zinc-400 uppercase tracking-wider">
+        <div className="flex items-center gap-2 text-xs font-medium text-theme-text-muted uppercase tracking-wider">
           <Star className="h-3 w-3" />
           {t('fileManager.favorites')}
         </div>
@@ -117,7 +117,7 @@ export const BookmarksPanel: React.FC<BookmarksPanelProps> = ({
       {/* Bookmarks list */}
       <div className="flex-1 overflow-y-auto py-1">
         {bookmarks.length === 0 ? (
-          <div className="px-3 py-4 text-xs text-zinc-600 text-center">
+          <div className="px-3 py-4 text-xs text-theme-text-muted text-center">
             {t('fileManager.noBookmarks')}
           </div>
         ) : (
@@ -125,7 +125,7 @@ export const BookmarksPanel: React.FC<BookmarksPanelProps> = ({
             <div
               key={bookmark.id}
               className={cn(
-                "group flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-zinc-800/50 transition-colors",
+                "group flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-theme-bg-hover/50 transition-colors",
                 currentPath === bookmark.path && "bg-theme-accent/10 text-theme-accent"
               )}
               onClick={() => onNavigate(bookmark.path)}
@@ -166,7 +166,7 @@ export const BookmarksPanel: React.FC<BookmarksPanelProps> = ({
               )}
               
               {hoveredId !== bookmark.id && (
-                <ChevronRight className="h-3 w-3 text-zinc-600 opacity-0 group-hover:opacity-100" />
+                <ChevronRight className="h-3 w-3 text-theme-text-muted opacity-0 group-hover:opacity-100" />
               )}
             </div>
           ))
@@ -182,7 +182,7 @@ export const BookmarksPanel: React.FC<BookmarksPanelProps> = ({
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-zinc-500">{t('fileManager.bookmarkName')}</label>
+              <label className="text-xs text-theme-text-muted">{t('fileManager.bookmarkName')}</label>
               <Input
                 value={editName}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditName(e.target.value)}
@@ -194,8 +194,8 @@ export const BookmarksPanel: React.FC<BookmarksPanelProps> = ({
             </div>
             {editDialog && (
               <div>
-                <label className="text-xs text-zinc-500">{t('fileManager.bookmarkPath')}</label>
-                <p className="text-xs text-zinc-400 mt-1 font-mono bg-zinc-900 px-2 py-1 rounded truncate">
+                <label className="text-xs text-theme-text-muted">{t('fileManager.bookmarkPath')}</label>
+                <p className="text-xs text-theme-text-muted mt-1 font-mono bg-theme-bg-panel px-2 py-1 rounded truncate">
                   {editDialog.path}
                 </p>
               </div>

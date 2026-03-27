@@ -119,7 +119,7 @@ export const EditConnectionPropertiesModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto bg-theme-bg-panel border-theme-border text-theme-text">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto bg-theme-bg-elevated border-theme-border text-theme-text">
         <DialogHeader>
           <DialogTitle className="text-theme-text">
             {t('sessionManager.edit_properties.title')}

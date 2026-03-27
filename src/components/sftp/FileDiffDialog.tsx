@@ -118,7 +118,7 @@ export const FileDiffDialog: React.FC<FileDiffDialogProps> = ({
             <ArrowLeftRight className="h-4 w-4 text-theme-accent" />
             {t('sftp.diff.title')}
           </DialogTitle>
-          <DialogDescription id="diff-desc" className="text-xs text-zinc-500">
+          <DialogDescription id="diff-desc" className="text-xs text-theme-text-muted">
             {t('sftp.diff.description')}
           </DialogDescription>
         </DialogHeader>
@@ -128,13 +128,13 @@ export const FileDiffDialog: React.FC<FileDiffDialogProps> = ({
           <div className="flex-1 px-3 py-2 bg-red-950/20 border-r border-theme-border flex items-center gap-2">
             <File className="h-3 w-3 text-red-400" />
             <span className="text-red-300 font-medium">{t('sftp.diff.local')}:</span>
-            <span className="text-zinc-400 truncate">{getFileName(localFile.path)}</span>
+            <span className="text-theme-text-muted truncate">{getFileName(localFile.path)}</span>
             <span className="ml-auto text-red-400">-{stats.removed}</span>
           </div>
           <div className="flex-1 px-3 py-2 bg-green-950/20 flex items-center gap-2">
             <File className="h-3 w-3 text-green-400" />
             <span className="text-green-300 font-medium">{t('sftp.diff.remote')}:</span>
-            <span className="text-zinc-400 truncate">{getFileName(remoteFile.path)}</span>
+            <span className="text-theme-text-muted truncate">{getFileName(remoteFile.path)}</span>
             <span className="ml-auto text-green-400">+{stats.added}</span>
           </div>
         </div>
@@ -145,14 +145,14 @@ export const FileDiffDialog: React.FC<FileDiffDialogProps> = ({
             <div 
               key={index}
               className={cn(
-                "flex border-b border-zinc-800/50",
+                "flex border-b border-theme-border/50",
                 line.type === 'added' && "bg-green-950/30",
                 line.type === 'removed' && "bg-red-950/30"
               )}
             >
               {/* Left line number */}
               <div className={cn(
-                "w-12 px-2 py-0.5 text-right text-zinc-600 border-r border-zinc-800 select-none shrink-0",
+                "w-12 px-2 py-0.5 text-right text-theme-text-muted border-r border-theme-border select-none shrink-0",
                 line.type === 'removed' && "bg-red-950/50 text-red-400"
               )}>
                 {line.leftLineNum || ''}
@@ -160,10 +160,10 @@ export const FileDiffDialog: React.FC<FileDiffDialogProps> = ({
               
               {/* Left content */}
               <div className={cn(
-                "flex-1 px-2 py-0.5 whitespace-pre overflow-x-auto border-r border-zinc-700",
+                "flex-1 px-2 py-0.5 whitespace-pre overflow-x-auto border-r border-theme-border",
                 line.type === 'removed' && "bg-red-950/30 text-red-200",
-                line.type === 'added' && "bg-zinc-900/50 text-zinc-600",
-                line.type === 'unchanged' && "text-zinc-400"
+                line.type === 'added' && "bg-theme-bg-panel/80 text-theme-text-muted",
+                line.type === 'unchanged' && "text-theme-text-muted"
               )}>
                 {line.type !== 'added' && (
                   <>
@@ -175,7 +175,7 @@ export const FileDiffDialog: React.FC<FileDiffDialogProps> = ({
               
               {/* Right line number */}
               <div className={cn(
-                "w-12 px-2 py-0.5 text-right text-zinc-600 border-r border-zinc-800 select-none shrink-0",
+                "w-12 px-2 py-0.5 text-right text-theme-text-muted border-r border-theme-border select-none shrink-0",
                 line.type === 'added' && "bg-green-950/50 text-green-400"
               )}>
                 {line.rightLineNum || ''}
@@ -185,8 +185,8 @@ export const FileDiffDialog: React.FC<FileDiffDialogProps> = ({
               <div className={cn(
                 "flex-1 px-2 py-0.5 whitespace-pre overflow-x-auto",
                 line.type === 'added' && "bg-green-950/30 text-green-200",
-                line.type === 'removed' && "bg-zinc-900/50 text-zinc-600",
-                line.type === 'unchanged' && "text-zinc-400"
+                line.type === 'removed' && "bg-theme-bg-panel/80 text-theme-text-muted",
+                line.type === 'unchanged' && "text-theme-text-muted"
               )}>
                 {line.type !== 'removed' && (
                   <>
@@ -199,14 +199,14 @@ export const FileDiffDialog: React.FC<FileDiffDialogProps> = ({
           ))}
           
           {diffLines.length === 0 && (
-            <div className="flex items-center justify-center h-full text-zinc-500">
+            <div className="flex items-center justify-center h-full text-theme-text-muted">
               {t('sftp.diff.identical')}
             </div>
           )}
         </div>
         
         <DialogFooter className="px-4 py-2 border-t border-theme-border">
-          <div className="flex-1 text-xs text-zinc-500">
+          <div className="flex-1 text-xs text-theme-text-muted">
             {t('sftp.diff.unchanged', { count: stats.unchanged })}, 
             <span className="text-green-400 ml-1">{t('sftp.diff.added', { count: stats.added })}</span>,
             <span className="text-red-400 ml-1">{t('sftp.diff.removed', { count: stats.removed })}</span>

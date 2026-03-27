@@ -98,9 +98,9 @@ export const TransferConflictDialog: React.FC<TransferConflictDialogProps> = ({
         </DialogHeader>
         
         {/* File name */}
-        <div className="px-3 py-2 bg-zinc-900 rounded-md border border-zinc-700">
+        <div className="px-3 py-2 bg-theme-bg-panel rounded-md border border-theme-border">
           <div className="flex items-center gap-2 text-sm font-medium">
-            <File className="h-4 w-4 text-zinc-400" />
+            <File className="h-4 w-4 text-theme-text-muted" />
             {fileName}
           </div>
         </div>
@@ -109,21 +109,21 @@ export const TransferConflictDialog: React.FC<TransferConflictDialogProps> = ({
         <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-stretch">
           {/* Source */}
           <div className={`p-3 rounded-md border ${
-            sourceNewer === true ? 'border-green-600 bg-green-950/30' : 'border-zinc-700 bg-zinc-900'
+            sourceNewer === true ? 'border-green-600 bg-green-950/30' : 'border-theme-border bg-theme-bg-panel'
           }`}>
-            <div className="text-xs text-zinc-400 mb-2 font-medium uppercase">
+            <div className="text-xs text-theme-text-muted mb-2 font-medium uppercase">
               {sourceLabel}
               {sourceNewer === true && (
                 <span className="ml-2 text-green-400 normal-case">{t('sftp.conflict.newer')}</span>
               )}
             </div>
             <div className="space-y-1.5 text-sm">
-              <div className="flex items-center gap-2 text-zinc-300">
-                <HardDrive className="h-3.5 w-3.5 text-zinc-500" />
+              <div className="flex items-center gap-2 text-theme-text">
+                <HardDrive className="h-3.5 w-3.5 text-theme-text-muted" />
                 {formatFileSize(sourceFile.size)}
               </div>
-              <div className="flex items-center gap-2 text-zinc-300">
-                <Clock className="h-3.5 w-3.5 text-zinc-500" />
+              <div className="flex items-center gap-2 text-theme-text">
+                <Clock className="h-3.5 w-3.5 text-theme-text-muted" />
                 {formatDate(sourceFile.modified)}
               </div>
             </div>
@@ -131,26 +131,26 @@ export const TransferConflictDialog: React.FC<TransferConflictDialogProps> = ({
           
           {/* Arrow */}
           <div className="flex items-center justify-center">
-            <ArrowRight className="h-5 w-5 text-zinc-500" />
+            <ArrowRight className="h-5 w-5 text-theme-text-muted" />
           </div>
           
           {/* Target */}
           <div className={`p-3 rounded-md border ${
-            sourceNewer === false ? 'border-green-600 bg-green-950/30' : 'border-zinc-700 bg-zinc-900'
+            sourceNewer === false ? 'border-green-600 bg-green-950/30' : 'border-theme-border bg-theme-bg-panel'
           }`}>
-            <div className="text-xs text-zinc-400 mb-2 font-medium uppercase">
+            <div className="text-xs text-theme-text-muted mb-2 font-medium uppercase">
               {targetLabel}
               {sourceNewer === false && (
                 <span className="ml-2 text-green-400 normal-case">{t('sftp.conflict.newer')}</span>
               )}
             </div>
             <div className="space-y-1.5 text-sm">
-              <div className="flex items-center gap-2 text-zinc-300">
-                <HardDrive className="h-3.5 w-3.5 text-zinc-500" />
+              <div className="flex items-center gap-2 text-theme-text">
+                <HardDrive className="h-3.5 w-3.5 text-theme-text-muted" />
                 {formatFileSize(targetFile.size)}
               </div>
-              <div className="flex items-center gap-2 text-zinc-300">
-                <Clock className="h-3.5 w-3.5 text-zinc-500" />
+              <div className="flex items-center gap-2 text-theme-text">
+                <Clock className="h-3.5 w-3.5 text-theme-text-muted" />
                 {formatDate(targetFile.modified)}
               </div>
             </div>
@@ -165,7 +165,7 @@ export const TransferConflictDialog: React.FC<TransferConflictDialogProps> = ({
               checked={applyToAll} 
               onCheckedChange={(checked) => setApplyToAll(!!checked)}
             />
-            <Label htmlFor="apply-all" className="text-sm text-zinc-400 cursor-pointer">
+            <Label htmlFor="apply-all" className="text-sm text-theme-text-muted cursor-pointer">
               {t('sftp.conflict.apply_all', { count: conflicts.length })}
             </Label>
           </div>

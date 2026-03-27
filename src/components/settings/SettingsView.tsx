@@ -184,7 +184,7 @@ const LocalTerminalSettings = () => {
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div>
-                <h3 className="text-2xl font-medium text-theme-text mb-2">{t('settings_view.local_terminal.title')}</h3>
+                <h3 className="text-2xl font-medium text-theme-text-heading mb-2">{t('settings_view.local_terminal.title')}</h3>
                 <p className="text-theme-text-muted">{t('settings_view.local_terminal.description')}</p>
             </div>
             <Separator />
@@ -385,7 +385,7 @@ const HelpAboutSection = () => {
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div>
-                <h3 className="text-2xl font-medium text-theme-text mb-2">{t('settings_view.help.title')}</h3>
+                <h3 className="text-2xl font-medium text-theme-text-heading mb-2">{t('settings_view.help.title')}</h3>
                 <p className="text-theme-text-muted">{t('settings_view.help.description')}</p>
             </div>
             <Separator />
@@ -1239,7 +1239,7 @@ export const SettingsView = () => {
             {/* Sidebar */}
             <div className="w-56 bg-theme-bg-panel border-r border-theme-border flex flex-col pt-6 pb-4 min-h-0">
                 <div className="px-5 mb-6">
-                    <h2 className="text-xl font-semibold text-theme-text">{t('settings_view.title')}</h2>
+                    <h2 className="text-xl font-semibold text-theme-text-heading">{t('settings_view.title')}</h2>
                 </div>
                 <div className="space-y-1 px-3 flex-1 overflow-y-auto min-h-0">
                     {/* ── 基础 ── */}
@@ -1352,7 +1352,7 @@ export const SettingsView = () => {
                     {activeTab === 'general' && (
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div>
-                                <h3 className="text-2xl font-medium text-theme-text mb-2">{t('settings_view.general.title')}</h3>
+                                <h3 className="text-2xl font-medium text-theme-text-heading mb-2">{t('settings_view.general.title')}</h3>
                                 <p className="text-theme-text-muted">{t('settings_view.general.description')}</p>
                             </div>
                             <Separator />
@@ -1487,7 +1487,7 @@ export const SettingsView = () => {
                     {activeTab === 'terminal' && (
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div>
-                                <h3 className="text-2xl font-medium text-theme-text mb-2">{t('settings_view.terminal.title')}</h3>
+                                <h3 className="text-2xl font-medium text-theme-text-heading mb-2">{t('settings_view.terminal.title')}</h3>
                                 <p className="text-theme-text-muted">{t('settings_view.terminal.description')}</p>
                             </div>
                             <Separator />
@@ -1539,7 +1539,7 @@ export const SettingsView = () => {
                                     )}
 
                                     {/* 字体预览 */}
-                                    <div className="rounded-md border border-theme-border bg-zinc-950 p-4">
+                                    <div className="rounded-md border border-theme-border bg-theme-bg-sunken p-4">
                                         <p className="text-xs text-theme-text-muted mb-2">{t('settings_view.terminal.font_preview')}</p>
                                         <div
                                             className="text-theme-text leading-relaxed"
@@ -1560,7 +1560,7 @@ export const SettingsView = () => {
                                             }}
                                         >
                                             <div>ABCDEFG abcdefg 0123456789</div>
-                                            <div className="text-zinc-400">{'-> => == != <= >= {}'}</div>
+                                            <div className="text-theme-text-muted">{'-> => == != <= >= {}'}</div>
                                             <div className="text-emerald-400">天地玄黄 The quick brown fox</div>
                                             <div className="text-amber-400" style={{ letterSpacing: '0.1em' }}>       󰊤  </div>
                                         </div>
@@ -1765,7 +1765,7 @@ export const SettingsView = () => {
                     {activeTab === 'appearance' && (
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div>
-                                <h3 className="text-2xl font-medium text-theme-text mb-2">{t('settings_view.appearance.title')}</h3>
+                                <h3 className="text-2xl font-medium text-theme-text-heading mb-2">{t('settings_view.appearance.title')}</h3>
                                 <p className="text-theme-text-muted">{t('settings_view.appearance.description')}</p>
                             </div>
                             <Separator />
@@ -1868,7 +1868,7 @@ export const SettingsView = () => {
                                                                 </SelectItem>
                                                             ))}
                                                         </SelectGroup>
-                                                        <SelectSeparator className="bg-zinc-700 my-1" />
+                                                        <SelectSeparator className="bg-theme-bg-hover my-1" />
                                                     </>
                                                 )}
 
@@ -1886,7 +1886,7 @@ export const SettingsView = () => {
                                                     ))}
                                                 </SelectGroup>
 
-                                                <SelectSeparator className="bg-zinc-700 my-1" />
+                                                <SelectSeparator className="bg-theme-bg-hover my-1" />
 
                                                 {/* Classic Themes Group */}
                                                 <SelectGroup>
@@ -2057,7 +2057,7 @@ export const SettingsView = () => {
                     {activeTab === 'connections' && (
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div>
-                                <h3 className="text-2xl font-medium text-theme-text mb-2">{t('settings_view.connections.title')}</h3>
+                                <h3 className="text-2xl font-medium text-theme-text-heading mb-2">{t('settings_view.connections.title')}</h3>
                                 <p className="text-theme-text-muted">{t('settings_view.connections.description')}</p>
                             </div>
                             <Separator />
@@ -2079,7 +2079,7 @@ export const SettingsView = () => {
                             </div>
 
                             <div className="pt-8">
-                                <h3 className="text-xl font-medium text-theme-text mb-2">{t('settings_view.connections.groups.title')}</h3>
+                                <h3 className="text-xl font-medium text-theme-text-heading mb-2">{t('settings_view.connections.groups.title')}</h3>
                                 <p className="text-sm text-theme-text-muted mb-4">{t('settings_view.connections.groups.description')}</p>
                                 <Separator className="mb-4" />
 
@@ -2107,7 +2107,7 @@ export const SettingsView = () => {
                             </div>
 
                             <div className="pt-8">
-                                <h3 className="text-xl font-medium text-theme-text mb-2">{t('settings_view.connections.idle_timeout.title')}</h3>
+                                <h3 className="text-xl font-medium text-theme-text-heading mb-2">{t('settings_view.connections.idle_timeout.title')}</h3>
                                 <p className="text-sm text-theme-text-muted mb-4">{t('settings_view.connections.idle_timeout.description')}</p>
                                 <Separator className="mb-4" />
                                 <div className="grid gap-2 max-w-xs">
@@ -2142,7 +2142,7 @@ export const SettingsView = () => {
                             </div>
 
                             <div className="pt-8">
-                                <h3 className="text-xl font-medium text-theme-text mb-2">{t('settings_view.connections.ssh_config.title')}</h3>
+                                <h3 className="text-xl font-medium text-theme-text-heading mb-2">{t('settings_view.connections.ssh_config.title')}</h3>
                                 <p className="text-sm text-theme-text-muted mb-4">{t('settings_view.connections.ssh_config.description')}</p>
                                 <Separator className="mb-4" />
 
@@ -2219,7 +2219,7 @@ export const SettingsView = () => {
                     {activeTab === 'ssh' && (
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div>
-                                <h3 className="text-2xl font-medium text-theme-text mb-2">{t('settings_view.ssh_keys.title')}</h3>
+                                <h3 className="text-2xl font-medium text-theme-text-heading mb-2">{t('settings_view.ssh_keys.title')}</h3>
                                 <p className="text-theme-text-muted">{t('settings_view.ssh_keys.description')}</p>
                             </div>
                             <Separator />
@@ -2253,7 +2253,7 @@ export const SettingsView = () => {
                     {activeTab === 'ai' && (<>
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div>
-                                <h3 className="text-2xl font-medium text-theme-text mb-2">{t('settings_view.ai.title')}</h3>
+                                <h3 className="text-2xl font-medium text-theme-text-heading mb-2">{t('settings_view.ai.title')}</h3>
                                 <p className="text-theme-text-muted">{t('settings_view.ai.description')}</p>
                             </div>
                             <Separator />
@@ -2282,7 +2282,7 @@ export const SettingsView = () => {
                                 </div>
 
                                 {/* Privacy Note - Integrating subtly */}
-                                <div className="mb-6 p-3 rounded bg-theme-bg-panel/50 border border-zinc-800">
+                                <div className="mb-6 p-3 rounded bg-theme-bg-panel/50 border border-theme-border">
                                     <p className="text-xs text-theme-text-muted leading-relaxed">
                                         <span className="font-semibold text-theme-text-muted">{t('settings_view.ai.privacy_notice')}:</span> {t('settings_view.ai.privacy_text')}
                                     </p>
@@ -2811,7 +2811,7 @@ export const SettingsView = () => {
                     {activeTab === 'reconnect' && (
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div>
-                                <h3 className="text-2xl font-medium text-theme-text mb-2">{t('settings_view.reconnect.title')}</h3>
+                                <h3 className="text-2xl font-medium text-theme-text-heading mb-2">{t('settings_view.reconnect.title')}</h3>
                                 <p className="text-theme-text-muted">{t('settings_view.reconnect.description')}</p>
                             </div>
                             <Separator />
@@ -2832,7 +2832,7 @@ export const SettingsView = () => {
 
                             {/* Retry strategy settings */}
                             <div className={cn('space-y-6 transition-opacity', !(reconnect?.enabled ?? true) && 'opacity-40 pointer-events-none')}>
-                                <h4 className="text-lg font-medium text-theme-text">{t('settings_view.reconnect.strategy')}</h4>
+                                <h4 className="text-lg font-medium text-theme-text-heading">{t('settings_view.reconnect.strategy')}</h4>
 
                                 <div className="grid grid-cols-2 gap-8 max-w-2xl">
                                     {/* Max attempts */}
@@ -2925,7 +2925,7 @@ export const SettingsView = () => {
                     {activeTab === 'sftp' && (
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div>
-                                <h3 className="text-2xl font-medium text-theme-text mb-2">{t('settings_view.sftp.title')}</h3>
+                                <h3 className="text-2xl font-medium text-theme-text-heading mb-2">{t('settings_view.sftp.title')}</h3>
                                 <p className="text-theme-text-muted">{t('settings_view.sftp.description')}</p>
                             </div>
                             <Separator />
@@ -3025,7 +3025,7 @@ export const SettingsView = () => {
                     {activeTab === 'ide' && (
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div>
-                                <h3 className="text-2xl font-medium text-theme-text mb-2">{t('settings_view.ide.title', 'IDE Mode (Mini)')}</h3>
+                                <h3 className="text-2xl font-medium text-theme-text-heading mb-2">{t('settings_view.ide.title', 'IDE Mode (Mini)')}</h3>
                                 <p className="text-theme-text-muted">{t('settings_view.ide.description', 'Configure the built-in code editor behavior.')}</p>
                             </div>
                             <Separator />
@@ -3241,15 +3241,15 @@ export const SettingsView = () => {
                         </p>
                         <div className="space-y-2 text-xs text-theme-text-muted bg-theme-bg-panel/30 p-3 rounded border border-theme-border/50">
                             <div className="flex items-start gap-2">
-                                <div className="w-1 h-1 rounded-full bg-zinc-500 mt-1.5 shrink-0"></div>
+                                <div className="w-1 h-1 rounded-full bg-theme-text-muted mt-1.5 shrink-0"></div>
                                 <p>{t('settings_view.ai_confirm.point_local')}</p>
                             </div>
                             <div className="flex items-start gap-2">
-                                <div className="w-1 h-1 rounded-full bg-zinc-500 mt-1.5 shrink-0"></div>
+                                <div className="w-1 h-1 rounded-full bg-theme-text-muted mt-1.5 shrink-0"></div>
                                 <p>{t('settings_view.ai_confirm.point_no_server')}</p>
                             </div>
                             <div className="flex items-start gap-2">
-                                <div className="w-1 h-1 rounded-full bg-zinc-500 mt-1.5 shrink-0"></div>
+                                <div className="w-1 h-1 rounded-full bg-theme-text-muted mt-1.5 shrink-0"></div>
                                 <p>{t('settings_view.ai_confirm.point_context')}</p>
                             </div>
                         </div>

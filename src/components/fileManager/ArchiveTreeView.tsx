@@ -101,8 +101,8 @@ const TreeRow: React.FC<TreeRowProps> = ({ node, depth, defaultOpen = false, for
       <div
         className={cn(
           'grid grid-cols-[1fr_80px_80px_120px] gap-2 px-3 py-1.5 text-xs',
-          idx % 2 === 0 ? 'bg-zinc-900/20' : 'bg-transparent',
-          'hover:bg-zinc-800/50',
+          idx % 2 === 0 ? 'bg-theme-bg-panel/20' : 'bg-transparent',
+          'hover:bg-theme-bg-hover/50',
         )}
       >
         {/* Name column — tree structure with indentation */}
@@ -115,9 +115,9 @@ const TreeRow: React.FC<TreeRowProps> = ({ node, depth, defaultOpen = false, for
           <span className="w-4 h-4 flex items-center justify-center shrink-0">
             {node.isDir && hasChildren ? (
               expanded ? (
-                <ChevronDown className="h-3 w-3 text-zinc-500" />
+                <ChevronDown className="h-3 w-3 text-theme-text-muted" />
               ) : (
-                <ChevronRight className="h-3 w-3 text-zinc-500" />
+                <ChevronRight className="h-3 w-3 text-theme-text-muted" />
               )
             ) : (
               <span className="w-3" />
@@ -132,27 +132,27 @@ const TreeRow: React.FC<TreeRowProps> = ({ node, depth, defaultOpen = false, for
               <Folder className="h-3.5 w-3.5 text-amber-400 shrink-0" />
             )
           ) : (
-            <File className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+            <File className="h-3.5 w-3.5 text-theme-text-muted shrink-0" />
           )}
 
           {/* Name */}
-          <span className="truncate text-zinc-300" title={node.path}>
+          <span className="truncate text-theme-text" title={node.path}>
             {node.name}
           </span>
         </div>
 
         {/* Size */}
-        <span className="text-right text-zinc-500">
+        <span className="text-right text-theme-text-muted">
           {node.isDir ? '-' : node.entry ? formatSize(node.entry.size) : '-'}
         </span>
 
         {/* Compressed */}
-        <span className="text-right text-zinc-500">
+        <span className="text-right text-theme-text-muted">
           {node.isDir ? '-' : node.entry ? formatSize(node.entry.compressedSize) : '-'}
         </span>
 
         {/* Modified */}
-        <span className="text-right text-zinc-600">
+        <span className="text-right text-theme-text-muted">
           {node.entry?.modified || '-'}
         </span>
       </div>
@@ -199,7 +199,7 @@ export const ArchiveTreeView: React.FC<ArchiveTreeViewProps> = ({ archiveInfo, t
   return (
     <div className="p-4">
       {/* Archive Stats */}
-      <div className="flex items-center gap-4 mb-4 p-3 bg-zinc-900/50 rounded-lg text-xs text-zinc-400">
+      <div className="flex items-center gap-4 mb-4 p-3 bg-theme-bg-panel rounded-lg text-xs text-theme-text-muted">
         <div className="flex items-center gap-1.5">
           <Folder className="h-3.5 w-3.5" />
           <span>{archiveInfo.totalDirs} {t('fileManager.folders')}</span>
@@ -221,11 +221,11 @@ export const ArchiveTreeView: React.FC<ArchiveTreeViewProps> = ({ archiveInfo, t
       </div>
 
       {/* Header */}
-      <div className="grid grid-cols-[1fr_80px_80px_120px] gap-2 px-3 py-2 bg-zinc-900/80 border-b border-theme-border text-xs font-medium text-zinc-400 sticky top-0 z-10">
+      <div className="grid grid-cols-[1fr_80px_80px_120px] gap-2 px-3 py-2 bg-theme-bg-panel/80 border-b border-theme-border text-xs font-medium text-theme-text-muted sticky top-0 z-10">
           <div className="flex items-center justify-between">
             <span>{t('fileManager.name')}</span>
             <button
-              className="text-zinc-500 hover:text-zinc-300 transition-colors text-[10px]"
+              className="text-theme-text-muted hover:text-theme-text transition-colors text-[10px]"
               onClick={toggleAll}
             >
               {allExpanded ? t('fileManager.collapseAll') : t('fileManager.expandAll')}

@@ -73,8 +73,8 @@ function getStatusStyles(status: UnifiedNodeStatus): {
   switch (status) {
     case 'idle':
       return { 
-        dot: 'bg-zinc-500', 
-        text: 'text-zinc-400',
+        dot: 'bg-theme-text-muted', 
+        text: 'text-theme-text-muted',
         bg: 'hover:bg-white/5',
       };
     case 'connecting':
@@ -109,8 +109,8 @@ function getStatusStyles(status: UnifiedNodeStatus): {
       };
     default:
       return { 
-        dot: 'bg-zinc-500', 
-        text: 'text-zinc-400',
+        dot: 'bg-theme-text-muted', 
+        text: 'text-theme-text-muted',
         bg: 'hover:bg-white/5',
       };
   }
@@ -287,7 +287,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
                     "flex items-center gap-2 px-2 py-1 rounded cursor-pointer transition-colors group/term",
                     activeTerminalId === termId 
                       ? "bg-blue-500/20 text-blue-300" 
-                      : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                      : "text-theme-text-muted hover:bg-white/5 hover:text-theme-text"
                   )}
                   onClick={(e) => {
                     e.stopPropagation();

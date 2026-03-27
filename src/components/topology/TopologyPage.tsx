@@ -64,7 +64,7 @@ export const TopologyPage: React.FC = () => {
     return (
         <div className={`h-full w-full overflow-hidden flex flex-col ${bgActive ? '' : 'bg-theme-bg'}`} data-bg-active={bgActive || undefined}>
             <div className="p-6 border-b border-theme-border bg-theme-bg-panel topo-header">
-                <h1 className="text-2xl font-bold text-theme-text mb-2">{t('topology.page.title')}</h1>
+                <h1 className="text-2xl font-bold text-theme-text-heading mb-2">{t('topology.page.title')}</h1>
                 <p className="text-theme-text-muted text-sm">{t('topology.page.description')}</p>
             </div>
             <div ref={containerRef} className="flex-1 overflow-hidden relative">

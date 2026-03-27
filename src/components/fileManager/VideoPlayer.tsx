@@ -602,7 +602,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, name, mimeType, f
       <div
         className={cn(
           "transition-all duration-300 overflow-hidden border-l border-theme-border",
-          "bg-zinc-900/50 flex flex-col shrink-0",
+          "bg-theme-bg-panel/80 flex flex-col shrink-0",
           showInfo ? "w-56" : "w-0 border-l-0",
         )}
       >
@@ -612,7 +612,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, name, mimeType, f
           <span>video info</span>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3 scrollbar-thin scrollbar-thumb-zinc-700">
+        <div className="flex-1 overflow-y-auto p-3 scrollbar-thin scrollbar-thumb-theme-border">
           {/* File entries */}
           {fileEntries.length > 0 && (
             <div className="mb-2">
@@ -659,6 +659,6 @@ const VideoInfoRow: React.FC<{ label: string; value: string }> = ({ label, value
   <div className="flex text-[10px] leading-4 font-mono hover:bg-theme-bg-hover/50 px-1 -mx-1 rounded-sm transition-colors">
     <span className="text-theme-accent/50 mr-1">{'>'}</span>
     <span className="text-theme-text-muted w-[72px] shrink-0">{label}</span>
-    <span className="text-zinc-300 truncate" title={value}>{value}</span>
+    <span className="text-theme-text truncate" title={value}>{value}</span>
   </div>
 );

@@ -51,7 +51,7 @@ function StatusBadge({ state }: { state: PluginState }) {
 
   const config: Record<PluginState, { color: string; label: string }> = {
     active: { color: 'bg-green-400', label: t('plugin.status.active') },
-    inactive: { color: 'bg-zinc-500', label: t('plugin.status.inactive') },
+    inactive: { color: 'bg-theme-text-muted', label: t('plugin.status.inactive') },
     loading: { color: 'bg-blue-400 animate-pulse', label: t('plugin.status.loading') },
     error: { color: 'bg-red-400', label: t('plugin.status.error') },
     disabled: { color: 'bg-yellow-500', label: t('plugin.status.disabled') },

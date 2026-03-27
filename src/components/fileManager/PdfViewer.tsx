@@ -152,7 +152,7 @@ const PagePlaceholder: React.FC<{ width: number; height: number; zoom: number }>
   zoom,
 }) => (
   <div
-    className="rounded-sm bg-zinc-700/30"
+    className="rounded-sm bg-theme-bg-hover/30"
     style={{ width: width * zoom, height: height * zoom }}
   />
 );
