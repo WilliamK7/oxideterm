@@ -4,7 +4,14 @@
 
 ## 概述
 
-`oxt` CLI 是一个独立的命令行二进制程序，通过 IPC（进程间通信）与正在运行的 OxideTerm GUI 进行通信。用户可以在终端或 shell 脚本中查询 OxideTerm 状态、列出连接和会话、查看端口转发与健康状态、断开会话、执行连通性检查——一切从终端或 shell 脚本完成。
+`oxt` CLI 是一个独立的命令行二进制程序，通过 IPC（进程间通信）与正在运行的 OxideTerm GUI 进行通信。用户可以在终端或 shell 脚本中：
+
+- 查询 OxideTerm 状态与健康信息
+- 列出连接、会话、本地终端与端口转发
+- 执行连接、断开、聚焦、附着（mirror）等会话操作
+- 创建/删除端口转发规则
+- 读取配置（分组、连接详情）
+- 使用 AI（`ask` / `exec`），支持流式输出、会话续聊与终端 Markdown 渲染
 
 **主要设计决策：**
 
@@ -24,12 +31,10 @@
   ~/.oxideterm/oxt.sock                          accept 循环
        │                                              │
   Named Pipe（Windows）                          methods.rs
-  \\.\pipe\OxideTerm-CLI-{user}                  ├─ status
-                                                 ├─ list_saved_connections
-                                                 ├─ list_sessions
-                                                 ├─ list_active_connections                                                 ├─ list_forwards
-                                                 ├─ health
-                                                 ├─ disconnect                                                 └─ ping
+  \\.\pipe\OxideTerm-CLI-{user}                  ├─ 状态/列表/健康类方法
+                                                 ├─ 会话与标签操作方法
+                                                 ├─ 转发与配置方法
+                                                 └─ ask（流式 AI）
 ```
 
 ### 模块结构
@@ -100,7 +105,20 @@
 | `1001` | `ERR_NOT_CONNECTED` | 无活跃连接（保留） |
 | `1003` | `ERR_TIMEOUT` | 操作超时（保留） |
 
-## 可用方法（8 个）
+## 可用方法（17 个 + 1 个流式）
+
+> 说明：`ask` 被归类为流式方法（服务端通过 `stream_chunk` 通知推送增量文本），其余为普通 JSON-RPC 请求/响应。
+
+### 方法总览
+
+| 分类 | 方法名 |
+|---|---|
+| 状态/探活 | `status`、`ping` |
+| 列表/查询 | `list_saved_connections`、`list_sessions`、`list_active_connections`、`list_forwards`、`list_local_terminals`、`health` |
+| 会话/标签操作 | `disconnect`、`connect`、`open_tab`、`focus_tab`、`attach` |
+| 转发管理 | `create_forward`、`delete_forward` |
+| 配置读取 | `config_list`、`config_get` |
+| AI（流式） | `ask` |
 
 ### `status`
 
@@ -267,6 +285,101 @@
 {"pong": true}
 ```
 
+### `list_local_terminals`
+
+返回本地终端会话列表（`local-terminal` 特性开启时可用）。
+
+**参数**：`{}`
+
+**响应示例**：
+```json
+[
+  {
+    "id": "local-123...",
+    "shell_name": "zsh",
+    "cwd": "/Users/name/project"
+  }
+]
+```
+
+### `connect`
+
+根据保存的连接名称/ID/主机匹配并发起连接（在 GUI 中打开会话）。
+
+**参数**：`{ "target": "prod-server" }`
+
+### `open_tab`
+
+打开一个新的本地终端标签页。
+
+**参数**：`{ "path": "/path/to/workdir" }`
+
+### `focus_tab`
+
+聚焦一个已存在标签页（SSH 会话或本地终端）。
+
+**参数**：`{ "target": "session-id-or-name" }`
+
+### `attach`
+
+附着到一个正在运行的会话（SSH/本地），进行终端镜像。
+
+**参数**：`{ "session_id": "abc123" }`
+
+**响应示例**：
+```json
+{
+  "ws_url": "ws://127.0.0.1:55321",
+  "ws_token": "single-use-token",
+  "terminal_type": "ssh",
+  "cols": 160,
+  "rows": 48
+}
+```
+
+### `create_forward`
+
+为会话创建端口转发规则（local / remote / dynamic）。
+
+### `delete_forward`
+
+删除指定端口转发规则。
+
+### `config_list`
+
+列出连接分组及统计信息。
+
+### `config_get`
+
+查询单个连接详情（不返回密码或私钥内容）。
+
+### `ask`（流式）
+
+AI 提问接口。支持：
+
+- `context`（stdin 管道上下文）
+- `session_id`（附带终端缓冲区上下文）
+- `model`、`provider` 覆盖
+- `stream` 流式输出
+- `conversation_id` 续聊
+
+流式过程中服务端会发送：
+
+```json
+{"method":"stream_chunk","params":{"text":"..."}}
+```
+
+最终响应示例：
+
+```json
+{
+  "text": "...",
+  "model": "moonshot-v1-8k",
+  "done": true,
+  "conversation_id": "b1d0..."
+}
+```
+
 ## CLI 使用说明
 
 ### 安装
@@ -315,6 +428,41 @@ oxt disconnect <session-id-or-name>
 # 连通性检查
 oxt ping
 
+# AI 提问（默认流式）
+oxt ask "explain this log"
+
+# 从 stdin 管道上下文
+echo "$(cat app.log)" | oxt ask "find root cause"
+
+# 强制原始文本输出（不做 Markdown 渲染）
+oxt ask --raw "show me command"
+
+# 续聊
+oxt ask --continue <conversation-id> "give me safer variant"
+
+# 代码/命令生成模式（代码优先输出）
+oxt exec "write a bash script to rotate logs"
+
+# 按名称连接并在 GUI 打开
+oxt connect prod-server
+
+# 打开本地终端标签（可指定路径）
+oxt open ~/work
+
+# 聚焦标签
+oxt focus <session-id-or-name>
+
+# 附着镜像会话
+oxt attach <session-id-or-name>
+
+# 创建/删除端口转发
+oxt forward add 8080:localhost:80 --session <session-id>
+oxt forward remove <forward-id> --session <session-id>
+
+# 配置查询
+oxt config list
+oxt config get <connection-name-or-id>
+
 # 显示版本
 oxt version
 
@@ -339,6 +487,11 @@ CLI 会自动检测 stdout 是否为终端：
 
 - **终端** → 人类可读的格式化表格
 - **管道/重定向** → 紧凑 JSON（单行）
+
+对于 AI 输出（`oxt ask`）：
+
+- **TTY 且未指定 `--raw`**：输出完成后按 Markdown 渲染（ANSI）
+- **管道/重定向 或 `--raw`**：原始文本输出
 
 使用 `--json` 可强制始终输出 JSON。
 
@@ -387,6 +540,21 @@ $ oxt completions zsh > ~/.zfunc/_oxt
 
 # 自定义超时时间
 $ oxt status --timeout 5000
+
+# AI：流式 + Markdown 终端渲染
+$ oxt ask "explain pwd command"
+
+# AI：用于脚本/管道时建议 raw
+$ oxt ask --raw "generate curl command" | pbcopy
+
+# AI：多轮续聊
+$ oxt ask "summarize this" --provider openai
+...
+Conversation: b1d0...
+$ oxt ask --continue b1d0... "give me concise version"
+
+# Attach：会话镜像，`~.` 退出
+$ oxt attach prod-server
 ```
 
 ### 环境变量
@@ -412,6 +580,15 @@ $ oxt status --timeout 5000
 | 最大请求大小 | 1 MB | 有界行读取，防止内存滥用 |
 | 最大响应大小 | 4 MB | 客户端 `.take()` 限制 |
 | 空闲超时 | 60 秒 | 断开不活跃的客户端 |
+
+AI 相关补充限制：
+
+| 限制项 | 数值 | 说明 |
+|---|---|---|
+| `MAX_PROMPT_SIZE` | 50 KB | 单次 prompt 上限 |
+| `MAX_CONTEXT_SIZE` | 500 KB | stdin 上下文上限 |
+| `MAX_TERMINAL_BUFFER_LINES` | 2000 行 | 会话缓冲区注入上限 |
+| 流式读取超时 | 180 秒 | `oxt ask` 客户端读取超时 |
 
 ### 数据暴露原则
 
@@ -551,10 +728,8 @@ oxt completions powershell >> $PROFILE
 
 后续版本可能新增的功能：
 
-- `oxt connect <name>` — 从命令行打开 SSH 会话
-- `oxt exec <name> <command>` — 在远程主机上执行命令
-- `oxt forward add/remove` — 从命令行管理端口转发
 - `oxt transfer <name> <local> <remote>` — SFTP 文件传输
-- `oxt config list/get/set` — 管理连接配置
+- `oxt config set` — 命令行修改连接配置
+- `oxt chat` — 交互式多轮 REPL（当前为 `ask --continue`）
 - 服务端主动推送通知（事件流）
 - 动态 Shell 补全（实时查询连接名、会话 ID）
