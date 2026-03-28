@@ -554,12 +554,19 @@ function ConversationItem({
             className="w-full text-[12px] font-bold tracking-tight bg-theme-bg/50 border border-theme-accent/40 px-1 py-0 text-theme-text focus:outline-none"
           />
         ) : (
-          <div
-            className={`text-[12px] truncate font-bold tracking-tight ${isActive ? 'text-theme-text' : 'text-theme-text-muted group-hover/item:text-theme-text'}`}
-            onDoubleClick={handleStartRename}
-            title={t('ai.chat.double_click_rename')}
-          >
-            {conversation.title}
+          <div className="flex items-center gap-1.5 min-w-0">
+            {conversation.origin === 'cli' && (
+              <span className="inline-flex items-center justify-center w-4 h-4 rounded-sm border border-theme-border/40 text-theme-text-muted/70 shrink-0">
+                <Terminal className="w-2.5 h-2.5" />
+              </span>
+            )}
+            <div
+              className={`text-[12px] truncate font-bold tracking-tight ${isActive ? 'text-theme-text' : 'text-theme-text-muted group-hover/item:text-theme-text'}`}
+              onDoubleClick={handleStartRename}
+              title={t('ai.chat.double_click_rename')}
+            >
+              {conversation.title}
+            </div>
           </div>
         )}
         <div className="text-[9px] text-theme-text-muted/40 uppercase tracking-tight mt-0.5 font-mono">

@@ -1297,6 +1297,8 @@ export interface AiConversation {
   sessionId?: string;
   /** Cached message count from backend (for unloaded conversations) */
   messageCount?: number;
+  /** Origin: "sidebar", "inline", or "cli" */
+  origin?: string;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

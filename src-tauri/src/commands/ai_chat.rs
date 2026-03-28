@@ -25,6 +25,12 @@ pub struct CreateConversationRequest {
     pub id: String,
     pub title: String,
     pub session_id: Option<String>,
+    #[serde(default = "default_origin")]
+    pub origin: String,
+}
+
+fn default_origin() -> String {
+    "sidebar".to_string()
 }
 
 /// Request to save a message
@@ -79,6 +85,7 @@ pub struct ConversationMetaResponse {
     pub updated_at: i64,
     pub message_count: usize,
     pub session_id: Option<String>,
+    pub origin: String,
 }
 
 /// Full conversation response
@@ -90,6 +97,7 @@ pub struct FullConversationResponse {
     pub created_at: i64,
     pub updated_at: i64,
     pub session_id: Option<String>,
+    pub origin: String,
     pub messages: Vec<MessageResponse>,
 }
 
@@ -145,6 +153,7 @@ pub async fn ai_chat_list_conversations(
                 updated_at: m.updated_at,
                 message_count: m.message_count,
                 session_id: m.session_id,
+                origin: m.origin,
             })
             .collect(),
     };
@@ -168,6 +177,7 @@ pub async fn ai_chat_get_conversation(
         created_at: full.meta.created_at,
         updated_at: full.meta.updated_at,
         session_id: full.meta.session_id,
+        origin: full.meta.origin,
         messages: full
             .messages
             .into_iter()
@@ -201,6 +211,7 @@ pub async fn ai_chat_create_conversation(
         updated_at: now,
         message_count: 0,
         session_id: request.session_id,
+        origin: request.origin,
     };
 
     store.create_conversation(&meta).map_err(|e| e.to_string())
@@ -225,6 +236,7 @@ pub async fn ai_chat_update_conversation(
         updated_at: chrono::Utc::now().timestamp_millis(),
         message_count: full.meta.message_count,
         session_id: full.meta.session_id,
+        origin: full.meta.origin,
     };
 
     store

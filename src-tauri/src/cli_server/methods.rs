@@ -18,6 +18,7 @@ use crate::commands::{HealthRegistry, ProfilerRegistry};
 use crate::session::SessionRegistry;
 use crate::sftp::session::SftpRegistry;
 use crate::ssh::{ExtendedSessionHandle, SessionCommand, SshConnectionRegistry};
+use crate::state::{AiChatStore, ConversationMeta, PersistedMessage};
 
 /// Dispatch a JSON-RPC method call to the appropriate handler.
 pub async fn dispatch(
@@ -845,6 +846,108 @@ const MAX_TERMINAL_BUFFER_LINES: usize = 2_000;
 const AI_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
 /// Maximum response tokens for Anthropic API.
 const ANTHROPIC_MAX_TOKENS: u32 = 4096;
+/// Fraction of context window allocated to conversation history.
+const HISTORY_BUDGET_RATIO: f64 = 0.7;
+/// Safety margin multiplier for heuristic token estimates.
+const TOKEN_SAFETY_MARGIN: f64 = 1.15;
+/// Default context window for unknown models.
+const DEFAULT_CONTEXT_WINDOW: usize = 8192;
+
+/// Heuristic token estimation (matches frontend tokenUtils.ts).
+///
+/// CJK characters ≈ 1.5 tokens/char, non-CJK ≈ 0.25 tokens/char.
+/// A ×1.15 safety margin compensates for heuristic imprecision.
+fn estimate_tokens(text: &str) -> usize {
+    if text.is_empty() {
+        return 0;
+    }
+    let mut cjk_count = 0usize;
+    for c in text.chars() {
+        if matches!(c,
+            '\u{4e00}'..='\u{9fff}'   // CJK Unified Ideographs
+            | '\u{3040}'..='\u{309f}' // Hiragana
+            | '\u{30a0}'..='\u{30ff}' // Katakana
+            | '\u{ac00}'..='\u{d7af}' // Hangul Syllables
+        ) {
+            cjk_count += 1;
+        }
+    }
+    let non_cjk_len = text.len().saturating_sub(cjk_count);
+    let raw = cjk_count as f64 * 1.5 + non_cjk_len as f64 * 0.25;
+    (raw * TOKEN_SAFETY_MARGIN).ceil() as usize
+}
+
+/// Get model context window size by name pattern (matches frontend MODEL_CONTEXT_WINDOWS).
+fn get_model_context_window(model: &str) -> usize {
+    let m = model.to_lowercase();
+    // OpenAI
+    if m.contains("gpt-4.1") { return 1_048_576; }
+    if m.starts_with("o1") || m.starts_with("o2") || m.starts_with("o3") { return 200_000; }
+    if m.contains("gpt-4o-mini") { return 128_000; }
+    if m.contains("gpt-4-turbo") || m.contains("gpt-4o") { return 128_000; }
+    if m.contains("gpt-4") { return 8_192; }
+    if m.contains("gpt-3.5") { return 4_096; }
+    // Anthropic
+    if m.contains("claude") { return 200_000; }
+    // Google
+    if m.contains("gemini-2") || m.contains("gemini-1.5") { return 1_048_576; }
+    if m.contains("gemini") { return 128_000; }
+    // Meta
+    if m.contains("llama-4") { return 1_048_576; }
+    if m.contains("llama-3.1") || m.contains("llama-3.2") || m.contains("llama-3.3") { return 128_000; }
+    if m.contains("llama") { return 8_192; }
+    // Others
+    if m.contains("qwen") { return 128_000; }
+    if m.contains("deepseek") { return 128_000; }
+    if m.contains("mistral-large") || m.contains("mistral-medium") { return 128_000; }
+    if m.contains("mistral") { return 32_000; }
+    // Moonshot (common for this user)
+    if m.contains("moonshot") { return 128_000; }
+    DEFAULT_CONTEXT_WINDOW
+}
+
+/// Trim conversation history to fit within the token budget.
+///
+/// Strategy: sliding window — keeps the most recent messages, drops oldest first.
+/// Always preserves the last user message (which is the current request).
+fn trim_history_to_budget(history: &[Value], model: &str) -> Vec<Value> {
+    if history.is_empty() {
+        return vec![];
+    }
+
+    let context_window = get_model_context_window(model);
+    // Budget for history = context_window × HISTORY_BUDGET_RATIO,
+    // minus a reserve for system prompt (~200 tokens) and response (~4096 tokens)
+    let budget = ((context_window as f64 * HISTORY_BUDGET_RATIO) as usize)
+        .saturating_sub(200)  // system prompt reserve
+        .saturating_sub(4096); // response reserve
+
+    let mut total_tokens = 0usize;
+    let mut kept = Vec::new();
+
+    // Walk from newest to oldest, accumulate until budget exceeded
+    for msg in history.iter().rev() {
+        let content = msg.get("content").and_then(|v| v.as_str()).unwrap_or("");
+        let msg_tokens = estimate_tokens(content) + 4; // 4 tokens overhead per message
+        if total_tokens + msg_tokens > budget && !kept.is_empty() {
+            break;
+        }
+        total_tokens += msg_tokens;
+        kept.push(msg.clone());
+    }
+
+    // Reverse back to chronological order
+    kept.reverse();
+    kept
+}
+
+/// Escape XML-like control characters before embedding text inside pseudo tags.
+fn escape_tagged_text(input: &str) -> String {
+    input
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+}
 
 /// Dispatch the `ask` RPC method with streaming support.
 ///
@@ -858,7 +961,7 @@ pub async fn dispatch_streaming<W: AsyncWriteExt + Unpin>(
     ask(app, params, writer).await
 }
 
-/// AI ask implementation with streaming.
+/// AI ask implementation with streaming and conversation persistence.
 async fn ask<W: AsyncWriteExt + Unpin>(
     app: &tauri::AppHandle,
     params: Value,
@@ -916,6 +1019,11 @@ async fn ask<W: AsyncWriteExt + Unpin>(
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
 
+    let conversation_id = params
+        .get("conversation_id")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
     // Resolve provider
     let config_state = app
         .try_state::<Arc<ConfigState>>()
@@ -944,23 +1052,93 @@ async fn ask<W: AsyncWriteExt + Unpin>(
         "You are a code generator. Output only executable code or commands. No explanations, no markdown fences, no comments unless part of the code."
             .to_string()
     } else {
-        "You are OxideSens, an expert terminal & DevOps assistant in OxideTerm. Be concise and helpful. When given terminal output or logs, analyze them and provide actionable insights."
+        "You are OxideSens, an expert terminal & DevOps assistant in OxideTerm. Be concise and helpful. When given terminal output or logs, analyze them and provide actionable insights. You can use markdown for formatting."
             .to_string()
     };
 
     // Build user message
     let mut user_message = String::new();
     if let Some(ctx) = &context {
+        let escaped_ctx = escape_tagged_text(ctx);
         user_message.push_str("<context>\n");
-        user_message.push_str(ctx);
+        user_message.push_str(&escaped_ctx);
         user_message.push_str("\n</context>\n\n");
     }
     if let Some(tc) = &terminal_context {
+        let escaped_tc = escape_tagged_text(tc);
         user_message.push_str("<terminal_buffer>\n");
-        user_message.push_str(tc);
+        user_message.push_str(&escaped_tc);
         user_message.push_str("\n</terminal_buffer>\n\n");
     }
     user_message.push_str(&prompt);
+
+    // Load conversation history or create new conversation
+    let ai_store = app.try_state::<Arc<AiChatStore>>();
+    let (conv_id, history_messages) = if let Some(ref cid) = conversation_id {
+        // Continue existing conversation
+        if let Some(ref store) = ai_store {
+            let full = store.get_conversation(cid).map_err(|e| {
+                (protocol::ERR_INVALID_PARAMS, format!("Conversation not found: {e}"))
+            })?;
+            let history: Vec<Value> = full
+                .messages
+                .iter()
+                .filter(|m| m.role == "user" || m.role == "assistant")
+                .map(|m| json!({ "role": m.role, "content": m.content }))
+                .collect();
+            (cid.clone(), history)
+        } else {
+            (cid.clone(), vec![])
+        }
+    } else {
+        // New conversation
+        let new_id = uuid::Uuid::new_v4().to_string();
+        if let Some(ref store) = ai_store {
+            let now = chrono::Utc::now().timestamp_millis();
+            // Generate a title from the first ~50 chars of prompt
+            let title = if prompt.len() > 50 {
+                let short = prompt.chars().take(50).collect::<String>();
+                format!("{short}…")
+            } else if prompt.is_empty() {
+                "CLI Query".to_string()
+            } else {
+                prompt.clone()
+            };
+            let meta = ConversationMeta {
+                id: new_id.clone(),
+                title,
+                created_at: now,
+                updated_at: now,
+                message_count: 0,
+                session_id: session_id.clone(),
+                origin: "cli".to_string(),
+            };
+            let _ = store.create_conversation(&meta);
+        }
+        (new_id, vec![])
+    };
+
+    // Apply sliding window to history if needed
+    let trimmed_history = trim_history_to_budget(&history_messages, &model);
+
+    // Build full messages array: history + new user message
+    let mut messages = trimmed_history;
+    messages.push(json!({ "role": "user", "content": user_message }));
+
+    // Save user message to store
+    if let Some(ref store) = ai_store {
+        let now = chrono::Utc::now().timestamp_millis();
+        let user_msg = PersistedMessage {
+            id: uuid::Uuid::new_v4().to_string(),
+            conversation_id: conv_id.clone(),
+            role: "user".to_string(),
+            content: user_message.clone(),
+            timestamp: now,
+            tool_calls: vec![],
+            context_snapshot: None,
+        };
+        let _ = store.save_message(user_msg);
+    }
 
     // Make AI API call
     let client = reqwest::Client::builder()
@@ -968,21 +1146,47 @@ async fn ask<W: AsyncWriteExt + Unpin>(
         .build()
         .map_err(|e| (protocol::ERR_INTERNAL, format!("Failed to create HTTP client: {e}")))?;
 
-    match provider_type.as_str() {
+    let result = match provider_type.as_str() {
         "anthropic" => {
             call_anthropic(
-                &client, &base_url, &api_key, &model, &system_prompt, &user_message, stream, writer,
+                &client, &base_url, &api_key, &model, &system_prompt, &messages, stream, writer,
             )
             .await
         }
         _ => {
-            // OpenAI-compatible (openai, ollama, openai_compatible, gemini via compatible endpoint)
             call_openai_compatible(
-                &client, &base_url, &api_key, &model, &system_prompt, &user_message, stream, writer,
+                &client, &base_url, &api_key, &model, &system_prompt, &messages, stream, writer,
             )
             .await
         }
+    }?;
+
+    // Save assistant response to store
+    if let Some(ref store) = ai_store {
+        let assistant_text = result
+            .get("text")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        if !assistant_text.is_empty() {
+            let now = chrono::Utc::now().timestamp_millis();
+            let assistant_msg = PersistedMessage {
+                id: uuid::Uuid::new_v4().to_string(),
+                conversation_id: conv_id.clone(),
+                role: "assistant".to_string(),
+                content: assistant_text,
+                timestamp: now,
+                tool_calls: vec![],
+                context_snapshot: None,
+            };
+            let _ = store.save_message(assistant_msg);
+        }
     }
+
+    // Merge conversation_id into the response
+    let mut response = result;
+    response["conversation_id"] = json!(conv_id);
+    Ok(response)
 }
 
 /// Resolve AI provider from CLI params or auto-detect from keychain.
@@ -1132,7 +1336,7 @@ async fn call_openai_compatible<W: AsyncWriteExt + Unpin>(
     api_key: &str,
     model: &str,
     system_prompt: &str,
-    user_message: &str,
+    messages: &[Value],
     stream: bool,
     writer: &mut W,
 ) -> Result<Value, (i32, String)> {
@@ -1143,12 +1347,13 @@ async fn call_openai_compatible<W: AsyncWriteExt + Unpin>(
         return Err((protocol::ERR_INTERNAL, "API key is empty".to_string()));
     }
 
+    // Build messages: system + history + current
+    let mut all_messages = vec![json!({ "role": "system", "content": system_prompt })];
+    all_messages.extend_from_slice(messages);
+
     let body = json!({
         "model": model,
-        "messages": [
-            { "role": "system", "content": system_prompt },
-            { "role": "user", "content": user_message },
-        ],
+        "messages": all_messages,
         "stream": stream,
     });
 
@@ -1234,7 +1439,7 @@ async fn call_anthropic<W: AsyncWriteExt + Unpin>(
     api_key: &str,
     model: &str,
     system_prompt: &str,
-    user_message: &str,
+    messages: &[Value],
     stream: bool,
     writer: &mut W,
 ) -> Result<Value, (i32, String)> {
@@ -1249,9 +1454,7 @@ async fn call_anthropic<W: AsyncWriteExt + Unpin>(
         "model": model,
         "max_tokens": ANTHROPIC_MAX_TOKENS,
         "system": system_prompt,
-        "messages": [
-            { "role": "user", "content": user_message },
-        ],
+        "messages": messages,
         "stream": stream,
     });
 

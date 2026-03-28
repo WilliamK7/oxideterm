@@ -92,6 +92,14 @@ enum Commands {
         /// Disable streaming (wait for full response)
         #[arg(long)]
         no_stream: bool,
+
+        /// Force raw text output (no markdown rendering)
+        #[arg(long)]
+        raw: bool,
+
+        /// Continue a previous conversation by ID
+        #[arg(long, short = 'c')]
+        r#continue: Option<String>,
     },
 
     /// Generate code/commands with AI (code-only output)
@@ -337,6 +345,8 @@ fn run(cli: &Cli, out: &output::OutputMode) -> Result<(), String> {
             model,
             provider,
             no_stream,
+            raw,
+            r#continue: continue_id,
         } => {
             let prompt_text = prompt.join(" ");
             if prompt_text.is_empty() && is_terminal_stdin() {
@@ -367,18 +377,44 @@ fn run(cli: &Cli, out: &output::OutputMode) -> Result<(), String> {
             if let Some(p) = provider {
                 params["provider"] = serde_json::json!(p);
             }
+            if let Some(cid) = continue_id {
+                params["conversation_id"] = serde_json::json!(cid);
+            }
+
+            // Determine markdown rendering mode:
+            // --raw or piped stdout → raw text; TTY stdout → markdown render
+            let use_markdown = !raw && is_terminal_stdout();
 
             if *no_stream {
                 let resp = conn.call("ask", params)?;
-                out.print_ai_response(&resp);
+                let text = resp
+                    .get("text")
+                    .and_then(|v| v.as_str())
+                    .or_else(|| resp.get("content").and_then(|v| v.as_str()))
+                    .unwrap_or("");
+                if use_markdown {
+                    render_markdown(text);
+                } else {
+                    out.print_ai_response(&resp);
+                }
+                print_conversation_id(&resp);
             } else {
-                conn.call_streaming("ask", params, |text| {
-                    use std::io::Write;
-                    print!("{text}");
-                    let _ = std::io::stdout().flush();
+                let mut accumulated = String::new();
+                let resp = conn.call_streaming("ask", params, |text| {
+                    if use_markdown {
+                        accumulated.push_str(text);
+                    } else {
+                        use std::io::Write;
+                        print!("{text}");
+                        let _ = std::io::stdout().flush();
+                    }
                 })?;
-                // Ensure final newline
-                println!();
+                if use_markdown {
+                    render_markdown(&accumulated);
+                } else {
+                    println!();
+                }
+                print_conversation_id(&resp);
             }
         }
         Commands::Exec {
@@ -615,6 +651,11 @@ fn is_terminal_stdin() -> bool {
     std::io::stdin().is_terminal()
 }
 
+fn is_terminal_stdout() -> bool {
+    use std::io::IsTerminal;
+    std::io::stdout().is_terminal()
+}
+
 fn read_stdin() -> Result<String, String> {
     use std::io::Read;
     let mut buf = String::new();
@@ -625,6 +666,21 @@ fn read_stdin() -> Result<String, String> {
         .read_to_string(&mut buf)
         .map_err(|e| format!("Failed to read stdin: {e}"))?;
     Ok(buf)
+}
+
+/// Render markdown text to the terminal using termimad.
+fn render_markdown(text: &str) {
+    let skin = termimad::MadSkin::default();
+    // termimad writes ANSI-colored markdown to the terminal
+    skin.print_text(text);
+}
+
+/// Print the conversation ID from the response for `--continue` use.
+fn print_conversation_id(resp: &serde_json::Value) {
+    if let Some(cid) = resp.get("conversation_id").and_then(|v| v.as_str()) {
+        eprintln!("\n\x1b[2mConversation: {cid}\x1b[0m");
+        eprintln!("\x1b[2mContinue with: oxt ask --continue {cid} \"your follow-up\"\x1b[0m");
+    }
 }
 
 /// Resolve a target to a session ID, checking both SSH and local sessions.

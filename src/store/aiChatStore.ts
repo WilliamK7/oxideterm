@@ -47,6 +47,7 @@ interface ConversationMetaDto {
   createdAt: number;
   updatedAt: number;
   messageCount: number;
+  origin?: string;
 }
 
 // Backend returns flat structure, not nested meta
@@ -56,6 +57,7 @@ interface FullConversationDto {
   createdAt: number;
   updatedAt: number;
   sessionId: string | null;
+  origin?: string;
   messages: Array<{
     id: string;
     role: 'user' | 'assistant' | 'system' | 'tool';
@@ -149,6 +151,8 @@ function dtoToConversation(dto: FullConversationDto): AiConversation {
     title: dto.title,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
+    sessionId: dto.sessionId ?? undefined,
+    origin: dto.origin || 'sidebar',
     messages: dto.messages.map((m) => {
       // Re-parse thinking + suggestions from persisted assistant content
       if (m.role === 'assistant') {
@@ -205,6 +209,7 @@ function metaToConversation(meta: ConversationMetaDto): AiConversation {
     updatedAt: meta.updatedAt,
     messages: [], // Will be loaded on demand
     messageCount: meta.messageCount,
+    origin: meta.origin || 'sidebar',
   };
 }
 
@@ -456,6 +461,7 @@ export const useAiChatStore = create<AiChatStore>()((set, get) => ({
         request: {
           id,
           title: conversation.title,
+          origin: 'sidebar',
           createdAt: now,
         },
       });
@@ -1674,6 +1680,7 @@ You have tools to interact with the user's terminal sessions and workspace. **Us
             id: activeConversationId,
             title: conversation.title,
             sessionId: conversation.sessionId ?? null,
+            origin: conversation.origin ?? 'sidebar',
           },
         });
       }
@@ -1775,6 +1782,7 @@ You have tools to interact with the user's terminal sessions and workspace. **Us
             id: activeConversationId,
             title: conversation.title,
             sessionId: conversation.sessionId ?? null,
+            origin: conversation.origin ?? 'sidebar',
           },
         });
       }
@@ -1899,6 +1907,7 @@ You have tools to interact with the user's terminal sessions and workspace. **Us
             id: activeConversationId,
             title: conversation.title,
             sessionId: conversation.sessionId ?? null,
+            origin: conversation.origin ?? 'sidebar',
           },
         });
       }

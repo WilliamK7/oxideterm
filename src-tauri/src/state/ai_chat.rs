@@ -147,6 +147,13 @@ pub struct ConversationMeta {
     pub message_count: usize,
     /// Associated session ID (optional)
     pub session_id: Option<String>,
+    /// Origin: "sidebar", "inline", "cli" (defaults to "sidebar" for existing data)
+    #[serde(default = "default_origin")]
+    pub origin: String,
+}
+
+fn default_origin() -> String {
+    "sidebar".to_string()
 }
 
 /// Full conversation with messages (for loading)
@@ -660,6 +667,7 @@ impl AiChatStore {
                     updated_at: now,
                     message_count: 1,
                     session_id: None,
+                    origin: default_origin(),
                 }
             };
 
