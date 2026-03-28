@@ -616,10 +616,10 @@ CLI 在 GitHub Actions 中自动为全部 6 个平台目标构建并打包：
 
 1. **构建步骤**：在 `cli/` 目录执行 `cargo build --release --target ${{ matrix.target }}`
 2. **复制**：二进制放入 `src-tauri/cli-bin/`
-3. **打包**：`TAURI_CONFIG` 环境变量动态将 `cli-bin/oxt`（或 `oxt.exe`）注入 Tauri 资源列表
+3. **打包**：`tauri.conf.json` 的 `bundle.resources` 包含 `"cli-bin/*"` glob，Tauri 自动将匹配到的 CLI 二进制打包为资源
 4. **分发**：Tauri 将 CLI 二进制包含在最终的 `.app` / `.deb` / `.exe` 安装包中
 
-采用 `TAURI_CONFIG` 方式可以避免修改静态的 `tauri.conf.json`，本地 `pnpm tauri dev` 无需 CLI 二进制即可正常运行。
+本地 `pnpm tauri dev` 时 `cli-bin/` 目录不存在，glob 匹配零个文件，不会报错。
 
 ### 支持的目标平台
 
@@ -659,7 +659,7 @@ CLI 伴侣工具区块位于 设置 → 通用：
 
 `find_bundled_cli()` 按以下顺序查找 CLI 二进制：
 
-1. Tauri 资源路径：`cli-bin/{binary_name}`（来自 `TAURI_CONFIG` 注入）
+1. Tauri 资源路径：`cli-bin/{binary_name}`（来自 `tauri.conf.json` 静态配置）
 2. 直接资源路径：`{binary_name}`（备用）
 3. 主程序同目录：`{exe_dir}/{binary_name}`（开发环境备用）
 
