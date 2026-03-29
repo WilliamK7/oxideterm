@@ -84,3 +84,5 @@ CLAUDE.md
 .github/agents
 /plugins
 /promo
+# Website (symlink)
+oxideterm-web
