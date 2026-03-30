@@ -32,6 +32,9 @@
   <a href="../../README.md">English</a> | <a href="README.zh-Hans.md">简体中文</a> | <a href="README.zh-Hant.md">繁體中文</a> | <a href="README.ja.md">日本語</a> | <a href="README.ko.md">한국어</a> | <a href="README.fr.md">Français</a> | <a href="README.de.md">Deutsch</a> | <a href="README.es.md">Español</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português</a> | <a href="README.vi.md">Tiếng Việt</a>
 </p>
 
+> [!NOTE]
+> **Thay đổi giấy phép:** Từ phiên bản v1.0.0, OxideTerm đã thay đổi giấy phép từ **PolyForm Noncommercial 1.0.0** sang **GPL-3.0 (GNU General Public License v3.0)**. OxideTerm hiện là mã nguồn mở hoàn toàn — bạn có thể tự do sử dụng, sửa đổi và phân phối theo các điều khoản của giấy phép GPL-3.0. Xem tệp [LICENSE](../../LICENSE) để biết chi tiết.
+
 ---
 
 <div align="center">
