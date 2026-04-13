@@ -233,7 +233,7 @@ Full local (-L), remote (-R), and dynamic SOCKS5 (-D) forwarding:
 
 Dynamic ESM loading with a security-hardened, frozen API surface:
 
-- **PluginContext API**: 8 namespaces — terminal, ui, commands, settings, lifecycle, events, storage, system
+- **PluginContext API**: 18 namespaces — terminal, ui, commands, settings, lifecycle, events, storage, system
 - **24 UI Kit components**: pre-built React components (buttons, inputs, dialogs, tables…) injected into plugin sandboxes via `window.__OXIDE__`
 - **Security membrane**: `Object.freeze` on all context objects, Proxy-based ACL, IPC whitelist, circuit breaker with auto-disable after repeated errors
 - **Shared modules**: React, ReactDOM, zustand, lucide-react exposed for plugin use without bundling duplicates
